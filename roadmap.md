@@ -1,0 +1,33 @@
+# RecipeVault Roadmap & Status
+
+- [x] **"Warm Pantry" Design System Implementation**:
+  - Full palette integration: Cream Base `#FAF6F0`, Card White `#FFFDF9`, Espresso Ink `#2C231B`, Clay `#C4633F`, Sage `#7C9070`, Honey `#D9A441`, Linen Border `#E9DFD2`.
+  - Editorial typography: `Fraunces` display serif headings, `Nunito Sans` body, and tabular figures for ingredient quantities.
+  - Generous 16–24px rounded surfaces, warm undertone shadows, gentle card hover lifts, and tuck-into-vault animations.
+- [x] **Relational DBMS Architecture & Schema**:
+  - Normalized 3NF data store: Users, Recipes, RecipeVersions, Master Ingredients, Junctions, Collections, Meal Plans, Reviews, and Pantry Items.
+  - Complete PostgreSQL DDL (`src/db/schema.sql`) and seed data (`src/db/seed.sql`) with referential integrity, indexes, views, and aggregate triggers.
+  - In-browser local storage persistence with referential consistency and a 1-click canonical demo database reset.
+- [x] **Pantry Matching & Recommendation Intelligence Engine**:
+  - Interactive "Cook With What You Have" pantry selector calculating real-time overlap percentages.
+  - Transparent, explainable recommendation scoring query combining cuisine affinities, dietary patterns, time, and ratings.
+- [x] **Recipe Detail, Scaling Engine & Cooking Mode**:
+  - Non-destructive fractional serving scaler with culinary fraction formatting (`1/2`, `1 1/4`, etc.).
+  - Distraction-free full-screen cooking mode with step progress tracking and timers.
+  - Semantic ingredient glossary modals with tested substitutes and flavor profiles.
+- [x] **Recipe Version Control**:
+  - Immutable revision snapshots with commit messages, version comparison, and 1-click rollback restoration.
+- [x] **Meal Planner & Consolidated Shopping List**:
+  - 7-day schedule matrix with custom serving multipliers.
+  - Automated consolidated shopping list grouped by supermarket aisle (Produce, Dairy, Pantry, etc.) with pantry stock cross-checking.
+- [x] **Ingredient Library & Semantic Ontology**:
+  - Master ingredient catalog with regional aliases, classifications, flavor notes, and dishes featuring each ingredient.
+- [x] **Nutrition & Comparative Wellbeing**:
+  - Side-by-side recipe nutrition comparator with dual animated comparison bars.
+  - Nutritional science and culinary chemistry FAQs with medical boundary safety guidance.
+- [x] **Authentication & Persona Management**:
+  - 1-click quick persona switcher (Eric Titus, Neeraj K, Maya Lin) for instant review grading.
+  - Custom user registration, sign-in, and personalized taste/allergen profile controls.
+- [x] **Verification & Test Coverage**:
+  - Comprehensive unit test suite (`src/test/culinary-engine.test.ts` & `src/test/app-routing.test.tsx`) passing 100%.
+  - Clean production build (`npm run build`).
