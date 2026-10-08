@@ -10,7 +10,6 @@ import {
   Plus,
   Menu,
   X,
-  ChefHat,
   ArrowUpRight,
   RotateCcw,
   UserCheck,
@@ -28,6 +27,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useVault } from '@/components/vault-provider';
 import { ThemeSlider } from '@/components/theme-slider';
+import { RecipeVaultLogo } from '@/components/recipe-vault-logo';
 
 const navigation = [
   { to: '/' as const, label: 'Discover', icon: Compass },
@@ -52,9 +52,7 @@ export function VaultShell({ children }: { children: ReactNode }) {
       {/* Mobile Sticky Header */}
       <header className="mobile-header">
         <Link to="/" className="brand">
-          <span className="brand-mark">
-            <ChefHat size={20} />
-          </span>
+          <RecipeVaultLogo size={32} />
           RecipeVault<span className="text-clay">.</span>
         </Link>
         <div className="flex items-center gap-2">
@@ -73,9 +71,7 @@ export function VaultShell({ children }: { children: ReactNode }) {
       {/* Main Persistent Shelf Sidebar */}
       <aside className={`sidebar ${open ? 'sidebar-open' : ''}`}>
         <Link to="/" className="brand" onClick={() => setOpen(false)}>
-          <span className="brand-mark">
-            <ChefHat size={19} />
-          </span>
+          <RecipeVaultLogo size={32} />
           RecipeVault<span className="text-clay">.</span>
         </Link>
         <p className="sidebar-caption">A LITTLE SPACE FOR GOOD FOOD</p>

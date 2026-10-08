@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import {
-  ChefHat,
   ArrowRight,
   UserPlus,
   LogIn,
@@ -26,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useVault } from '@/components/vault-provider';
 import { ThemeSlider } from '@/components/theme-slider';
+import { RecipeVaultLogo } from '@/components/recipe-vault-logo';
 import { pageMeta } from '@/lib/metadata';
 import { toast } from 'sonner';
 
@@ -159,9 +159,7 @@ export function LoginPage() {
           {/* Header & Logo with interactive floating icon */}
           <div className="text-center relative">
             <Link to="/" className="brand justify-center mb-2 inline-flex group">
-              <span className="brand-mark group-hover:scale-105 transition-transform">
-                <ChefHat size={22} />
-              </span>
+              <RecipeVaultLogo size={42} className="group-hover:scale-105 transition-transform" />
               RecipeVault<span className="text-clay">.</span>
             </Link>
 

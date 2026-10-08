@@ -229,7 +229,7 @@ function Planner() {
                       {recipe ? (
                         <div className="relative group">
                           <Link to="/recipe/$id" params={{ id: recipe.id }}>
-                            <img src={recipe.image} alt={recipe.title} width={384} height={256} />
+                            <img src={recipe.image} alt={recipe.title} loading="lazy" decoding="async" width={384} height={256} />
                             <strong>{recipe.title}</strong>
                           </Link>
                           <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1">

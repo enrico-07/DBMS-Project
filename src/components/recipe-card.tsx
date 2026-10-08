@@ -34,7 +34,7 @@ export function RecipeCard({
     <article className="recipe-card">
       <div className="recipe-photo">
         <Link to="/recipe/$id" params={{ id: recipe.id }} aria-label={`View ${recipe.title}`}>
-          <img src={recipe.image} alt={recipe.title} loading="lazy" width={768} height={512} />
+          <img src={recipe.image} alt={recipe.title} loading="lazy" decoding="async" width={768} height={512} />
         </Link>
 
         {/* Dietary Badge */}

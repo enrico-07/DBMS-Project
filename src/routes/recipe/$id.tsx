@@ -236,6 +236,9 @@ function RecipeDetail() {
         alt={recipe.title}
         width={1536}
         height={1024}
+        loading="eager"
+        decoding="async"
+        fetchPriority="high"
       />
 
       {/* Action Toolbar */}

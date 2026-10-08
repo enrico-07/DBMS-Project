@@ -304,7 +304,15 @@ function Index() {
       {/* Featured Recipe Hero (Only on pristine discover state) */}
       {!query && category === 'All recipes' && diet === 'All diets' && time === 'Any time' && (
         <section className="featured-recipe">
-          <img src={pasta} alt="Lemon ricotta pasta with fresh basil" width={1536} height={1024} />
+          <img
+            src={pasta}
+            alt="Lemon ricotta pasta with fresh basil"
+            width={1536}
+            height={1024}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+          />
           <div className="featured-copy">
             <span className="eyebrow">
               <Sparkles size={13} /> RECIPE OF THE DAY

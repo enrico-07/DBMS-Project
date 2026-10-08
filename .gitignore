@@ -7,26 +7,52 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-.output
-.vinxi
-.tanstack/**
-.nitro
-*.local
+# Dependencies
+node_modules/
 
-# Wrangler / Cloudflare
+# Build & runtime outputs
+dist/
+dist-ssr/
+.output/
+.vinxi/
+.tanstack/
+.nitro/
+*.tsbuildinfo
+
+# Cloudflare / Wrangler
 .wrangler/
 .dev.vars
 
-# Editor directories and files
+# Environment & local secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Testing & coverage
+coverage/
+.nyc_output/
+
+# Editor & IDE settings
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/settings.json
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/

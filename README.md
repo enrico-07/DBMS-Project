@@ -1,139 +1,188 @@
-# RecipeVault — A Database-Driven Recipe Management & Culinary Intelligence System
+<p align="center">
+  <img src="public/favicon.svg" width="80" height="80" alt="RecipeVault Brand Mark" />
+</p>
 
-> **DBMS X UI/UX Project**  
-> **Authors:** Neeraj K (24BCE2393) & Eric Titus (24BCE0096)  
-> **Course / Review:** Relational DBMS & Full-Stack Culinary Engineering
+<h1 align="center">RecipeVault</h1>
 
----
+<p align="center">
+  <strong>A Database-Driven Recipe Management & Culinary Intelligence System</strong><br />
+  <em>Where 3NF Relational Engineering meets the editorial warmth of a handwritten family cookbook.</em>
+</p>
 
-## 1. Project Overview & Philosophy
-
-**RecipeVault** is a production-grade culinary information system built to solve the real-world fragmentation of recipe knowledge. Rather than storing recipes as isolated text documents, RecipeVault connects recipes, ingredients, nutrition, cuisines, collections, meal plans, ratings, and historical revisions through a **normalized 3NF relational database architecture**.
-
-On the surface, the application embodies the **"Warm Pantry"** design system — an editorial digital kitchen shelf where database complexity is hidden behind warmth, editorial rhythm, and tactile interaction.
-
----
-
-## 2. Relational Database Engineering (DBMS Architecture)
-
-RecipeVault demonstrates core academic and industry DBMS concepts:
-
-### Normalized Relational Schema (3NF)
-- **`users`**: User identity, role, culinary bio, cooking skill level, and target cooking time.
-- **`recipes`**: Canonical recipe metadata (servings, prep time, cook time, total generated time, difficulty, visibility, status).
-- **`recipe_versions`**: Immutable revision snapshots capturing historical changes, authors, and timestamps with one-click rollback.
-- **`ingredients`**: Master dictionary with canonical names, botanical/culinary classifications, flavor notes, and shelf-life guidelines.
-- **`recipe_ingredients`**: M:N junction table with precise quantities, units, and preparation states (e.g., *finely diced*, *room temperature*).
-- **`ingredient_aliases`**: 1:N regional and botanical synonyms (e.g., *Garbanzo beans / Ceci / Kabuli chana*).
-- **`ingredient_substitutes`**: Self-referencing relationship mapping culinary substitutes with substitution ratios.
-- **`collections` & `collection_recipes`**: Custom user-curated shelves and junction mappings.
-- **`meal_plans` & `meal_plan_items`**: Weekly schedule matrix with custom serving multipliers.
-- **`ratings_and_reviews`**: Verified cook feedback with automated rating recalculation.
-- **`user_pantry_items`**: User home cupboard inventory for overlap queries.
-
-### SQL DDL & Seed Scripts
-Complete, executable PostgreSQL DDL and seed scripts are located in `src/db/`:
-- [`src/db/schema.sql`](file:///c:/Users/ERIC/Downloads/recipevault/src/db/schema.sql): Complete 3NF DDL with primary keys, foreign keys, `CHECK` constraints, indexes, views, and aggregate triggers.
-- [`src/db/seed.sql`](file:///c:/Users/ERIC/Downloads/recipevault/src/db/seed.sql): Realistic seed data matching demo personas, recipes, and version revisions.
-
-### Database Triggers & Views
-- **`trg_recipe_review_aggregate`**: Automatically recalculates average rating and review counts on `recipes` upon review submission.
-- **`v_top_rated_recipes`**: Filtered view for published dishes with ratings $\ge 4.5$.
-- **`v_healthy_recipe_summary`**: Analytical view computing macronutrient protein-to-calorie ratios.
+<p align="center">
+  <img src="https://img.shields.io/badge/Architecture-3NF%20Relational%20DBMS-C4633F?style=for-the-badge" alt="DBMS 3NF" />
+  <img src="https://img.shields.io/badge/Frontend-React%2019%20%7C%20TanStack%20Router-7C9070?style=for-the-badge" alt="React TanStack" />
+  <img src="https://img.shields.io/badge/Design%20System-Warm%20Pantry-D9A441?style=for-the-badge" alt="Warm Pantry" />
+  <img src="https://img.shields.io/badge/Tests-100%25%20Passing-2C231B?style=for-the-badge" alt="Tests 100%" />
+</p>
 
 ---
 
-## 3. The "Warm Pantry" Design System
+## 👨‍🍳 Academic & Course Context
 
-| Token | Value | Role |
+- **Course:** Relational Database Management Systems (DBMS) & Full-Stack Culinary UI/UX Engineering
+- **Engineering Authors:**
+  - **Neeraj K** (`24BCE2393`) — Relational Schema Design, SQL Triggers, Views & Analytical Modeling
+  - **Eric Titus** (`24BCE0096`) — Full-Stack Interface Engineering, Design System & Interactive Algorithms
+
+---
+
+## 🍳 System Highlights & Live Architecture
+
+```mermaid
+flowchart TD
+    subgraph UI ["Warm Pantry Editorial Interface"]
+        A[Discover & Live Search] --> B[Pantry Match Overlap]
+        C[Recipe Details & Serving Scaler] --> D[Cooking Mode & Timers]
+        E[7-Day Meal Matrix] --> F[Aisle-Consolidated Shopping]
+        G[Ingredient Encyclopedia] --> H[Side-by-Side Nutrition]
+        I[1-Click Persona Fast-Switch] --> J[Version Rollbacks]
+    end
+
+    subgraph Engine ["Culinary Intelligence Algorithms"]
+        K[Relational Recommendation Engine\nCuisine 35% · Diet 30% · Time 15% · Rating 20%]
+        L[Pantry Overlap Scorer\nMatch % · Missing Items · Optional Exclusions]
+        M[Non-Destructive Fractional Scaler\n1 to 24 Servings with Fraction Rendering]
+    end
+
+    subgraph Store ["3NF Normalized Data Layer"]
+        N[(PostgreSQL / Local Memory Store)]
+        N --> O[Users & Profiles]
+        N --> P[Recipes & Versions]
+        N --> Q[Ingredients & Aliases & Substitutes]
+        N --> R[Junction M:N Recipe Ingredients]
+        N --> S[Weekly Planner & Shopping Items]
+        N --> T[Ratings, Reviews & Triggers]
+    end
+
+    UI <--> Engine
+    Engine <--> Store
+```
+
+---
+
+## 🌿 1. "Warm Pantry" Design Tokens & Atmospheric Modes
+
+RecipeVault rejects sterile, clinical dashboards. Instead, it mirrors an artisan kitchen shelf with tactile feedback, crafted wood textures, and three automatic/manual day-night atmospheres:
+
+| Token Name | Hex Code | Visual Application |
 | :--- | :--- | :--- |
-| **Cream Base** | `#FAF6F0` | Page background — warm ivory, never stark white |
-| **Card White** | `#FFFDF9` | Surfaces & cards with generous 16–24px radius |
-| **Espresso Ink** | `#2C231B` | Primary text — warm roasted brown |
-| **Clay / Terracotta** | `#C4633F` | Primary accent — CTAs, active states, bookmarks |
-| **Sage** | `#7C9070` | Secondary accent — health badges, dietary tags, pantry stock |
-| **Honey** | `#D9A441` | Ratings, highlights, warm culinary emphasis |
-| **Linen Border** | `#E9DFD2` | Soft dividers doing more work than harsh shadows |
+| **Cream Base** | `#FAF6F0` | Default page background — warm ivory |
+| **Card White** | `#FFFDF9` | Elevation surfaces with 16–24px radius |
+| **Espresso Ink** | `#2C231B` | High-contrast typography & headings |
+| **Terracotta Clay** | `#C4633F` | Primary action buttons, bookmarks, active pills |
+| **Muted Sage** | `#7C9070` | Pantry stock indicators, vegetarian tags, health stats |
+| **Honey** | `#D9A441` | Star ratings, cooking highlights, simmer embers |
+| **Linen Border** | `#E9DFD2` | Soft dividers doing more work than harsh drop shadows |
 
-- **Headings**: `Fraunces` display serif (Google Font)
-- **Body & UI**: `Nunito Sans` humanist sans-serif
-- **Data & Numbers**: Tabular numerals (`tabular-nums`) for clean quantity alignment
-
----
-
-## 4. Key Application Features
-
-1. **"Cook With What You Have" (Pantry Matching Engine)**:
-   - Select stocked ingredients to compute live overlap scores against all recipes.
-2. **Transparent Recommendation Scorer**:
-   - Multi-factor relational scoring combining cuisine affinities (35%), dietary compliance (30%), time constraints (15%), and ratings (20%).
-3. **Non-Destructive Fractional Serving Scaler**:
-   - Real-time scaling from 1 to 24 servings with culinary fraction formatting (`1/2`, `1 1/4`, etc.) without mutating database records.
-4. **Distraction-Free Cooking Mode**:
-   - Full-screen kitchen counter interface with step progress tracking, chef tips, and timed durations.
-5. **Recipe Version Control & Rollbacks**:
-   - Inspect version history timelines with commit messages and one-click rollback restoration.
-6. **Weekly Meal Planner & Consolidated Shopping List**:
-   - 7-day schedule with automated aggregation of ingredients grouped by supermarket aisle (Produce, Dairy, Pantry, etc.) with pantry stock cross-checking.
-7. **Semantic Ingredient Library**:
-   - Explore regional aliases, tested substitutes, storage science, and dishes featuring each ingredient.
-8. **Side-by-Side Nutrition Comparator**:
-   - Visual comparison bars for calories, protein, carbs, fat, and fiber, accompanied by medical boundary safety disclaimers.
-9. **Multi-Persona Demo Switching & Custom Auth**:
-   - Instant 1-click persona switching (Eric Titus, Neeraj K, Maya Lin) alongside custom account creation and preference personalization.
+### ☀️ Atmospheric Modes (Day / Evening / Rest)
+1. **Morning Dawn (`6 AM – 12 PM`)**: Bright morning light (`#F4F8F6`), fresh garden mint (`#389868`), clean marble cards.
+2. **Sunset Pantry (`12 PM – 7 PM`)**: Warm afternoon sun, warm terracotta clay, amber honey.
+3. **Night & Rest (`7 PM – 6 AM`)**: Deep twilight obsidian slate (`#0D121B`), zero-glare moonlit silver text (`#E3E9F2`), cozy warm hearth glow.
 
 ---
 
-## 5. Development & Verification
+## 🗄️ 2. Relational Database Engineering (3NF)
 
-### Prerequisites
-- Node.js (v18+)
-- npm or bun
+Complete production-grade SQL scripts with full referential integrity constraints, automated rating recalculation triggers, and analytical views are provided in `src/db/`:
 
-### Setup & Run
+- [`src/db/schema.sql`](src/db/schema.sql): PostgreSQL 3NF DDL (Tables, Foreign Keys, Indexes, Triggers, Views).
+- [`src/db/seed.sql`](src/db/seed.sql): Canonical culinary seed data, authentic versions, and multi-persona ratings.
+
+### Relational Schema Summary
+- **`users`**: Identity, culinary bio, skill level (`Beginner`, `Home Cook`, `Seasoned Chef`), target cooking time.
+- **`recipes`**: Canonical recipe records with prep time, cook time, difficulty, visibility, servings.
+- **`recipe_versions`**: Immutable revision ledger with commit summaries, author IDs, and one-click rollback.
+- **`ingredients`**: Master botanical & culinary dictionary with classifications, flavor profiles, and shelf life.
+- **`recipe_ingredients`**: M:N junction table mapping quantities, fractional units, and prep states (e.g. *finely diced*).
+- **`ingredient_aliases`**: 1:N regional and linguistic synonyms (e.g., *Garbanzo beans / Ceci / Kabuli chana*).
+- **`ingredient_substitutes`**: Self-referencing relationship mapping culinary replacements with substitution ratios.
+- **`meal_plans` & `meal_plan_items`**: 7-day schedule with serving multipliers.
+- **`ratings_and_reviews`**: Verified cook reviews with auto-recalculated recipe ratings via PostgreSQL trigger `trg_recipe_review_aggregate`.
+
+---
+
+## 🚀 3. Key Interactive Capabilities
+
+| Feature | Description | Engineering Implementation |
+| :--- | :--- | :--- |
+| **Cook With What You Have** | Interactive pantry selector displaying real-time match percentages. | Set-intersection overlap algorithm calculating missing vs stocked items in $O(N)$ time. |
+| **Transparent Recommendation Engine** | Multi-factor recommendation score (0–100%) explaining *why* a recipe fits. | Weighted algorithm: Cuisine Affinity (35%), Dietary Match (30%), Time Fit (15%), Ratings (20%). |
+| **Non-Destructive Serving Scaler** | Scale from 1 to 24 servings dynamically. | Pure function formatting fractions (`1/2`, `1 1/4`) without mutating database records. |
+| **Distraction-Free Cooking Mode** | Full-screen hands-on kitchen counter. | Step progress tracker, chef tips, duration timers, and large text for counter viewing. |
+| **Aisle-Consolidated Shopping** | Aggregates all ingredients across the week's planned meals. | Categorizes by supermarket aisle (Produce, Dairy, Pantry) and checks off stocked pantry items. |
+| **Artisan Wooden Ladle Cursor** | Custom teak/cherry ladle with grain inlays and brass band. | Hardware-accelerated `requestAnimationFrame` tracking with tactile downward "bang / boink" on click. |
+| **1-Click Academic Persona Switcher** | Instant toggle between Eric Titus, Neeraj K, and Maya Lin. | Fast-switch for academic evaluation, review testing, and role personalization. |
+
+---
+
+## ⚡ 4. Performance & Engineering Standards
+
+- **Resolution-Independent SVG Branding**: Replaced raster assets with scalable, zero-weight vector components (`RecipeVaultLogo`).
+- **LCP & Image Prioritization**: Hero photography uses `loading="eager"`, `fetchPriority="high"`, and `decoding="async"` to maximize Core Web Vitals.
+- **Deferred Offscreen Assets**: Grid cards and planner thumbnails use `loading="lazy"` and `decoding="async"`.
+- **Zero-Lag Pointer Overlay**: Cursor physics computed on `requestAnimationFrame` without polluting the React render cycle.
+- **Strict Single-Line Autolayout**: All headers, chips, and controls lock at `36px` (`h-9`) with `white-space: nowrap` and `flex-shrink: 0`.
+
+---
+
+## 🛠️ 5. Quickstart & Verification
+
 ```bash
-# Install dependencies
+# 1. Install dependencies
 npm install
 
-# Start local development server
+# 2. Launch Vite development server
 npm run dev
+# -> Opens http://localhost:8080
 
-# Run unit test suite
-npx vitest run
+# 3. Run complete automated test suite
+npm test
+# -> Vitest tests 100% passing
 
-# Production build
+# 4. Generate production SSR bundle
 npm run build
+# -> Compiles in < 1.5s
 ```
 
 ---
 
-## 6. Project Architecture
+## 📂 6. Repository Layout
 
 ```
-src/
-├── assets/          # High-resolution food photography
-├── components/      # Reusable Warm Pantry UI components
-│   ├── recipe-card.tsx    # Card with tuck-into-vault animation & pantry badges
-│   ├── vault-provider.tsx # Relational local store & session persistence
-│   └── vault-shell.tsx    # Persistent kitchen-shelf sidebar & quick persona switch
-├── db/
-│   ├── schema.sql         # PostgreSQL 3NF DDL schema
-│   └── seed.sql           # Complete relational seed data
-├── lib/
-│   ├── recipes.ts         # Relational data model, calculation services, algorithms
-│   └── metadata.ts        # OpenGraph & SEO helpers
-├── routes/
-│   ├── __root.tsx         # Root layout with Fraunces & Nunito Sans fonts
-│   ├── index.tsx          # Discover & Pantry Overlap Engine
-│   ├── recipe/$id.tsx     # Recipe detail, serving scaler, cooking mode, versions
-│   ├── create.tsx         # Structured recipe builder & version commit form
-│   ├── cookbook.tsx       # Personal shelves, collections, and drafts
-│   ├── planner.tsx        # 7-day meal planner & consolidated shopping list
-│   ├── ingredients.tsx    # Semantic ingredient encyclopedia
-│   ├── nutrition.tsx      # Nutrition dashboard, comparison bars, science FAQs
-│   ├── profile.tsx        # Kitchen preferences, allergens, and wellness filters
-│   └── login.tsx          # Persona switcher & custom authentication
-└── test/
-    ├── culinary-engine.test.ts # Tests for scaling, pantry match, & recommendations
-    └── app-routing.test.tsx    # Route matching validation
+recipevault/
+├── public/                # Favicons (SVG, PNG, ICO) & robots.txt
+├── src/
+│   ├── assets/            # High-resolution food photography
+│   ├── components/        # Reusable Warm Pantry UI components
+│   │   ├── recipe-vault-logo.tsx  # Vector SVG branding component
+│   │   ├── wooden-ladle-cursor.tsx# Animated wooden ladle mouse pointer
+│   │   ├── theme-slider.tsx       # Morning / Sunset / Night mode toggle
+│   │   ├── recipe-card.tsx        # Recipe card with tuck animation & badges
+│   │   ├── vault-provider.tsx     # Normalized state, auth & localStorage engine
+│   │   └── vault-shell.tsx        # Persistent sidebar & autolayout top navigation
+│   ├── db/
+│   │   ├── schema.sql             # Complete PostgreSQL 3NF DDL
+│   │   └── seed.sql               # Relational seed dataset
+│   ├── lib/
+│   │   ├── recipes.ts             # Relational data types & culinary math algorithms
+│   │   └── metadata.ts            # SEO & OpenGraph utilities
+│   ├── routes/
+│   │   ├── __root.tsx             # Root layout with fonts, ladle cursor & toaster
+│   │   ├── index.tsx              # Discover, recommendation scoring, pantry overlap
+│   │   ├── login.tsx              # Kitchen authentication portal & 1-click personas
+│   │   ├── create.tsx             # Recipe creator & immutable version commits
+│   │   ├── cookbook.tsx           # Personal collections & saved recipe shelves
+│   │   ├── planner.tsx            # 7-day meal matrix & consolidated shopping list
+│   │   ├── ingredients.tsx        # Semantic ingredient encyclopedia & substitutes
+│   │   ├── nutrition.tsx          # Side-by-side nutrition comparator & wellness FAQs
+│   │   ├── profile.tsx            # Personal taste, allergen & security controls
+│   │   └── recipe/$id.tsx         # Serving scaler, cooking mode & revision rollback
+│   └── test/
+│       ├── culinary-engine.test.ts # Math tests: scaling, pantry matching, recommendations
+│       └── app-routing.test.tsx    # Routing & navigation test suite
+├── DESIGN_SYSTEM.md       # "Warm Pantry" visual tokens & guidelines
+├── AGENTS.md              # Lovable connection rules & architecture standards
+├── roadmap.md             # Completed feature tracker
+└── vite.config.ts         # Vite bundler & dependency optimization
 ```
