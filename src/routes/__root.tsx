@@ -128,16 +128,10 @@ function RootShell({ children }: { children: ReactNode }) {
               if (storedAuth === null) {
                 try { localStorage.setItem('rv_is_authenticated_v3', 'true'); } catch(e){}
               }
-              var lastRoute = localStorage.getItem('rv_last_visited_route_v3');
               var path = window.location.pathname;
 
               if (!isAuth && path !== '/login') {
                 window.location.replace('/login');
-              } else if (isAuth && path === '/' && lastRoute && lastRoute !== '/' && lastRoute !== '/login') {
-                if (!sessionStorage.getItem('rv_session_active')) {
-                  sessionStorage.setItem('rv_session_active', 'true');
-                  window.location.replace(lastRoute);
-                }
               }
               if (isAuth) {
                 sessionStorage.setItem('rv_session_active', 'true');
@@ -157,18 +151,15 @@ function RootShell({ children }: { children: ReactNode }) {
 function RouteGate({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: s => s.location.pathname });
   const router = useRouter();
-  const { isAuthenticated, setLastVisitedRoute, lastVisitedRoute } = useVault();
+  const { isAuthenticated } = useVault();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     if (!isAuthenticated && path !== '/login') {
       router.navigate({ to: '/login', replace: true });
-    } else if (isAuthenticated && path !== '/login') {
-      setLastVisitedRoute(path);
-      sessionStorage.setItem('rv_session_active', 'true');
     }
-  }, [isAuthenticated, path, router, setLastVisitedRoute, lastVisitedRoute]);
+  }, [isAuthenticated, path, router]);
 
   return <>{children}</>;
 }

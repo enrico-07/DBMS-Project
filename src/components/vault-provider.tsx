@@ -674,17 +674,23 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
         if (!recipeErr && dbRecipes && dbRecipes.length > 0) {
           const mapped = (dbRecipes as DbRecipeRow[]).map(mapDbRecipeToAppRecipe);
-          setItems(mapped);
+          setItems(prev => {
+            const customLocalRecipes = prev.filter(r => !mapped.some(m => m.id === r.id));
+            return [...mapped, ...customLocalRecipes];
+          });
         }
 
         if (currentUser?.id) {
-          const { data: dbPantry, error: pantryErr } = await supabase
-            .from("user_pantry_items")
-            .select("ingredient_name")
-            .eq("user_id", currentUser.id);
+          const hasLocalPantry = Boolean(localStorage.getItem(STORAGE_KEYS.PANTRY));
+          if (!hasLocalPantry) {
+            const { data: dbPantry, error: pantryErr } = await supabase
+              .from("user_pantry_items")
+              .select("ingredient_name")
+              .eq("user_id", currentUser.id);
 
-          if (!pantryErr && dbPantry && dbPantry.length > 0) {
-            setPantry(dbPantry.map((p: { ingredient_name: string }) => p.ingredient_name));
+            if (!pantryErr && dbPantry && dbPantry.length > 0) {
+              setPantry(dbPantry.map((p: { ingredient_name: string }) => p.ingredient_name));
+            }
           }
         }
 
