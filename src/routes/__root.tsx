@@ -124,10 +124,7 @@ function RootShell({ children }: { children: ReactNode }) {
               if(t==='night'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}
 
               var storedAuth = localStorage.getItem('rv_is_authenticated_v3');
-              var isAuth = storedAuth === null ? true : storedAuth === 'true';
-              if (storedAuth === null) {
-                try { localStorage.setItem('rv_is_authenticated_v3', 'true'); } catch(e){}
-              }
+              var isAuth = storedAuth === 'true';
               var path = window.location.pathname;
 
               if (!isAuth && path !== '/login') {

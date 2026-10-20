@@ -429,13 +429,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const currentUser = allUsers.find((user) => user.id === currentUserId) ?? defaultUser;
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true;
+    if (typeof window === "undefined") return false;
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.IS_AUTHENTICATED);
-      if (stored === null) return true;
       return stored === "true";
     } catch {
-      return true;
+      return false;
     }
   });
 
@@ -893,6 +892,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     if (allUsers.some((u) => u.id === userId)) {
       setCurrentUserId(userId);
       setIsAuthenticated(true);
+      try {
+        localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, "true");
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, userId);
+      } catch (e) {
+        console.warn("Storage save error", e);
+      }
       const targetUser = allUsers.find((u) => u.id === userId);
       toast.success(`Switched active cook to ${targetUser?.name}`);
     }
@@ -934,6 +939,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setAllUsers((prev) => [...prev, newUser]);
     setCurrentUserId(newUser.id);
     setIsAuthenticated(true);
+    try {
+      localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, "true");
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
+    } catch (e) {
+      console.warn("Storage save error", e);
+    }
 
     (async () => {
       await supabase.from("users").insert({
