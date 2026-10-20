@@ -30,6 +30,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { pageMeta } from '@/lib/metadata';
+import { HEALTH_CONDITIONS } from '@/lib/recipes';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/profile')({
@@ -77,7 +78,7 @@ function Profile() {
 
   const cuisines = ['Italian', 'Mediterranean', 'American', 'Indian', 'Japanese', 'Mexican'];
   const diets = ['Vegetarian', 'Vegan', 'High protein', 'Gluten-free', 'Balanced'];
-  const healthFilters = ['Heart-Healthy / Balanced', 'Muscle Growth / Fitness', 'Anti-inflammatory', 'Low Sodium'];
+  const healthConditionsList = Object.values(HEALTH_CONDITIONS);
 
   const handleSavePersonal = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,13 +178,11 @@ function Profile() {
         title="Kitchen Profile & Account Settings"
         description="Fine-tune your personal identity, login credentials, culinary tastes, and dietary intelligence rules."
         action={
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" className="rounded-full gap-1.5 text-xs">
-              <Link to="/login">
-                <LogIn size={14} /> Switch / Register
-              </Link>
-            </Button>
-          </div>
+          <Button asChild variant="outline" className="rounded-full gap-1.5 text-xs h-9 px-4 shrink-0 shadow-sm">
+            <Link to="/login">
+              <LogIn size={14} /> Switch / Register
+            </Link>
+          </Button>
         }
       />
 
@@ -563,7 +562,7 @@ function Profile() {
                   Kitchen Atmosphere
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Toggle between Morning Sunshine (6 AM–12 PM), Afternoon & Sunset (12 PM–7 PM), and Peaceful Night (7 PM–6 AM).
+                  Toggle between Morning Sunshine (6 AM–12 PM), Afternoon & Evening (12 PM–7 PM), and Peaceful Night (7 PM–6 AM).
                 </p>
               </div>
               <ThemeSlider />
@@ -664,35 +663,60 @@ function Profile() {
             </div>
           </section>
 
-          {/* Health-Oriented Wellness Profiles */}
+          {/* Clinical Health & Metabolic Intelligence Profiles */}
           <section className="bg-card border border-border p-6 rounded-2xl shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <Shield size={18} className="text-sage" />
-              <h3 className="text-lg font-serif">Wellness & Nutritional Goals</h3>
+              <ShieldCheck size={20} className="text-sage" />
+              <div>
+                <h3 className="text-lg font-serif">Clinical Health & Metabolic Conditions</h3>
+                <p className="text-xs text-muted-foreground">
+                  Personalize the culinary recommendation engine for specific medical or metabolic needs.
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-4">
-              Informational filters to highlight recipes matching specific wellness aims.
-            </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {healthFilters.map(h => {
-                const active = currentUser.healthConditions.includes(h);
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-4">
+              {healthConditionsList.map(h => {
+                const active = currentUser.healthConditions.some(
+                  c => c.toLowerCase() === h.id.toLowerCase() || c.toLowerCase() === h.label.toLowerCase()
+                );
                 return (
-                  <label
-                    key={h}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                      active ? 'border-sage bg-secondary' : 'border-border bg-background'
+                  <div
+                    key={h.id}
+                    onClick={() => toggleHealth(h.id)}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                      active ? 'border-sage bg-sage/10 shadow-sm' : 'border-border bg-background hover:border-border/80'
                     }`}
                   >
-                    <span className="text-xs font-medium">{h}</span>
-                    <Switch checked={active} onCheckedChange={() => toggleHealth(h)} />
-                  </label>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          <span className="text-xs font-semibold text-foreground">{h.label}</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-primary border border-border">
+                            {h.badge}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          {h.description}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={active}
+                        onCheckedChange={() => toggleHealth(h.id)}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </div>
+                    <div className="pt-2 border-t border-border/50 text-[10px] text-muted-foreground/80 flex items-center justify-between">
+                      <span>Clinical Protocol Active</span>
+                      <span className="font-semibold text-primary">Tailors Discover & Detail Pages</span>
+                    </div>
+                  </div>
                 );
               })}
             </div>
 
             <p className="text-[11px] text-muted-foreground mt-4 italic">
-              *RecipeVault informational disclaimer: Wellness goals are filtered strictly based on publicly available nutritional benchmarks and do not constitute clinical guidance.
+              *RecipeVault clinical note: Health suggestions are generated algorithmically using nutritional data, glycemic analysis, and fiber thresholds. Always consult your healthcare provider or registered dietitian for individualized medical meal planning.
             </p>
           </section>
         </div>

@@ -37,7 +37,7 @@ function SettingsPage() {
     },
     {
       id: 'sunset',
-      title: 'Afternoon & Sunset',
+      title: 'Afternoon & Evening',
       period: '12:00 PM – 7:00 PM',
       description: 'The signature Warm Pantry aesthetic with roasted espresso ink, soft cream backgrounds, and artisan clay terracotta.',
       icon: Sunset,

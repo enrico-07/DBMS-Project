@@ -16,14 +16,23 @@ import {
   ShoppingBag,
   Flame,
   Check,
+  X,
+  ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useVault } from '@/components/vault-provider';
 import { RecipeCard, EmptyState } from '@/components/recipe-card';
-import { calculatePantryMatch, calculateRecommendationScore } from '@/lib/recipes';
+import { OnboardingGuide } from '@/components/onboarding-guide';
+import { RecipeGridSkeleton } from '@/components/ui/skeleton-loaders';
+import {
+  calculatePantryMatch,
+  calculateRecommendationScore,
+  evaluatePantryFreshness,
+  evaluateRecipeHealthConditions,
+} from '@/lib/recipes';
 import pasta from '@/assets/lemon-pasta.jpg';
-import { LoginPage } from './login';
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -36,12 +45,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { items, currentUser, pantry, togglePantryItem, isAuthenticated } = useVault();
-
-  // If the user has not logged in yet, present the welcoming Login / Sign-up portal first!
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
+  const { items, currentUser, pantry, pantryStockDates, togglePantryItem } = useVault();
 
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All recipes');
@@ -51,6 +55,17 @@ function Index() {
   const [cuisineFilter, setCuisineFilter] = useState('All cuisines');
   const [sort, setSort] = useState('Recommended');
   const [pantryMatchOnly, setPantryMatchOnly] = useState(false);
+  const [healthMatchOnly, setHealthMatchOnly] = useState(false);
+  const [expiringOnly, setExpiringOnly] = useState(false);
+
+  // Freshness Radar Evaluation
+  const pantryFreshness = useMemo(() => {
+    return evaluatePantryFreshness(pantry, pantryStockDates);
+  }, [pantry, pantryStockDates]);
+
+  const expiringSoonItems = useMemo(() => {
+    return pantryFreshness.filter(item => item.status === 'expiring' || item.status === 'use-soon');
+  }, [pantryFreshness]);
 
   // Common pantry ingredients to toggle quickly
   const quickPantryOptions = [
@@ -106,6 +121,28 @@ function Index() {
         // Cuisine filter
         if (cuisineFilter !== 'All cuisines' && recipe.cuisine !== cuisineFilter) return false;
 
+        // Health profile match filter
+        if (healthMatchOnly && (currentUser.healthConditions?.length ?? 0) > 0) {
+          const healthEvals = evaluateRecipeHealthConditions(recipe);
+          const matchesUser = healthEvals.some(
+            h =>
+              h.isMatch &&
+              currentUser.healthConditions.some(
+                c => c.toLowerCase() === h.conditionId.toLowerCase() || c.toLowerCase() === h.label.toLowerCase()
+              )
+          );
+          if (!matchesUser) return false;
+        }
+
+        // Expiring pantry items filter
+        if (expiringOnly && expiringSoonItems.length > 0) {
+          const expiringNames = expiringSoonItems.map(i => i.name.toLowerCase());
+          const usesExpiring = recipe.ingredients.some(i =>
+            expiringNames.some(e => i.name.toLowerCase().includes(e) || e.includes(i.name.toLowerCase()))
+          );
+          if (!usesExpiring) return false;
+        }
+
         // Query search across title, cuisine, description, ingredients, and tags
         if (query.trim()) {
           const q = query.toLowerCase();
@@ -133,16 +170,21 @@ function Index() {
         // Default: Recommended (Relational scoring algorithm)
         return b.recScore.score - a.recScore.score;
       });
-  }, [items, pantry, currentUser, query, category, diet, time, cuisineFilter, sort, pantryMatchOnly]);
+  }, [items, pantry, currentUser, query, category, diet, time, cuisineFilter, sort, pantryMatchOnly, healthMatchOnly, expiringOnly, expiringSoonItems]);
 
   const activeFiltersCount =
     (diet !== 'All diets' ? 1 : 0) +
     (time !== 'Any time' ? 1 : 0) +
     (cuisineFilter !== 'All cuisines' ? 1 : 0) +
-    (pantryMatchOnly ? 1 : 0);
+    (pantryMatchOnly ? 1 : 0) +
+    (healthMatchOnly ? 1 : 0) +
+    (expiringOnly ? 1 : 0);
 
   return (
     <div className="discover-page">
+      {/* Onboarding Guide for New & Exploring Cooks */}
+      <OnboardingGuide />
+
       {/* Main Discover Heading */}
       <header className="discover-heading">
         <div>
@@ -284,21 +326,74 @@ function Index() {
             );
           })}
         </div>
+
+        {/* Shelf-Life Freshness Radar Banner */}
+        {expiringSoonItems.length > 0 && (
+          <div className="mt-4 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-start gap-2.5">
+              <span className="text-base leading-none mt-0.5">⏱</span>
+              <div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <strong className="text-foreground font-semibold">Pantry Freshness Radar:</strong>
+                  <span className="text-amber-900 dark:text-amber-200">
+                    {expiringSoonItems.map(i => `${i.name} (${i.daysRemaining}d left)`).join(', ')} should be used soon!
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Avoid food waste: cook recipes incorporating these ingredients before they expire.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant={expiringOnly ? 'default' : 'outline'}
+              className={`rounded-full h-7 text-[11px] shrink-0 ${
+                expiringOnly
+                  ? 'bg-amber-600 text-white border-amber-600'
+                  : 'border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20'
+              }`}
+              onClick={() => setExpiringOnly(!expiringOnly)}
+            >
+              {expiringOnly ? '✓ Filtering Expiring Items' : 'Cook With Expiring Items'}
+            </Button>
+          </div>
+        )}
       </section>
 
-      {/* Category Pills */}
-      <div className="category-tabs">
-        {categories.map(({ name, icon: Icon }) => (
+      {/* Category Pills & Health Profile Toggle */}
+      <div className="category-tabs flex items-center justify-between gap-2 overflow-x-auto">
+        <div className="flex items-center gap-1">
+          {categories.map(({ name, icon: Icon }) => (
+            <Button
+              key={name}
+              variant="ghost"
+              onClick={() => setCategory(name)}
+              className={category === name ? 'category-active' : ''}
+            >
+              <Icon size={14} className="mr-1.5" />
+              {name}
+            </Button>
+          ))}
+        </div>
+
+        {/* My Health Profile Direct Filter */}
+        {(currentUser.healthConditions?.length ?? 0) > 0 && (
           <Button
-            key={name}
-            variant="ghost"
-            onClick={() => setCategory(name)}
-            className={category === name ? 'category-active' : ''}
+            variant="outline"
+            size="sm"
+            onClick={() => setHealthMatchOnly(!healthMatchOnly)}
+            className={`rounded-full text-xs h-8 px-3 shrink-0 gap-1.5 border transition-all ${
+              healthMatchOnly
+                ? 'bg-sage text-white border-sage shadow-sm'
+                : 'border-sage/40 text-sage hover:bg-sage/10'
+            }`}
+            title="Filter recipes customized for your metabolic health conditions"
           >
-            <Icon size={14} className="mr-1.5" />
-            {name}
+            <ShieldCheck size={13} />
+            <span>My Health Profile</span>
+            {healthMatchOnly && <Check size={12} />}
           </Button>
-        ))}
+        )}
       </div>
 
       {/* Featured Recipe Hero (Only on pristine discover state) */}
@@ -349,11 +444,115 @@ function Index() {
 
       {/* Recipe Grid & Sorting */}
       <section className="recipe-section">
+        {/* Active Filters Pill Bar */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-4 p-2.5 rounded-2xl bg-muted/40 border border-border">
+            <span className="text-xs text-muted-foreground mr-1 font-medium">Active filters:</span>
+            {query && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-card border border-border text-foreground">
+                "{query}"
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="hover:text-destructive text-muted-foreground transition-colors ml-0.5"
+                  title="Remove query filter"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {category !== 'All recipes' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-card border border-border text-foreground">
+                Category: {category}
+                <button
+                  type="button"
+                  onClick={() => setCategory('All recipes')}
+                  className="hover:text-destructive text-muted-foreground transition-colors ml-0.5"
+                  title="Clear category"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {diet !== 'All diets' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-card border border-border text-foreground">
+                Diet: {diet}
+                <button
+                  type="button"
+                  onClick={() => setDiet('All diets')}
+                  className="hover:text-destructive text-muted-foreground transition-colors ml-0.5"
+                  title="Clear diet filter"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {cuisineFilter !== 'All cuisines' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-card border border-border text-foreground">
+                Cuisine: {cuisineFilter}
+                <button
+                  type="button"
+                  onClick={() => setCuisineFilter('All cuisines')}
+                  className="hover:text-destructive text-muted-foreground transition-colors ml-0.5"
+                  title="Clear cuisine filter"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {time !== 'Any time' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-card border border-border text-foreground">
+                Max {time} min
+                <button
+                  type="button"
+                  onClick={() => setTime('Any time')}
+                  className="hover:text-destructive text-muted-foreground transition-colors ml-0.5"
+                  title="Clear time limit"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {pantryMatchOnly && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-sage/20 border border-sage/30 text-foreground font-medium">
+                Pantry match only
+                <button
+                  type="button"
+                  onClick={() => setPantryMatchOnly(false)}
+                  className="hover:text-destructive text-muted-foreground transition-colors ml-0.5"
+                  title="Disable pantry only filter"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('');
+                setCategory('All recipes');
+                setDiet('All diets');
+                setTime('Any time');
+                setCuisineFilter('All cuisines');
+                setPantryMatchOnly(false);
+              }}
+              className="text-xs text-clay hover:underline ml-2 font-medium"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
         <div className="section-heading">
           <div>
-            <span className="eyebrow">
-              {pantryMatchOnly ? 'PANTRY MATCH RESULTS' : 'RECOMMENDED FOR YOU'}
-            </span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="eyebrow">
+                {pantryMatchOnly ? 'PANTRY MATCH RESULTS' : 'RECOMMENDED FOR YOU'}
+              </span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground tabular-nums">
+                {processedRecipes.length} {processedRecipes.length === 1 ? 'recipe' : 'recipes'}
+              </span>
+            </div>
             <h2>
               {query || category !== 'All recipes' ? 'Search & Filter Results' : 'Made for your kind of cooking'}
               <span className="text-clay">.</span>

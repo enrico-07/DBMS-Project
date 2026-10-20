@@ -38,7 +38,7 @@ export const Route = createFileRoute("/login")({
     ),
 });
 
-export function LoginPage() {
+function LoginPage() {
   const {
     allUsers,
     switchUser,
@@ -47,8 +47,11 @@ export function LoginPage() {
     loginWithGoogle,
     resetPassword,
     currentUser,
+    lastVisitedRoute,
   } = useVault();
   const navigate = useNavigate();
+
+  const targetRoute = lastVisitedRoute && lastVisitedRoute !== "/login" ? lastVisitedRoute : "/";
 
   // Mode: 'login' | 'register' | 'forgot'
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
@@ -94,7 +97,7 @@ export function LoginPage() {
       const ok = loginUser(email.trim(), password.trim());
       if (ok) {
         toast.success(`Welcome back to your kitchen shelf!`);
-        navigate({ to: "/" });
+        navigate({ to: targetRoute as any });
       } else {
         // If account doesn't exist, provide a helpful prompt or offer 1-click register
         const existing = allUsers.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
@@ -105,7 +108,7 @@ export function LoginPage() {
             password.trim(),
           );
           toast.success(`New profile registered! Welcome, ${auto.name}.`);
-          navigate({ to: "/profile" });
+          navigate({ to: targetRoute as any });
         }
       }
     }, 450);
@@ -134,7 +137,7 @@ export function LoginPage() {
         avatar: name.trim().charAt(0).toUpperCase() || "C",
       });
       toast.success(`Welcome to RecipeVault, Chef ${u.name}! Your kitchen shelf is ready.`);
-      navigate({ to: "/" });
+      navigate({ to: targetRoute as any });
     }, 500);
   };
 
@@ -142,14 +145,11 @@ export function LoginPage() {
     setIsGoogleLoading(true);
     setTimeout(() => {
       setIsGoogleLoading(false);
-      const u = loginWithGoogle({
-        name: "Google Culinary Cook",
-        email: "culinary.cook@gmail.com",
-        avatar: "G",
-      });
-      toast.success(`Google Account connected! Welcome, ${u.name}.`);
-      navigate({ to: "/" });
-    }, 700);
+      toast.info(
+        "Google OAuth integration is configured for deployment rollout after project review. Please use the quick persona switcher below or demo email login for current evaluation.",
+        { duration: 5500 }
+      );
+    }, 350);
   };
 
   const handleForgotPassword = (e: React.FormEvent) => {
@@ -268,7 +268,7 @@ export function LoginPage() {
                       }`}
                       onClick={() => {
                         switchUser(u.id);
-                        navigate({ to: "/" });
+                        navigate({ to: targetRoute as any });
                       }}
                     >
                       <span className="avatar w-6 h-6 text-xs mx-auto mb-1">{u.avatar}</span>
@@ -282,6 +282,21 @@ export function LoginPage() {
                     </button>
                   );
                 })}
+              </div>
+              <div className="text-center pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-xs text-muted-foreground hover:text-clay gap-1.5 rounded-full h-8"
+                  onClick={() => {
+                    if (allUsers[0]) {
+                      switchUser(allUsers[0].id);
+                    }
+                    navigate({ to: '/' });
+                  }}
+                >
+                  <Compass size={13} /> Continue as Guest Cook (Explore demo)
+                </Button>
               </div>
             </div>
           )}

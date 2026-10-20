@@ -29,6 +29,12 @@ dist-ssr/
 !.env.example
 *.local
 
+# Database backups & private local queries
+*.dump
+*.sql.dump
+*.local.sql
+src/db/private/
+
 # Testing & coverage
 coverage/
 .nyc_output/

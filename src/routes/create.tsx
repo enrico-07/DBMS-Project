@@ -10,14 +10,22 @@ import {
   Sparkles,
   ArrowLeft,
   GitCommit,
+  Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { PageHeading } from '@/components/recipe-card';
 import { useVault } from '@/components/vault-provider';
 import { pageMeta } from '@/lib/metadata';
-import type { RecipeIngredient, RecipeStep } from '@/lib/recipes';
+import { type RecipeIngredient, type RecipeStep, parseRawRecipeText } from '@/lib/recipes';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/create')({
@@ -62,6 +70,33 @@ function CreateRecipe() {
 
   // Version Control Commit Message (for edits)
   const [changeSummary, setChangeSummary] = useState('');
+
+  // Smart Recipe Importer Modal State
+  const [smartImportOpen, setSmartImportOpen] = useState(false);
+  const [rawImportText, setRawImportText] = useState('');
+
+  const handleSmartExtract = () => {
+    if (!rawImportText.trim()) {
+      toast.error('Please paste recipe text first.');
+      return;
+    }
+    const draft = parseRawRecipeText(rawImportText);
+    setTitle(draft.title);
+    setDescription(draft.description);
+    setServings(draft.servings);
+    setPrepTime(draft.prepTime);
+    setCookTime(draft.cookTime);
+    setCategory(draft.category);
+    setCuisine(draft.cuisine);
+    setDiet(draft.diet);
+    setIngredients(draft.ingredients);
+    setSteps(draft.steps);
+    setSmartImportOpen(false);
+    setRawImportText('');
+    toast.success(
+      `Extracted "${draft.title}" with ${draft.ingredients.length} ingredients and ${draft.steps.length} timed steps!`,
+    );
+  };
 
   // Prepopulate if editing
   useEffect(() => {
@@ -156,14 +191,44 @@ function CreateRecipe() {
 
   return (
     <div className="standard-page editor-page max-w-5xl mx-auto">
+      {/* Breadcrumb Navigation */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+        <button
+          type="button"
+          onClick={() => navigate({ to: '/' })}
+          className="hover:text-primary transition-colors font-medium cursor-pointer"
+        >
+          Discover
+        </button>
+        <span>/</span>
+        <span className="text-foreground font-semibold">{edit ? 'Edit Recipe' : 'Add New Recipe'}</span>
+      </nav>
+
       <PageHeading
         eyebrow="STRUCTURED RECIPE BUILDER & DBMS ENGINE"
         title={edit ? `Refining "${original?.title || 'Recipe'}"` : 'Every great recipe has a story.'}
         description="Capture precise ingredient quantities, cooking durations, and version revisions for your digital shelf."
         action={
-          <Button variant="ghost" onClick={() => navigate({ to: edit ? `/recipe/${edit}` : '/' })}>
-            <ArrowLeft size={16} className="mr-1" /> Cancel
-          </Button>
+          <div className="flex items-center gap-2">
+            {!edit && (
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-full gap-1.5 text-xs text-clay border-clay/40 hover:bg-peach shrink-0"
+                onClick={() => setSmartImportOpen(true)}
+              >
+                <Wand2 size={14} /> Smart Paste / Import
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-full text-xs"
+              onClick={() => navigate({ to: edit ? `/recipe/${edit}` : '/' })}
+            >
+              <ArrowLeft size={16} className="mr-1" /> Cancel
+            </Button>
+          </div>
         }
       />
 
@@ -547,6 +612,80 @@ function CreateRecipe() {
           </section>
         </div>
       </form>
+
+      {/* Smart Unstructured Text Recipe Importer Modal */}
+      <Dialog open={smartImportOpen} onOpenChange={setSmartImportOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl flex items-center gap-2">
+              <Wand2 size={18} className="text-clay" /> Fast Recipe Text Importer
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Paste unformatted recipe notes, a family recipe card, or an online snippet. Our relational parser extracts ingredients, quantities, units, and numbered steps instantly.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-2">
+            <Textarea
+              rows={9}
+              placeholder={`Example:\nGrandma's Garlic Roasted Potatoes\nA crispy family staple for holidays.\nServings: 4\nPrep time: 10 mins\nCook time: 35 mins\n\nIngredients:\n* 800 g potatoes, cubed\n* 3 tbsp olive oil\n* 4 cloves garlic, minced\n\nInstructions:\n1. Preheat oven to 400°F (200°C).\n2. Toss potatoes with olive oil and garlic for 5 minutes.\n3. Roast for 30 minutes until crisp.`}
+              value={rawImportText}
+              onChange={(e) => setRawImportText(e.target.value)}
+              className="text-xs font-mono leading-relaxed bg-background"
+            />
+
+            <div className="flex items-center justify-between">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setRawImportText(`Sunday Skillet Shakshuka
+Eggs poached in spiced tomato & bell pepper sauce.
+Servings: 3
+Prep time: 10 mins
+Cook time: 20 mins
+
+Ingredients:
+* 1 tbsp olive oil
+* 1 whole onion, diced
+* 1 whole bell pepper, sliced
+* 400 g tomatoes, crushed
+* 4 whole eggs
+* 0.25 cup fresh cilantro
+
+Instructions:
+1. Heat olive oil in a skillet and sauté onion and bell pepper for 8 minutes.
+2. Add crushed tomatoes, cumin, and simmer for 10 minutes until thickened.
+3. Make small wells in the sauce and crack eggs directly in; cover and cook for 6 minutes.`);
+                }}
+              >
+                Use sample recipe
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSmartImportOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="bg-clay text-white hover:bg-clay/90 gap-1.5"
+                  onClick={handleSmartExtract}
+                >
+                  <Sparkles size={14} /> Extract & Populate
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

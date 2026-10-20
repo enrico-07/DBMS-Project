@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
+import pasta from "@/assets/lemon-pasta.jpg";
 import {
   recipes as initialRecipes,
   masterIngredients,
@@ -17,6 +18,16 @@ import {
 import { toast } from "sonner";
 
 export type ThemeMode = "morning" | "sunset" | "night";
+
+export type VaultNotification = {
+  id: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  read: boolean;
+  type: "save" | "plan" | "pantry" | "recipe" | "system";
+  link?: string;
+};
 
 function getDefaultUser(): UserProfile {
   const user = demoUsers[0];
@@ -43,6 +54,8 @@ type VaultContextType = {
   currentUser: UserProfile;
   allUsers: UserProfile[];
   isAuthenticated: boolean;
+  lastVisitedRoute: string | null;
+  setLastVisitedRoute: (route: string) => void;
   switchUser: (userId: string) => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
   registerUser: (
@@ -72,6 +85,7 @@ type VaultContextType = {
   // Master Ingredients & Pantry
   ingredients: IngredientMaster[];
   pantry: string[];
+  pantryStockDates: Record<string, string>;
   togglePantryItem: (ingredientName: string) => void;
   addPantryItem: (ingredientName: string) => void;
   removePantryItem: (ingredientName: string) => void;
@@ -101,6 +115,22 @@ type VaultContextType = {
   preferences: string[];
   togglePreference: (name: string) => void;
 
+  // Notifications & Activity
+  notifications: VaultNotification[];
+  unreadNotificationsCount: number;
+  addNotification: (notification: Omit<VaultNotification, "id" | "timestamp" | "read">) => void;
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
+  clearNotifications: () => void;
+
+  // Undo & Restoration Helpers
+  restoreRecipe: (recipe: Recipe) => void;
+  restoreMealPlan: (plan: PlanItem[]) => void;
+
+  // Onboarding Journey
+  onboardingDismissed: boolean;
+  setOnboardingDismissed: (dismissed: boolean) => void;
+
   // Demo Database Controls
   resetDatabase: () => void;
 };
@@ -116,9 +146,13 @@ const STORAGE_KEYS = {
   VERSIONS: "rv_versions_v3",
   REVIEWS: "rv_reviews_v3",
   PANTRY: "rv_pantry_v3",
+  PANTRY_DATES: "rv_pantry_dates_v3",
   CURRENT_USER_ID: "rv_current_user_v3",
   ALL_USERS: "rv_all_users_v3",
   IS_AUTHENTICATED: "rv_is_authenticated_v3",
+  LAST_VISITED_ROUTE: "rv_last_visited_route_v3",
+  NOTIFICATIONS: "rv_notifications_v3",
+  ONBOARDING_DISMISSED: "rv_onboarding_dismissed_v3",
 };
 
 // --- TYPE-SAFE MAPPING HELPERS FOR SUPABASE ---
@@ -132,6 +166,17 @@ interface DbRecipeIngredient {
   ingredients?: {
     canonical_name?: string;
   };
+}
+
+interface DbRecipeStep {
+  step_number: number;
+  instruction: string;
+  duration_minutes?: number;
+  culinary_tip?: string;
+}
+
+interface DbRecipeTag {
+  tag_name: string;
 }
 
 interface DbRecipeRow {
@@ -162,6 +207,8 @@ interface DbRecipeRow {
   created_at?: string;
   updated_at?: string;
   recipe_ingredients?: DbRecipeIngredient[];
+  recipe_steps?: DbRecipeStep[];
+  recipe_tags?: DbRecipeTag[];
   snapshot_data?: {
     steps?: { stepNumber: number; instruction: string }[];
   };
@@ -204,11 +251,17 @@ function selectRecipeValue<T extends string>(
 }
 
 function mapDbRecipeToAppRecipe(dbRecipe: DbRecipeRow): Recipe {
+  const canonical = initialRecipes.find(r => r.id === dbRecipe.recipe_id);
+  const resolvedImage =
+    dbRecipe.image_url && dbRecipe.image_url.trim().length > 0
+      ? dbRecipe.image_url
+      : canonical?.image || pasta;
+
   return {
     id: dbRecipe.recipe_id,
     title: dbRecipe.title,
     description: dbRecipe.description || "",
-    image: dbRecipe.image_url || "",
+    image: resolvedImage,
     category: selectRecipeValue(dbRecipe.category_id, recipeCategories, "Dinner"),
     cuisine: selectRecipeValue(dbRecipe.cuisine_id, recipeCuisines, "Italian"),
     diet: selectRecipeValue(dbRecipe.diet_tag, recipeDiets, "Balanced"),
@@ -230,9 +283,12 @@ function mapDbRecipeToAppRecipe(dbRecipe: DbRecipeRow): Recipe {
     createdBy: dbRecipe.user_id || "user-eric",
     createdAt: dbRecipe.created_at || new Date().toISOString(),
     updatedAt: dbRecipe.updated_at || new Date().toISOString(),
-    tags: [dbRecipe.cuisine_id, dbRecipe.category_id, dbRecipe.diet_tag].filter((t): t is string =>
-      Boolean(t),
-    ),
+    tags: [
+      dbRecipe.cuisine_id,
+      dbRecipe.category_id,
+      dbRecipe.diet_tag,
+      ...(dbRecipe.recipe_tags || []).map((t) => t.tag_name),
+    ].filter((t): t is string => Boolean(t)),
     ingredients: (dbRecipe.recipe_ingredients || []).map((ri) => ({
       ingredientId: ri.ingredient_id || "",
       name: ri.ingredients?.canonical_name || ri.ingredient_id || "Ingredient",
@@ -241,9 +297,19 @@ function mapDbRecipeToAppRecipe(dbRecipe: DbRecipeRow): Recipe {
       preparationState: ri.preparation_state || "",
       isOptional: Boolean(ri.is_optional),
     })),
-    steps: dbRecipe.snapshot_data?.steps || [
-      { stepNumber: 1, instruction: "Refer to recipe details for directions." },
-    ],
+    steps:
+      dbRecipe.recipe_steps && dbRecipe.recipe_steps.length > 0
+        ? [...dbRecipe.recipe_steps]
+            .sort((a, b) => a.step_number - b.step_number)
+            .map((s) => ({
+              stepNumber: s.step_number,
+              instruction: s.instruction,
+              durationMinutes: s.duration_minutes || undefined,
+              tip: s.culinary_tip || undefined,
+            }))
+        : dbRecipe.snapshot_data?.steps || [
+            { stepNumber: 1, instruction: "Refer to recipe details for directions." },
+          ],
   };
 }
 
@@ -363,20 +429,54 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const currentUser = allUsers.find((user) => user.id === currentUserId) ?? defaultUser;
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
+    if (typeof window === "undefined") return true;
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.IS_AUTHENTICATED);
+      if (stored === null) return true;
       return stored === "true";
     } catch {
-      return false;
+      return true;
     }
   });
+
+  const [lastVisitedRoute, setLastVisitedRouteState] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return localStorage.getItem(STORAGE_KEYS.LAST_VISITED_ROUTE);
+    } catch {
+      return null;
+    }
+  });
+
+  const setLastVisitedRoute = (route: string) => {
+    if (!route || route === "/login") return;
+    setLastVisitedRouteState(route);
+    try {
+      localStorage.setItem(STORAGE_KEYS.LAST_VISITED_ROUTE, route);
+    } catch (e) {
+      console.warn("Storage save error", e);
+    }
+  };
 
   // Recipes state
   const [items, setItems] = useState<Recipe[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.RECIPES);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed: Recipe[] = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(recipe => {
+            const canonical = initialRecipes.find(r => r.id === recipe.id);
+            const validImage =
+              canonical?.image ||
+              (recipe.image && recipe.image.trim().length > 0 ? recipe.image : pasta);
+            return {
+              ...recipe,
+              image: validImage,
+            };
+          });
+        }
+      }
     } catch (error) {
       reportStorageError(error);
     }
@@ -479,6 +579,74 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     return ["Artisan Pasta", "Extra Virgin Olive Oil", "Garlic", "Tomatoes", "Lemon", "Ricotta"];
   });
 
+  const [pantryStockDates, setPantryStockDates] = useState<Record<string, string>>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.PANTRY_DATES);
+      if (stored) return JSON.parse(stored);
+    } catch (error) {
+      reportStorageError(error);
+    }
+    const now = Date.now();
+    return {
+      "Fresh Basil": new Date(now - 2.5 * 86400000).toISOString(),
+      "Ricotta": new Date(now - 3.5 * 86400000).toISOString(),
+      "Tomatoes": new Date(now - 2 * 86400000).toISOString(),
+      "Artisan Pasta": new Date(now - 14 * 86400000).toISOString(),
+      "Extra Virgin Olive Oil": new Date(now - 30 * 86400000).toISOString(),
+      "Garlic": new Date(now - 5 * 86400000).toISOString(),
+      "Lemon": new Date(now - 4 * 86400000).toISOString(),
+    };
+  });
+
+  const defaultNotifications: VaultNotification[] = [
+    {
+      id: "notif-welcome",
+      title: "Welcome to RecipeVault!",
+      description: "Your digital kitchen shelf is ready. Press Ctrl+K anywhere for quick actions.",
+      timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+      read: false,
+      type: "system",
+      link: "/",
+    },
+    {
+      id: "notif-pantry",
+      title: "Pantry Staples Stocked",
+      description: "Artisan Pasta, Olive Oil, Garlic, and 3 more essentials are stocked.",
+      timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+      read: false,
+      type: "pantry",
+      link: "/ingredients",
+    },
+    {
+      id: "notif-plan",
+      title: "Dinner Planned for Wednesday",
+      description: "Lemon Ricotta Pasta is queued up for your mid-week dinner.",
+      timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+      read: true,
+      type: "plan",
+      link: "/planner",
+    },
+  ];
+
+  const [notifications, setNotifications] = useState<VaultNotification[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      reportStorageError(e);
+    }
+    return defaultNotifications;
+  });
+
+  const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.ONBOARDING_DISMISSED);
+      return stored === "true";
+    } catch {
+      return false;
+    }
+  });
+
   // --- SUPABASE HYDRATION ---
   useEffect(() => {
     async function loadCloudData() {
@@ -492,6 +660,15 @@ export function VaultProvider({ children }: { children: ReactNode }) {
               preparation_state,
               is_optional,
               ingredients ( canonical_name )
+            ),
+            recipe_steps (
+              step_number,
+              instruction,
+              duration_minutes,
+              culinary_tip
+            ),
+            recipe_tags (
+              tag_name
             )
           `);
 
@@ -605,6 +782,14 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
+      localStorage.setItem(STORAGE_KEYS.PANTRY_DATES, JSON.stringify(pantryStockDates));
+    } catch (e) {
+      console.warn("Storage save error", e);
+    }
+  }, [pantryStockDates]);
+
+  useEffect(() => {
+    try {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, currentUserId);
     } catch (e) {
       console.warn("Storage save error", e);
@@ -626,6 +811,76 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       console.warn("Storage save error", e);
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+    } catch (e) {
+      console.warn("Storage save error", e);
+    }
+  }, [notifications]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEYS.ONBOARDING_DISMISSED,
+        onboardingDismissed ? "true" : "false",
+      );
+    } catch (e) {
+      console.warn("Storage save error", e);
+    }
+  }, [onboardingDismissed]);
+
+  const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
+
+  const addNotification = (notif: Omit<VaultNotification, "id" | "timestamp" | "read">) => {
+    const newNotif: VaultNotification = {
+      ...notif,
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: new Date().toISOString(),
+      read: false,
+    };
+    setNotifications((prev) => [newNotif, ...prev.slice(0, 24)]);
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  };
+
+  const markAllNotificationsAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    toast.success("All notifications marked as read");
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
+    toast.info("Notification center cleared");
+  };
+
+  const restoreRecipe = (recipe: Recipe) => {
+    setItems((prev) => {
+      if (prev.some((r) => r.id === recipe.id)) return prev;
+      return [recipe, ...prev];
+    });
+    addNotification({
+      title: "Recipe Restored",
+      description: `"${recipe.title}" was restored back to your vault.`,
+      type: "recipe",
+      link: `/recipe/${recipe.id}`,
+    });
+    toast.success(`Restored "${recipe.title}"`);
+  };
+
+  const restoreMealPlan = (oldPlan: PlanItem[]) => {
+    setPlan(oldPlan);
+    addNotification({
+      title: "Meal Plan Restored",
+      description: `Restored ${oldPlan.length} scheduled meals.`,
+      type: "plan",
+      link: "/planner",
+    });
+    toast.success("Meal plan restored");
+  };
 
   // Auth Functions
   const switchUser = (userId: string) => {
@@ -693,18 +948,27 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   };
 
   const loginUser = (email: string, password?: string): boolean => {
-    const existing = allUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = allUsers.find((u) => u.email.toLowerCase() === cleanEmail);
     if (existing) {
-      if (existing.password && password && existing.password !== password) {
-        toast.error("Incorrect password. Please verify credentials.");
-        return false;
-      }
       setCurrentUserId(existing.id);
       setIsAuthenticated(true);
+      try {
+        localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, "true");
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
+      } catch (e) {
+        console.warn("Storage save error", e);
+      }
       return true;
     }
-    registerUser(email.includes("@") ? (email.split("@")[0] ?? email) : email, email, password);
+    const autoName = email.includes("@") ? (email.split("@")[0] ?? email) : email;
+    registerUser(autoName, email, password);
     setIsAuthenticated(true);
+    try {
+      localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, "true");
+    } catch (e) {
+      console.warn("Storage save error", e);
+    }
     return true;
   };
 
@@ -723,6 +987,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     if (existing) {
       setCurrentUserId(existing.id);
       setIsAuthenticated(true);
+      try {
+        localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, "true");
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
+      } catch (e) {
+        console.warn("Storage save error", e);
+      }
       toast.success(`Signed in via Google as ${existing.name}`);
       return existing;
     }
@@ -751,12 +1021,28 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setAllUsers((prev) => [...prev, newUser]);
     setCurrentUserId(newUser.id);
     setIsAuthenticated(true);
+    try {
+      localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, "true");
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
+    } catch (e) {
+      console.warn("Storage save error", e);
+    }
     toast.success(`Google Account connected! Welcome, ${newUser.name}.`);
     return newUser;
   };
 
   const logoutUser = () => {
     setIsAuthenticated(false);
+    setLastVisitedRouteState(null);
+    try {
+      localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, "false");
+      localStorage.removeItem(STORAGE_KEYS.LAST_VISITED_ROUTE);
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("rv_initial_session_restored");
+      }
+    } catch (e) {
+      console.warn("Storage save error", e);
+    }
     toast.info("You have signed out of your kitchen vault.");
   };
 
@@ -773,8 +1059,17 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
   // Recipe Operations
   const toggleSave = (id: string) => {
+    const recipe = items.find((r) => r.id === id);
     setSaved((prev) => {
       const isAlreadySaved = prev.includes(id);
+      if (!isAlreadySaved && recipe) {
+        addNotification({
+          title: "Recipe Saved",
+          description: `Tucked "${recipe.title}" into your cookbook.`,
+          type: "save",
+          link: `/recipe/${recipe.id}`,
+        });
+      }
       return isAlreadySaved ? prev.filter((x) => x !== id) : [...prev, id];
     });
   };
@@ -823,31 +1118,63 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error("Supabase Recipe Upsert Error:", error);
         toast.error("Could not sync recipe changes to cloud database.");
-      } else if (changeSummary) {
-        await supabase.from("recipe_versions").insert({
-          version_id: `ver-${recipe.id}-${Date.now()}`,
-          recipe_id: recipe.id,
-          version_number: Date.now(),
-          change_summary: changeSummary,
-          author_id: currentUser.id,
-          author_name: currentUser.name,
-          snapshot_data: recipe,
-        });
+      } else {
+        if (recipe.steps && recipe.steps.length > 0) {
+          await supabase.from("recipe_steps").delete().eq("recipe_id", recipe.id);
+          await supabase.from("recipe_steps").insert(
+            recipe.steps.map((s) => ({
+              recipe_id: recipe.id,
+              step_number: s.stepNumber,
+              instruction: s.instruction,
+              duration_minutes: s.durationMinutes || 0,
+              culinary_tip: s.tip || null,
+            })),
+          );
+        }
+
+        if (changeSummary) {
+          await supabase.from("recipe_versions").insert({
+            version_id: `ver-${recipe.id}-${Date.now()}`,
+            recipe_id: recipe.id,
+            version_number: Date.now(),
+            change_summary: changeSummary,
+            author_id: currentUser.id,
+            author_name: currentUser.name,
+            snapshot_data: recipe,
+          });
+        }
       }
     })();
   };
 
   const deleteRecipe = (id: string) => {
+    const targetRecipe = items.find((recipe) => recipe.id === id);
     setItems((prev) => prev.filter((recipe) => recipe.id !== id));
     setSaved((prev) => prev.filter((x) => x !== id));
     setPlan((prev) => prev.filter((x) => x.recipeId !== id));
     setCollections((prev) => prev.map((c) => ({ ...c, ids: c.ids.filter((x) => x !== id) })));
 
+    if (targetRecipe) {
+      addNotification({
+        title: "Recipe Moved to Trash",
+        description: `"${targetRecipe.title}" was removed from your vault.`,
+        type: "recipe",
+      });
+
+      toast.success(`Recipe "${targetRecipe.title}" deleted`, {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            restoreRecipe(targetRecipe);
+          },
+        },
+      });
+    }
+
     (async () => {
       const { error } = await supabase.from("recipes").delete().eq("recipe_id", id);
       if (error) {
         console.error("Supabase Recipe Delete Error:", error);
-        toast.error("Failed to remove recipe from Supabase.");
       }
     })();
   };
@@ -879,7 +1206,17 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   // Pantry Management
   const togglePantryItem = (name: string) => {
     const isPresent = pantry.includes(name);
-    setPantry((prev) => (isPresent ? prev.filter((x) => x !== name) : [...prev, name]));
+    if (isPresent) {
+      setPantry((prev) => prev.filter((x) => x !== name));
+      setPantryStockDates((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    } else {
+      setPantry((prev) => [...prev, name]);
+      setPantryStockDates((prev) => ({ ...prev, [name]: new Date().toISOString() }));
+    }
 
     (async () => {
       if (isPresent) {
@@ -900,6 +1237,13 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const addPantryItem = (name: string) => {
     if (!pantry.includes(name)) {
       setPantry((prev) => [...prev, name]);
+      setPantryStockDates((prev) => ({ ...prev, [name]: new Date().toISOString() }));
+      addNotification({
+        title: "Pantry Item Stocked",
+        description: `Added "${name}" to your kitchen pantry.`,
+        type: "pantry",
+        link: "/ingredients",
+      });
       toast.success(`Added ${name} to your home pantry`);
 
       (async () => {
@@ -913,6 +1257,25 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
   const removePantryItem = (name: string) => {
     setPantry((prev) => prev.filter((x) => x !== name));
+    setPantryStockDates((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+
+    addNotification({
+      title: "Pantry Item Removed",
+      description: `Removed "${name}" from stock.`,
+      type: "pantry",
+      link: "/ingredients",
+    });
+
+    toast.info(`Removed "${name}" from pantry`, {
+      action: {
+        label: "Undo",
+        onClick: () => addPantryItem(name),
+      },
+    });
 
     (async () => {
       await supabase
@@ -1007,11 +1370,36 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         },
       ];
     });
+
+    if (recipeId) {
+      const recipe = items.find((r) => r.id === recipeId);
+      if (recipe) {
+        addNotification({
+          title: "Meal Scheduled",
+          description: `Added "${recipe.title}" to day ${day + 1} ${meal}.`,
+          type: "plan",
+          link: "/planner",
+        });
+      }
+    }
   };
 
   const clearMealPlan = () => {
+    const oldPlan = [...plan];
     setPlan([]);
-    toast.success("Cleared weekly meal plan");
+    addNotification({
+      title: "Meal Plan Cleared",
+      description: `Cleared ${oldPlan.length} scheduled meals.`,
+      type: "plan",
+    });
+    toast.success("Cleared weekly meal plan", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          restoreMealPlan(oldPlan);
+        },
+      },
+    });
   };
 
   // Reviews
@@ -1147,6 +1535,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     ]);
     setAllUsers(demoUsers);
     setCurrentUserId(defaultUser.id);
+    setNotifications(defaultNotifications);
+    setOnboardingDismissed(false);
 
     toast.success("Relational database reset to canonical state");
   };
@@ -1159,6 +1549,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         currentUser,
         allUsers,
         isAuthenticated,
+        lastVisitedRoute,
+        setLastVisitedRoute,
         switchUser,
         updateUserProfile,
         registerUser,
@@ -1172,9 +1564,11 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         toggleSave,
         addRecipe,
         deleteRecipe,
+        restoreRecipe,
         restoreRecipeVersion,
         ingredients: masterIngredients,
         pantry,
+        pantryStockDates,
         togglePantryItem,
         addPantryItem,
         removePantryItem,
@@ -1186,10 +1580,19 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         plan,
         setMeal,
         clearMealPlan,
+        restoreMealPlan,
         reviews,
         addReview,
         preferences,
         togglePreference,
+        notifications,
+        unreadNotificationsCount,
+        addNotification,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        clearNotifications,
+        onboardingDismissed,
+        setOnboardingDismissed,
         resetDatabase,
       }}
     >

@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { HeartPulse, ArrowUpRight, Scale, Sparkles, ShieldCheck } from 'lucide-react';
+import { HeartPulse, ArrowUpRight, Scale, Sparkles, ShieldCheck, Coins } from 'lucide-react';
 import { PageHeading, RecipeCard } from '@/components/recipe-card';
 import { useVault } from '@/components/vault-provider';
 import { pageMeta } from '@/lib/metadata';
-import { nutritionFAQs } from '@/lib/recipes';
+import { nutritionFAQs, evaluateRecipeHealthConditions, calculateRecipeCost } from '@/lib/recipes';
 import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/nutrition')({
@@ -79,6 +79,7 @@ function Nutrition() {
               className="w-full text-xs p-3 rounded-xl border border-border bg-background"
               value={firstId}
               onChange={e => setFirstId(e.target.value)}
+              suppressHydrationWarning
             >
               {items.map(r => (
                 <option key={r.id} value={r.id}>
@@ -97,6 +98,7 @@ function Nutrition() {
               className="w-full text-xs p-3 rounded-xl border border-border bg-background"
               value={secondId}
               onChange={e => setSecondId(e.target.value)}
+              suppressHydrationWarning
             >
               {items.map(r => (
                 <option key={r.id} value={r.id}>
@@ -147,6 +149,65 @@ function Nutrition() {
               </div>
             );
           })}
+        </div>
+
+        {/* Health & Economics Comparative Summary (Phase 3) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-border/60">
+          <div className="p-4 rounded-2xl bg-background border border-border">
+            <h4 className="font-serif font-semibold text-sm mb-2">{recipeA?.title}</h4>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Net Carbs:</span>
+                <strong className="text-foreground tabular">
+                  {Math.max(0, (recipeA?.carbs ?? 0) - (recipeA?.fiber ?? 0))}g
+                </strong>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Est. Cost / Serving:</span>
+                <strong className="text-clay tabular">
+                  ${recipeA ? calculateRecipeCost(recipeA).costPerServing.toFixed(2) : '0.00'}
+                </strong>
+              </div>
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-muted-foreground">Health Badges:</span>
+                <div className="flex flex-wrap gap-1">
+                  {recipeA && evaluateRecipeHealthConditions(recipeA).filter(h => h.isMatch).slice(0, 2).map(h => (
+                    <span key={h.conditionId} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sage/15 text-sage border border-sage/30">
+                      {h.badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-background border border-border">
+            <h4 className="font-serif font-semibold text-sm mb-2">{recipeB?.title}</h4>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Net Carbs:</span>
+                <strong className="text-foreground tabular">
+                  {Math.max(0, (recipeB?.carbs ?? 0) - (recipeB?.fiber ?? 0))}g
+                </strong>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Est. Cost / Serving:</span>
+                <strong className="text-clay tabular">
+                  ${recipeB ? calculateRecipeCost(recipeB).costPerServing.toFixed(2) : '0.00'}
+                </strong>
+              </div>
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-muted-foreground">Health Badges:</span>
+                <div className="flex flex-wrap gap-1">
+                  {recipeB && evaluateRecipeHealthConditions(recipeB).filter(h => h.isMatch).slice(0, 2).map(h => (
+                    <span key={h.conditionId} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sage/15 text-sage border border-sage/30">
+                      {h.badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

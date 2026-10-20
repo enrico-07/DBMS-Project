@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -12,9 +13,10 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { VaultProvider } from '@/components/vault-provider';
+import { VaultProvider, useVault } from '@/components/vault-provider';
 import { VaultShell } from '@/components/vault-shell';
 import { WoodenLadleCursor } from '@/components/wooden-ladle-cursor';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from 'sonner';
 
 function NotFoundComponent() {
@@ -110,12 +112,37 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('rv_theme_mode');if(!t){var h=new Date().getHours();if(h>=6&&h<12)t='morning';else if(h>=12&&h<19)t='sunset';else t='night';}document.documentElement.setAttribute('data-theme',t);if(t==='night'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}}catch(e){}})();`,
+            __html: `(function(){try{
+              var t=localStorage.getItem('rv_theme_mode');
+              if(!t){var h=new Date().getHours();if(h>=6&&h<12)t='morning';else if(h>=12&&h<19)t='sunset';else t='night';}
+              document.documentElement.setAttribute('data-theme',t);
+              if(t==='night'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}
+
+              var storedAuth = localStorage.getItem('rv_is_authenticated_v3');
+              var isAuth = storedAuth === null ? true : storedAuth === 'true';
+              if (storedAuth === null) {
+                try { localStorage.setItem('rv_is_authenticated_v3', 'true'); } catch(e){}
+              }
+              var lastRoute = localStorage.getItem('rv_last_visited_route_v3');
+              var path = window.location.pathname;
+
+              if (!isAuth && path !== '/login') {
+                window.location.replace('/login');
+              } else if (isAuth && path === '/' && lastRoute && lastRoute !== '/' && lastRoute !== '/login') {
+                if (!sessionStorage.getItem('rv_session_active')) {
+                  sessionStorage.setItem('rv_session_active', 'true');
+                  window.location.replace(lastRoute);
+                }
+              }
+              if (isAuth) {
+                sessionStorage.setItem('rv_session_active', 'true');
+              }
+            }catch(e){}})();`,
           }}
         />
       </head>
@@ -127,6 +154,25 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function RouteGate({ children }: { children: ReactNode }) {
+  const path = useRouterState({ select: s => s.location.pathname });
+  const router = useRouter();
+  const { isAuthenticated, setLastVisitedRoute, lastVisitedRoute } = useVault();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (!isAuthenticated && path !== '/login') {
+      router.navigate({ to: '/login', replace: true });
+    } else if (isAuthenticated && path !== '/login') {
+      setLastVisitedRoute(path);
+      sessionStorage.setItem('rv_session_active', 'true');
+    }
+  }, [isAuthenticated, path, router, setLastVisitedRoute, lastVisitedRoute]);
+
+  return <>{children}</>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -134,11 +180,23 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <VaultProvider>
-        <WoodenLadleCursor />
-        <VaultShell>
-          <Outlet />
-        </VaultShell>
-        <Toaster position="bottom-right" />
+        <TooltipProvider delayDuration={200}>
+          <WoodenLadleCursor />
+          <RouteGate>
+            <VaultShell>
+              <Outlet />
+            </VaultShell>
+          </RouteGate>
+          <Toaster
+            position="bottom-right"
+            richColors
+            closeButton
+            duration={4500}
+            toastOptions={{
+              className: "font-sans text-xs rounded-2xl shadow-xl border border-border",
+            }}
+          />
+        </TooltipProvider>
       </VaultProvider>
     </QueryClientProvider>
   );

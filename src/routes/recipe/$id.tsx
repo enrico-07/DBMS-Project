@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Bookmark,
   Clock,
@@ -20,16 +20,39 @@ import {
   MessageSquare,
   X,
   Play,
+  Pause,
+  Timer,
+  Bell,
+  ArrowLeftRight,
+  ShieldCheck,
+  HeartPulse,
+  Undo2,
+  Volume2,
   CheckCircle2,
+  Printer,
+  Coins,
+  Receipt,
+  PiggyBank,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useVault } from '@/components/vault-provider';
-import { scaledQuantity, masterIngredients, type IngredientMaster } from '@/lib/recipes';
+import { CookingModeModal } from '@/components/cooking-mode-modal';
+import {
+  scaledQuantity,
+  masterIngredients,
+  type IngredientMaster,
+  evaluateRecipeHealthConditions,
+  ingredientSubstitutions,
+  type IngredientSubstitution,
+  HEALTH_CONDITIONS,
+  calculateRecipeCost,
+} from '@/lib/recipes';
 import { pageMeta } from '@/lib/metadata';
 import { toast } from 'sonner';
+import pasta from '@/assets/lemon-pasta.jpg';
 
 export const Route = createFileRoute('/recipe/$id')({
   component: RecipeDetail,
@@ -76,6 +99,178 @@ function RecipeDetail() {
   // Review Form
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
+
+  // Ingredient Substitution State
+  const [activeSwaps, setActiveSwaps] = useState<Record<string, IngredientSubstitution>>({});
+  const [substitutionModalIngredient, setSubstitutionModalIngredient] = useState<string | null>(null);
+
+  // Multi-Timer State
+  type KitchenTimer = {
+    id: string;
+    label: string;
+    totalSeconds: number;
+    remainingSeconds: number;
+    isRunning: boolean;
+    stepNumber?: number | undefined;
+  };
+
+  const [timers, setTimers] = useState<KitchenTimer[]>([]);
+
+  // Web Audio Synthetic Pleasant Kitchen Chime
+  const playChime = () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 - E5 - G5 - C6
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.12);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.12 + 0.85);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + idx * 0.12);
+        osc.stop(ctx.currentTime + idx * 0.12 + 0.9);
+      });
+    } catch (e) {
+      console.warn('Audio chime error', e);
+    }
+  };
+
+  // Timer Tick Hook
+  useEffect(() => {
+    const hasRunning = timers.some(t => t.isRunning && t.remainingSeconds > 0);
+    if (!hasRunning) return;
+
+    const interval = setInterval(() => {
+      setTimers(prev =>
+        prev.map(t => {
+          if (!t.isRunning || t.remainingSeconds <= 0) return t;
+          const nextSec = t.remainingSeconds - 1;
+          if (nextSec === 0) {
+            playChime();
+            toast.success(`⏰ Kitchen Timer Done: "${t.label}" has finished!`, {
+              duration: 7000,
+            });
+            return { ...t, remainingSeconds: 0, isRunning: false };
+          }
+          return { ...t, remainingSeconds: nextSec };
+        })
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timers]);
+
+  const startOrAddTimer = (label: string, minutes: number, stepNumber?: number) => {
+    const existing = timers.find(t => t.stepNumber === stepNumber && stepNumber !== undefined);
+    if (existing) {
+      setTimers(prev => prev.map(t => (t.id === existing.id ? { ...t, isRunning: true } : t)));
+      toast.info(`Resumed timer for Step ${stepNumber}`);
+      return;
+    }
+    const newTimer: KitchenTimer = {
+      id: `timer-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      label,
+      totalSeconds: minutes * 60,
+      remainingSeconds: minutes * 60,
+      isRunning: true,
+      stepNumber,
+    };
+    setTimers(prev => [...prev, newTimer]);
+    toast.success(`Started ${minutes}-minute timer: ${label}`);
+  };
+
+  const togglePauseTimer = (timerId: string) => {
+    setTimers(prev =>
+      prev.map(t => (t.id === timerId ? { ...t, isRunning: !t.isRunning } : t))
+    );
+  };
+
+  const addOneMinute = (timerId: string) => {
+    setTimers(prev =>
+      prev.map(t =>
+        t.id === timerId
+          ? {
+              ...t,
+              totalSeconds: t.totalSeconds + 60,
+              remainingSeconds: t.remainingSeconds + 60,
+              isRunning: true,
+            }
+          : t
+      )
+    );
+  };
+
+  const resetTimer = (timerId: string) => {
+    setTimers(prev =>
+      prev.map(t => (t.id === timerId ? { ...t, remainingSeconds: t.totalSeconds, isRunning: false } : t))
+    );
+  };
+
+  const removeTimer = (timerId: string) => {
+    setTimers(prev => prev.filter(t => t.id !== timerId));
+  };
+
+  const formatTimerDisplay = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  // Macro Deltas from Active Swaps
+  const macroDeltas = useMemo(() => {
+    let calorieDelta = 0;
+    let proteinDelta = 0;
+    let carbsDelta = 0;
+    let fatDelta = 0;
+    let fiberDelta = 0;
+
+    Object.values(activeSwaps).forEach(swap => {
+      calorieDelta += swap.calorieDelta;
+      proteinDelta += swap.proteinDelta;
+      carbsDelta += swap.carbsDelta;
+      fatDelta += swap.fatDelta;
+      fiberDelta += swap.fiberDelta;
+    });
+
+    return { calorieDelta, proteinDelta, carbsDelta, fatDelta, fiberDelta };
+  }, [activeSwaps]);
+
+  const effectiveCalories = Math.max(0, (recipe?.calories ?? 0) + macroDeltas.calorieDelta);
+  const effectiveProtein = Math.max(0, (recipe?.protein ?? 0) + macroDeltas.proteinDelta);
+  const effectiveCarbs = Math.max(0, (recipe?.carbs ?? 0) + macroDeltas.carbsDelta);
+  const effectiveFat = Math.max(0, (recipe?.fat ?? 0) + macroDeltas.fatDelta);
+  const effectiveFiber = Math.max(0, (recipe?.fiber ?? 4) + macroDeltas.fiberDelta);
+  const effectiveNetCarbs = Math.max(0, effectiveCarbs - effectiveFiber);
+
+  const healthEvals = useMemo(() => {
+    if (!recipe) return [];
+    return evaluateRecipeHealthConditions(recipe);
+  }, [recipe]);
+
+  const userHealthMatches = useMemo(() => {
+    return healthEvals.filter(h =>
+      h.isMatch &&
+      currentUser.healthConditions?.some(
+        c => c.toLowerCase() === h.conditionId.toLowerCase() || c.toLowerCase() === h.label.toLowerCase()
+      )
+    );
+  }, [healthEvals, currentUser.healthConditions]);
+
+  const costData = useMemo(() => {
+    if (!recipe) return null;
+    return calculateRecipeCost(recipe);
+  }, [recipe]);
+
+  const scaledBatchCost = useMemo(() => {
+    if (!costData) return 0;
+    return Math.round(costData.costPerServing * servings * 100) / 100;
+  }, [costData, servings]);
 
   if (!recipe) {
     return (
@@ -134,7 +329,16 @@ function RecipeDetail() {
   };
 
   return (
-    <div className="standard-page detail-page">
+    <div className="standard-page detail-page printable-recipe-card">
+      {/* Breadcrumbs for Crisp Culinary Context */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
+        <Link to="/" className="hover:text-primary transition-colors font-medium">Discover</Link>
+        <span>/</span>
+        <span className="capitalize">{recipe.category}</span>
+        <span>/</span>
+        <span className="text-foreground font-semibold truncate max-w-xs">{recipe.title}</span>
+      </nav>
+
       {/* Top Action Bar */}
       <div className="detail-actions">
         <Button asChild variant="ghost" className="rounded-full gap-2">
@@ -176,6 +380,15 @@ function RecipeDetail() {
           <Button
             variant="outline"
             className="rounded-full gap-1.5 text-xs"
+            onClick={() => window.print()}
+            title="Print printable recipe card"
+          >
+            <Printer size={15} /> Print
+          </Button>
+
+          <Button
+            variant="outline"
+            className="rounded-full gap-1.5 text-xs"
             onClick={async () => {
               try {
                 const text = `${recipe.title}\n${recipe.description}\n\nIngredients (${servings} servings):\n${recipe.ingredients
@@ -203,7 +416,7 @@ function RecipeDetail() {
         </div>
 
         <h1>{recipe.title}</h1>
-        <p>{recipe.description}</p>
+        <p suppressHydrationWarning>{recipe.description}</p>
 
         {/* Metadata Badges */}
         <div className="detail-meta">
@@ -222,8 +435,10 @@ function RecipeDetail() {
             <strong>{recipe.rating}</strong> ({recipe.ratingCount} reviews)
           </span>
 
-          <span className="photo-badge static">{recipe.diet}</span>
-          <span className="text-xs px-2.5 py-1 rounded-full border border-border bg-card">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-peach text-clay border border-clay/20 shadow-xs">
+            {recipe.diet}
+          </span>
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-secondary/80 border border-border text-foreground">
             {recipe.difficulty}
           </span>
         </div>
@@ -232,13 +447,16 @@ function RecipeDetail() {
       {/* Hero Cover Image */}
       <img
         className="detail-cover"
-        src={recipe.image}
+        src={recipe.image || pasta}
         alt={recipe.title}
         width={1536}
         height={1024}
         loading="eager"
         decoding="async"
         fetchPriority="high"
+        onError={e => {
+          (e.currentTarget as HTMLImageElement).src = pasta;
+        }}
       />
 
       {/* Action Toolbar */}
@@ -315,13 +533,49 @@ function RecipeDetail() {
             </div>
           </div>
 
+          {/* Active Substitutions Banner if any */}
+          {Object.keys(activeSwaps).length > 0 && (
+            <div className="mb-4 p-3 bg-secondary/70 border border-border rounded-xl flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <ArrowLeftRight size={14} className="text-clay shrink-0" />
+                <span>
+                  <strong>{Object.keys(activeSwaps).length} active ingredient substitution(s)</strong>
+                  <span className="text-[11px] text-muted-foreground block">
+                    Macros and scaled recipe quantities adjusted dynamically.
+                  </span>
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1 text-clay hover:bg-clay/10"
+                onClick={() => {
+                  setActiveSwaps({});
+                  toast.info('All ingredient substitutions cleared');
+                }}
+              >
+                <Undo2 size={12} /> Reset to Original
+              </Button>
+            </div>
+          )}
+
           {/* Ingredient Checkoff List */}
           <ul className="ingredient-list">
             {recipe.ingredients.map(i => {
               const isChecked = checkedIngredients.includes(i.name);
+              const swap = activeSwaps[i.name];
+              const availableSubstitutions = ingredientSubstitutions.filter(
+                s => s.originalIngredient.toLowerCase() === i.name.toLowerCase()
+              );
+              const displayQuantity = swap
+                ? scaledQuantity(i.quantity * swap.conversionRatio, recipe.servings, servings)
+                : scaledQuantity(i.quantity, recipe.servings, servings);
+              const displayUnit = swap ? swap.targetUnit : i.unit;
+              const displayName = swap ? swap.substituteName : i.name;
+
               return (
-                <li key={i.name}>
-                  <label>
+                <li key={i.name} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2 border-b border-border/50">
+                  <label className="flex items-start gap-2.5 cursor-pointer flex-1">
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -330,28 +584,52 @@ function RecipeDetail() {
                           prev.includes(i.name) ? prev.filter(x => x !== i.name) : [...prev, i.name]
                         )
                       }
+                      className="mt-1"
                     />
-                    <span className={isChecked ? 'line-through text-muted-foreground' : ''}>
-                      <strong data-testid={`quantity-${i.name}`} className="tabular mr-1.5 font-semibold">
-                        {scaledQuantity(i.quantity, recipe.servings, servings)} {i.unit}
-                      </strong>
-                      <span>{i.name}</span>
-                      {i.preparationState && (
-                        <span className="text-xs text-muted-foreground ml-1.5 font-normal italic">
-                          ({i.preparationState})
-                        </span>
-                      )}
-                    </span>
+                    <div className={isChecked ? 'line-through text-muted-foreground' : ''}>
+                      <span className="text-sm">
+                        <strong data-testid={`quantity-${i.name}`} className="tabular mr-1.5 font-semibold text-foreground">
+                          {displayQuantity} {displayUnit}
+                        </strong>
+                        <span className="font-medium text-foreground">{displayName}</span>
+                        {swap && (
+                          <span className="text-[11px] text-clay ml-1.5 font-semibold bg-peach/60 px-1.5 py-0.5 rounded">
+                            (Swapped for {i.name})
+                          </span>
+                        )}
+                        {!swap && i.preparationState && (
+                          <span className="text-xs text-muted-foreground ml-1.5 font-normal italic">
+                            ({i.preparationState})
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </label>
 
-                  <button
-                    type="button"
-                    className="ingredient-chip-trigger"
-                    onClick={() => handleIngredientClick(i.name)}
-                    title={`View culinary info and substitutes for ${i.name}`}
-                  >
-                    Glossary ⓘ
-                  </button>
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                    {availableSubstitutions.length > 0 && (
+                      <Button
+                        type="button"
+                        variant={swap ? 'secondary' : 'outline'}
+                        size="sm"
+                        className="h-7 text-[11px] rounded-full px-2.5 gap-1"
+                        onClick={() => setSubstitutionModalIngredient(i.name)}
+                        title={`Explore healthy substitutes for ${i.name}`}
+                      >
+                        <ArrowLeftRight size={11} />
+                        {swap ? 'Change Swap' : 'Swap'}
+                      </Button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="ingredient-chip-trigger"
+                      onClick={() => handleIngredientClick(i.name)}
+                      title={`View culinary info and substitutes for ${i.name}`}
+                    >
+                      Glossary ⓘ
+                    </button>
+                  </div>
                 </li>
               );
             })}
@@ -371,27 +649,183 @@ function RecipeDetail() {
 
             <div className="nutrition-grid">
               <div>
-                <strong className="tabular">{recipe.calories}<small>kcal</small></strong>
+                <strong className="tabular">{effectiveCalories}<small>kcal</small></strong>
                 <span>Energy</span>
+                {macroDeltas.calorieDelta !== 0 && (
+                  <span className={`text-[10px] font-bold ${macroDeltas.calorieDelta < 0 ? 'text-sage' : 'text-clay'}`}>
+                    {macroDeltas.calorieDelta > 0 ? `+${macroDeltas.calorieDelta}` : macroDeltas.calorieDelta} kcal
+                  </span>
+                )}
               </div>
               <div>
-                <strong className="tabular">{recipe.protein}<small>g</small></strong>
+                <strong className="tabular">{effectiveProtein}<small>g</small></strong>
                 <span>Protein</span>
+                {macroDeltas.proteinDelta !== 0 && (
+                  <span className={`text-[10px] font-bold ${macroDeltas.proteinDelta > 0 ? 'text-sage' : 'text-clay'}`}>
+                    {macroDeltas.proteinDelta > 0 ? `+${macroDeltas.proteinDelta}g` : `${macroDeltas.proteinDelta}g`}
+                  </span>
+                )}
               </div>
               <div>
-                <strong className="tabular">{recipe.carbs}<small>g</small></strong>
+                <strong className="tabular">{effectiveCarbs}<small>g</small></strong>
                 <span>Carbs</span>
+                {macroDeltas.carbsDelta !== 0 && (
+                  <span className={`text-[10px] font-bold ${macroDeltas.carbsDelta < 0 ? 'text-sage' : 'text-clay'}`}>
+                    {macroDeltas.carbsDelta > 0 ? `+${macroDeltas.carbsDelta}g` : `${macroDeltas.carbsDelta}g`}
+                  </span>
+                )}
               </div>
               <div>
-                <strong className="tabular">{recipe.fat}<small>g</small></strong>
+                <strong className="tabular">{effectiveFat}<small>g</small></strong>
                 <span>Fat</span>
+                {macroDeltas.fatDelta !== 0 && (
+                  <span className={`text-[10px] font-bold ${macroDeltas.fatDelta < 0 ? 'text-sage' : 'text-clay'}`}>
+                    {macroDeltas.fatDelta > 0 ? `+${macroDeltas.fatDelta}g` : `${macroDeltas.fatDelta}g`}
+                  </span>
+                )}
               </div>
             </div>
 
             <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-              *Informational culinary estimates based on standard recipe ingredients. Not intended as medical diagnosis or clinical diet planning.
+              *Informational culinary estimates adjusted for active ingredient swaps. Not intended as medical diagnosis.
             </p>
           </div>
+
+          {/* Clinical Health & Metabolic Analysis Panel */}
+          <div className="mt-8 p-5 rounded-2xl border border-border bg-card shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={18} className="text-sage" />
+                <h4 className="font-serif text-lg">Clinical Health & Nutrition Profile</h4>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-[11px] text-muted-foreground">Net Carbs:</span>
+                <span className="font-bold text-foreground tabular bg-secondary px-2 py-0.5 rounded-full border border-border">
+                  {effectiveNetCarbs}g <small className="text-muted-foreground font-normal">({effectiveFiber}g fiber)</small>
+                </span>
+              </div>
+            </div>
+
+            {/* If user has matched health conditions */}
+            {userHealthMatches.length > 0 && userHealthMatches[0] ? (
+              <div className="bg-sage/10 border border-sage/30 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center gap-2">
+                  <HeartPulse size={16} className="text-sage" />
+                  <span className="text-xs font-bold text-sage">
+                    Direct Alignment with Your Health Profile ({userHealthMatches.map(m => m.badge).join(', ')})
+                  </span>
+                </div>
+                <p className="text-xs text-foreground/90 leading-relaxed">
+                  {userHealthMatches[0].clinicalNote}
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {userHealthMatches[0].highlights.map((h, idx) => (
+                    <span key={idx} className="text-[10px] font-semibold bg-card text-foreground px-2 py-0.5 rounded-md border border-sage/20">
+                      ✓ {h}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : currentUser.healthConditions?.length > 0 ? (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-200">
+                <span className="font-semibold block mb-0.5">Note for your wellness profile:</span>
+                This dish provides wholesome nutrients. You can use the ingredient swapper above to tailor it even further for your metabolic needs.
+              </div>
+            ) : null}
+
+            {/* Condition Suitability Badges */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-semibold text-muted-foreground block uppercase tracking-wider">
+                Condition Suitability Ratings
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {healthEvals.map(evalItem => (
+                  <div
+                    key={evalItem.conditionId}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between text-xs ${
+                      evalItem.isMatch ? 'bg-secondary/40 border-border' : 'bg-muted/30 border-border/50 opacity-70'
+                    }`}
+                  >
+                    <div>
+                      <span className="font-semibold block text-[11px] text-foreground">
+                        {evalItem.label}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {evalItem.highlights[0] || (evalItem.isMatch ? 'Suitable' : 'Moderation advised')}
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 border ${
+                        evalItem.isMatch
+                          ? 'bg-sage/15 text-sage border-sage/30'
+                          : 'bg-muted text-muted-foreground border-border'
+                      }`}
+                    >
+                      {evalItem.isMatch ? `✓ ${evalItem.badge}` : 'Caution'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Kitchen Economics & Budget Estimator (Phase 3) */}
+          {costData && (
+            <div className="bg-card border border-border p-5 rounded-2xl shadow-sm mt-6">
+              <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                <div className="flex items-center gap-2">
+                  <Coins size={18} className="text-honey" />
+                  <h4 className="font-serif text-lg">Kitchen Economics & Budget</h4>
+                </div>
+                <span className="text-[11px] font-bold text-sage bg-sage/15 border border-sage/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <PiggyBank size={12} /> Save {costData.savingsPercentage}% vs. Takeout
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="p-3.5 rounded-xl bg-background border border-border">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block">
+                    Per Serving
+                  </span>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-xl font-bold font-serif text-foreground tabular">
+                      ${costData.costPerServing.toFixed(2)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-medium">/ portion</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground block mt-1">
+                    vs. ~$16.50 dining out
+                  </span>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-background border border-border">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block">
+                    Batch Total ({servings} servings)
+                  </span>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-xl font-bold font-serif text-clay tabular">
+                      ${scaledBatchCost.toFixed(2)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-medium">total</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground block mt-1">
+                    Pantry ingredient pricing
+                  </span>
+                </div>
+              </div>
+
+              {/* Collapsible itemized pricing details */}
+              <div className="mt-4 pt-3 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <Receipt size={13} className="text-muted-foreground" />
+                  {costData.ingredientCosts.length} itemized kitchen staples
+                </span>
+                <span className="font-medium text-foreground">
+                  Est. batch saving: ${(costData.restaurantEquivalent - scaledBatchCost).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Right Column: Step-by-Step Instructions & Reviews */}
@@ -409,6 +843,8 @@ function RecipeDetail() {
           <div className="space-y-4">
             {recipe.steps.map((step, index) => {
               const isDone = doneSteps.includes(index);
+              const stepTimer = timers.find(t => t.stepNumber === step.stepNumber);
+
               return (
                 <div
                   key={step.stepNumber}
@@ -431,9 +867,41 @@ function RecipeDetail() {
                       </div>
                     )}
                     {step.durationMinutes && (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground mt-2">
-                        <Clock size={12} /> Approx {step.durationMinutes} min
-                      </span>
+                      <div className="mt-2.5 flex items-center gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Clock size={12} /> Approx {step.durationMinutes} min
+                        </span>
+
+                        {stepTimer ? (
+                          <div className="flex items-center gap-1.5 bg-card border border-sage/40 px-2.5 py-1 rounded-full text-xs">
+                            <Timer size={12} className={stepTimer.isRunning ? 'text-sage animate-spin' : 'text-muted-foreground'} />
+                            <strong className="tabular">{formatTimerDisplay(stepTimer.remainingSeconds)}</strong>
+                            <button
+                              type="button"
+                              onClick={() => togglePauseTimer(stepTimer.id)}
+                              className="text-[10px] text-primary hover:underline ml-1 font-semibold"
+                            >
+                              {stepTimer.isRunning ? 'Pause' : 'Resume'}
+                            </button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-[11px] rounded-full gap-1 px-2.5"
+                            onClick={() =>
+                              startOrAddTimer(
+                                `Step ${step.stepNumber}: ${step.instruction.slice(0, 24)}…`,
+                                step.durationMinutes || 5,
+                                step.stepNumber
+                              )
+                            }
+                          >
+                            <Timer size={11} /> Start {step.durationMinutes}m Timer
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -547,6 +1015,59 @@ function RecipeDetail() {
               </div>
             )}
 
+            {recipe.steps[activeStepIndex]?.durationMinutes && (
+              <div className="mt-6 flex flex-col items-center justify-center gap-3">
+                {timers.find(t => t.stepNumber === activeStepIndex + 1) ? (
+                  <div className="flex items-center gap-3 bg-card border border-sage/50 px-5 py-2.5 rounded-full shadow-md">
+                    <Timer size={20} className="text-sage animate-spin" />
+                    <span className="text-xl font-bold font-mono tabular">
+                      {formatTimerDisplay(
+                        timers.find(t => t.stepNumber === activeStepIndex + 1)?.remainingSeconds ?? 0
+                      )}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full text-xs h-7 px-3"
+                      onClick={() =>
+                        togglePauseTimer(
+                          timers.find(t => t.stepNumber === activeStepIndex + 1)!.id
+                        )
+                      }
+                    >
+                      {timers.find(t => t.stepNumber === activeStepIndex + 1)?.isRunning ? 'Pause' : 'Resume'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full text-xs h-7 px-2"
+                      onClick={() =>
+                        addOneMinute(
+                          timers.find(t => t.stepNumber === activeStepIndex + 1)!.id
+                        )
+                      }
+                    >
+                      +1m
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-clay text-white gap-2 text-xs h-9 px-5 shadow-md hover:bg-clay/90"
+                    onClick={() =>
+                      startOrAddTimer(
+                        `Step ${activeStepIndex + 1}: ${recipe.steps[activeStepIndex]?.instruction.slice(0, 32)}…`,
+                        recipe.steps[activeStepIndex]?.durationMinutes || 5,
+                        activeStepIndex + 1
+                      )
+                    }
+                  >
+                    <Timer size={15} /> Start {recipe.steps[activeStepIndex]?.durationMinutes}m Step Timer
+                  </Button>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center justify-center gap-4 mt-10">
               <Button
                 variant="outline"
@@ -571,7 +1092,7 @@ function RecipeDetail() {
                     toast.success('Finished cooking! Enjoy your meal.');
                   }}
                 >
-                  Complete Recipe ♡
+                  <CheckCircle2 size={16} className="mr-2 inline" /> Complete Recipe
                 </Button>
               )}
             </div>
@@ -749,9 +1270,9 @@ function RecipeDetail() {
             <Button
               variant="destructive"
               onClick={() => {
+                setDeleteOpen(false);
                 deleteRecipe(id);
                 navigate({ to: '/' });
-                toast.success('Recipe removed from your kitchen.');
               }}
             >
               Confirm Delete
@@ -759,6 +1280,164 @@ function RecipeDetail() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* INGREDIENT SUBSTITUTION MODAL */}
+      <Dialog open={Boolean(substitutionModalIngredient)} onOpenChange={() => setSubstitutionModalIngredient(null)}>
+        <DialogContent className="max-w-md">
+          <DialogTitle className="text-xl font-serif flex items-center gap-2">
+            <ArrowLeftRight size={18} className="text-clay" />
+            Healthy Swaps for {substitutionModalIngredient}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Select a verified culinary substitution. Ingredient quantities and nutrition macros will recalculate dynamically.
+          </DialogDescription>
+
+          <div className="space-y-3 mt-3">
+            {ingredientSubstitutions
+              .filter(s => s.originalIngredient.toLowerCase() === substitutionModalIngredient?.toLowerCase())
+              .map(sub => {
+                const isCurrent = activeSwaps[sub.originalIngredient]?.substituteName === sub.substituteName;
+                return (
+                  <div
+                    key={sub.substituteName}
+                    className={`p-3.5 rounded-xl border text-xs transition-all flex flex-col gap-2 ${
+                      isCurrent ? 'border-clay bg-peach/40' : 'border-border bg-card hover:border-border/80'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <strong className="text-sm font-semibold text-foreground">{sub.substituteName}</strong>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-primary">
+                        Ratio: {sub.conversionRatio}:1
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      {sub.healthBenefit}
+                    </p>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50 text-[10px]">
+                      <div className="flex items-center gap-2 tabular font-medium">
+                        <span className={sub.calorieDelta < 0 ? 'text-sage' : sub.calorieDelta > 0 ? 'text-clay' : 'text-muted-foreground'}>
+                          {sub.calorieDelta > 0 ? `+${sub.calorieDelta}` : sub.calorieDelta} kcal
+                        </span>
+                        <span>·</span>
+                        <span className={sub.proteinDelta > 0 ? 'text-sage' : 'text-muted-foreground'}>
+                          {sub.proteinDelta > 0 ? `+${sub.proteinDelta}g` : `${sub.proteinDelta}g`} protein
+                        </span>
+                        <span>·</span>
+                        <span className={sub.carbsDelta < 0 ? 'text-sage' : 'text-muted-foreground'}>
+                          {sub.carbsDelta > 0 ? `+${sub.carbsDelta}g` : `${sub.carbsDelta}g`} carbs
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        className={`rounded-full h-7 text-xs ${isCurrent ? 'bg-secondary text-foreground' : 'bg-clay text-white'}`}
+                        onClick={() => {
+                          if (isCurrent) {
+                            setActiveSwaps(prev => {
+                              const next = { ...prev };
+                              delete next[sub.originalIngredient];
+                              return next;
+                            });
+                            toast.info(`Restored original ${sub.originalIngredient}`);
+                          } else {
+                            setActiveSwaps(prev => ({
+                              ...prev,
+                              [sub.originalIngredient]: sub,
+                            }));
+                            toast.success(`Swapped ${sub.originalIngredient} with ${sub.substituteName}`);
+                          }
+                          setSubstitutionModalIngredient(null);
+                        }}
+                      >
+                        {isCurrent ? 'Remove Swap' : 'Apply Swap'}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* FLOATING KITCHEN TIMERS HUD */}
+      {timers.length > 0 && (
+        <aside
+          aria-label="Active Kitchen Timers"
+          className="fixed bottom-5 right-5 z-50 bg-card/95 backdrop-blur-md border border-border shadow-2xl rounded-2xl p-3.5 max-w-sm w-full animate-in slide-in-from-bottom-5"
+        >
+          <div className="flex items-center justify-between border-b border-border/70 pb-2 mb-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-serif font-bold text-foreground">
+              <Timer size={15} className="text-clay animate-pulse" />
+              <span>Kitchen Multi-Timers ({timers.length})</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-[11px] text-muted-foreground hover:text-foreground px-2"
+              onClick={() => setTimers([])}
+            >
+              Clear All
+            </Button>
+          </div>
+
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {timers.map(timer => {
+              const isDone = timer.remainingSeconds === 0;
+              return (
+                <div
+                  key={timer.id}
+                  className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 transition-all ${
+                    isDone
+                      ? 'bg-clay/15 border-clay text-clay animate-bounce'
+                      : timer.isRunning
+                      ? 'bg-secondary/60 border-sage/40'
+                      : 'bg-muted/40 border-border text-muted-foreground'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold block truncate text-[11px] text-foreground">
+                      {timer.label}
+                    </span>
+                    <span className="tabular font-bold text-sm text-foreground">
+                      {isDone ? '🎉 Ready!' : formatTimerDisplay(timer.remainingSeconds)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {!isDone && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 rounded-full"
+                        onClick={() => togglePauseTimer(timer.id)}
+                        title={timer.isRunning ? 'Pause timer' : 'Resume timer'}
+                      >
+                        {timer.isRunning ? <Pause size={13} /> : <Play size={13} />}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[10px] px-1.5 rounded-full"
+                      onClick={() => addOneMinute(timer.id)}
+                      title="Add 1 minute"
+                    >
+                      +1m
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 rounded-full hover:text-destructive"
+                      onClick={() => removeTimer(timer.id)}
+                      title="Dismiss timer"
+                    >
+                      <X size={13} />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+      )}
     </div>
   );
 }

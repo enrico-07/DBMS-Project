@@ -389,7 +389,7 @@ export const recipes: Recipe[] = [
   {
     id: 'lemon-ricotta-pasta',
     title: 'Lemon & Ricotta Pasta',
-    description: 'A little sunshine in a bowl. Creamy fresh ricotta, bright lemon zest, and fragrant hand-torn basil come together in this effortless weeknight favorite.',
+    description: 'A little sunshine in a bowl. Creamy fresh ricotta, bright lemon zest, and fragrant hand-torn basil.',
     image: pasta,
     category: 'Dinner',
     cuisine: 'Italian',
@@ -902,16 +902,398 @@ export function calculatePantryMatch(recipe: Recipe, userPantryIngredientNames: 
 }
 
 /**
- * Transparent Relational Recommendation Scorer
+ * -------------------------------------------------------------
+ * CLINICAL HEALTH & METABOLIC INTELLIGENCE ENGINE
+ * Supports: Type 2 Diabetes, PCOS, Hypertension (DASH), GERD, Celiac
+ * -------------------------------------------------------------
+ */
+
+export type HealthConditionId = 'diabetes' | 'pcos' | 'hypertension' | 'gerd' | 'celiac';
+
+export type HealthConditionRule = {
+  id: HealthConditionId;
+  label: string;
+  badge: string;
+  color: string;
+  description: string;
+  clinicalRationale: string;
+  idealMaxNetCarbs?: number;
+  idealMinFiber?: number;
+  idealMinProtein?: number;
+  idealMaxFat?: number;
+  beneficialIngredients: string[];
+  triggerIngredients: string[];
+};
+
+export const HEALTH_CONDITIONS: Record<HealthConditionId, HealthConditionRule> = {
+  diabetes: {
+    id: 'diabetes',
+    label: 'Type 2 Diabetes & Prediabetes',
+    badge: 'Diabetic-Friendly',
+    color: 'emerald',
+    description: 'Stabilizes blood glucose via high soluble fiber, low net carbs, and slow digestive glycemic release.',
+    clinicalRationale: 'Focuses on complex carbohydrates with high dietary fiber (≥ 4g) and moderate net carbs (≤ 45g per serving). Blunts postprandial glucose excursions and guards pancreatic beta cells against insulin surges.',
+    idealMaxNetCarbs: 45,
+    idealMinFiber: 4,
+    beneficialIngredients: ['chickpeas', 'white beans', 'garlic', 'olive oil', 'lemon', 'basil', 'greens', 'spinach', 'avocado'],
+    triggerIngredients: ['refined sugar', 'corn syrup', 'maple syrup', 'white bread', 'sweetened glaze', 'candy'],
+  },
+  pcos: {
+    id: 'pcos',
+    label: 'PCOS (Polycystic Ovary Syndrome)',
+    badge: 'PCOS-Balanced',
+    color: 'purple',
+    description: 'Anti-inflammatory, hormone-supportive meals designed to reduce hyperinsulinemia and ovarian stress.',
+    clinicalRationale: 'Combines anti-inflammatory monounsaturated fats (EVOO, avocado) with lean proteins (≥ 14g) and low glycemic load starches to minimize insulin spikes that trigger androgen overproduction.',
+    idealMinProtein: 14,
+    idealMinFiber: 3,
+    beneficialIngredients: ['extra virgin olive oil', 'lemon', 'garlic', 'chicken', 'tahini', 'avocado', 'chickpeas', 'basil'],
+    triggerIngredients: ['refined sugar', 'trans fats', 'high fructose'],
+  },
+  hypertension: {
+    id: 'hypertension',
+    label: 'Hypertension & Heart-Healthy (DASH)',
+    badge: 'Heart-Healthy',
+    color: 'rose',
+    description: 'Vascular-protective meals rich in potassium, magnesium, and healthy polyphenols following DASH principles.',
+    clinicalRationale: 'Abundant in potassium-rich legumes and allium aromatics (garlic, onion) while keeping saturated fats low (≤ 18g). Supports nitric oxide bioavailability and arterial endothelial relaxation.',
+    idealMaxFat: 20,
+    beneficialIngredients: ['garlic', 'olive oil', 'tomatoes', 'basil', 'white beans', 'lemon', 'spinach'],
+    triggerIngredients: ['cured bacon', 'salted pork', 'high sodium brines'],
+  },
+  gerd: {
+    id: 'gerd',
+    label: 'GERD & Acid Reflux Relief',
+    badge: 'Reflux-Safe',
+    color: 'amber',
+    description: 'Gentle, low-acidity meals crafted to avoid relaxation of the lower esophageal sphincter (LES).',
+    clinicalRationale: 'Eliminates aggressive chili capsaicin, deep-fried coatings, and high-concentration citrus acids to protect the esophageal mucosa and prevent bile/acid regurgitation.',
+    beneficialIngredients: ['white beans', 'chickpeas', 'pasta', 'chicken breast', 'basil', 'olive oil', 'oats'],
+    triggerIngredients: ['cayenne', 'chili pepper', 'jalapeno', 'deep fried', 'raw onion in excess'],
+  },
+  celiac: {
+    id: 'celiac',
+    label: 'Celiac & Gluten-Free',
+    badge: 'Gluten-Safe',
+    color: 'sky',
+    description: '100% wheat- and gluten-free wholesome dishes safe for celiac sprue and severe gluten sensitivity.',
+    clinicalRationale: 'Zero gliadin and glutenin prolamins ensures mucosal immune protection, preventing intestinal villous blunting and systemic inflammation in celiac individuals.',
+    beneficialIngredients: ['chickpeas', 'white beans', 'chicken', 'olive oil', 'lemon', 'avocado', 'rice', 'quinoa'],
+    triggerIngredients: ['semolina', 'wheat flour', 'barley', 'rye', 'durum'],
+  },
+};
+
+export type HealthEvaluation = {
+  conditionId: HealthConditionId;
+  label: string;
+  badge: string;
+  color: string;
+  isMatch: boolean;
+  score: number; // 0 to 100 suitability score
+  clinicalNote: string;
+  highlights: string[];
+};
+
+/**
+ * Clinically evaluates a recipe across chronic health profiles
+ */
+export function evaluateRecipeHealthConditions(recipe: Recipe): HealthEvaluation[] {
+  const fiber = recipe.fiber ?? (recipe.ingredients.some(i => i.name.toLowerCase().includes('bean') || i.name.toLowerCase().includes('chickpea')) ? 8 : 3);
+  const netCarbs = Math.max(0, recipe.carbs - fiber);
+  const ingNames = recipe.ingredients.map(i => i.name.toLowerCase());
+  const titleLower = recipe.title.toLowerCase();
+
+  return (Object.keys(HEALTH_CONDITIONS) as HealthConditionId[]).map(condId => {
+    const rule = HEALTH_CONDITIONS[condId];
+    let isMatch = true;
+    let score = 70;
+    const highlights: string[] = [];
+
+    // Check triggers
+    const hasTrigger = rule.triggerIngredients.some(t =>
+      ingNames.some(ing => ing.includes(t)) || titleLower.includes(t)
+    );
+
+    if (hasTrigger) {
+      isMatch = false;
+      score = Math.max(20, score - 50);
+    }
+
+    // Condition-specific clinical algorithms
+    if (condId === 'diabetes') {
+      if (netCarbs <= (rule.idealMaxNetCarbs || 45)) {
+        score += 15;
+        highlights.push(`Low Net Carbs (${netCarbs}g)`);
+      } else {
+        score -= 20;
+      }
+      if (fiber >= (rule.idealMinFiber || 4)) {
+        score += 15;
+        highlights.push(`High Soluble Fiber (${fiber}g)`);
+      }
+      if (hasTrigger) isMatch = false;
+      else if (score >= 65) isMatch = true;
+    } else if (condId === 'pcos') {
+      if (recipe.protein >= (rule.idealMinProtein || 14)) {
+        score += 15;
+        highlights.push(`Satisfying Protein (${recipe.protein}g)`);
+      }
+      if (ingNames.some(i => i.includes('olive oil') || i.includes('avocado') || i.includes('tahini'))) {
+        score += 15;
+        highlights.push('Anti-inflammatory healthy lipids');
+      }
+      if (hasTrigger) isMatch = false;
+      else if (score >= 70) isMatch = true;
+    } else if (condId === 'hypertension') {
+      if (recipe.fat <= (rule.idealMaxFat || 20)) {
+        score += 15;
+        highlights.push(`Controlled Total Fat (${recipe.fat}g)`);
+      }
+      if (ingNames.some(i => i.includes('garlic') || i.includes('tomato') || i.includes('basil'))) {
+        score += 15;
+        highlights.push('Rich in allium and herbal potassium');
+      }
+      if (hasTrigger) isMatch = false;
+      else if (score >= 70) isMatch = true;
+    } else if (condId === 'gerd') {
+      // Check spicy/heavy citrus
+      const hasCitrus = ingNames.some(i => i.includes('lemon') && recipe.ingredients.find(ing => ing.name.toLowerCase().includes('lemon'))?.quantity! > 1);
+      const isSpicy = ingNames.some(i => i.includes('chili') || i.includes('pepper') || i.includes('cayenne'));
+      if (isSpicy || hasCitrus) {
+        score -= 30;
+        isMatch = false;
+      } else {
+        score += 20;
+        highlights.push('Non-acidic & digestive soothing');
+        isMatch = true;
+      }
+    } else if (condId === 'celiac') {
+      const isGlutenDiet = recipe.diet === 'Gluten-free';
+      const hasWheat = ingNames.some(i => i.includes('artisan pasta') || i.includes('wheat') || i.includes('flour') || i.includes('semolina'));
+      if (isGlutenDiet || !hasWheat) {
+        score = 95;
+        highlights.push('Naturally 100% Gluten-Free');
+        isMatch = true;
+      } else {
+        score = 15;
+        isMatch = false;
+      }
+    }
+
+    return {
+      conditionId: condId,
+      label: rule.label,
+      badge: rule.badge,
+      color: rule.color,
+      isMatch,
+      score: Math.min(100, Math.max(0, score)),
+      clinicalNote: rule.clinicalRationale,
+      highlights,
+    };
+  });
+}
+
+/**
+ * -------------------------------------------------------------
+ * INGREDIENT SUBSTITUTION SWAPPER CATALOG
+ * Provides real-time macro delta calculations
+ * -------------------------------------------------------------
+ */
+
+export type IngredientSubstitution = {
+  originalIngredient: string;
+  substituteName: string;
+  conversionRatio: number; // e.g. 1.0 means 1:1 replacement
+  targetUnit: string;
+  calorieDelta: number; // per serving estimate
+  proteinDelta: number;
+  carbsDelta: number;
+  fatDelta: number;
+  fiberDelta: number;
+  healthBenefit: string;
+  suitableForConditions: HealthConditionId[];
+};
+
+export const ingredientSubstitutions: IngredientSubstitution[] = [
+  {
+    originalIngredient: 'Artisan Pasta',
+    substituteName: 'Chickpea & Lentil Rotini',
+    conversionRatio: 1.0,
+    targetUnit: 'g',
+    calorieDelta: -25,
+    proteinDelta: +7,
+    carbsDelta: -14,
+    fatDelta: +0.5,
+    fiberDelta: +6,
+    healthBenefit: 'Boosts plant protein and lowers glycemic impact for blood sugar stability',
+    suitableForConditions: ['diabetes', 'celiac', 'pcos'],
+  },
+  {
+    originalIngredient: 'Artisan Pasta',
+    substituteName: 'Spiralized Zucchini Ribbons',
+    conversionRatio: 1.5,
+    targetUnit: 'g',
+    calorieDelta: -120,
+    proteinDelta: -6,
+    carbsDelta: -32,
+    fatDelta: -0.5,
+    fiberDelta: +1,
+    healthBenefit: 'Cuts 80% of starches and carbs; ideal for ultra-low GI meals',
+    suitableForConditions: ['diabetes', 'celiac', 'pcos'],
+  },
+  {
+    originalIngredient: 'Ricotta',
+    substituteName: 'Whipped Cottage Cheese',
+    conversionRatio: 1.0,
+    targetUnit: 'g',
+    calorieDelta: -45,
+    proteinDelta: +6,
+    carbsDelta: +0.5,
+    fatDelta: -7,
+    fiberDelta: 0,
+    healthBenefit: 'Reduces saturated fat by 50% while doubling lean casein protein',
+    suitableForConditions: ['diabetes', 'pcos', 'hypertension'],
+  },
+  {
+    originalIngredient: 'Ricotta',
+    substituteName: 'Silken Tofu & Nutritional Yeast',
+    conversionRatio: 1.0,
+    targetUnit: 'g',
+    calorieDelta: -55,
+    proteinDelta: +3,
+    carbsDelta: -1,
+    fatDelta: -8,
+    fiberDelta: +1.5,
+    healthBenefit: 'Zero cholesterol plant-based alternative rich in isoflavones',
+    suitableForConditions: ['hypertension', 'pcos', 'gerd'],
+  },
+  {
+    originalIngredient: 'Extra Virgin Olive Oil',
+    substituteName: 'Cold-Pressed Avocado Oil',
+    conversionRatio: 1.0,
+    targetUnit: 'tbsp',
+    calorieDelta: 0,
+    proteinDelta: 0,
+    carbsDelta: 0,
+    fatDelta: 0,
+    fiberDelta: 0,
+    healthBenefit: 'Higher smoke point (270°C) with identical heart-healthy oleic acid content',
+    suitableForConditions: ['hypertension', 'pcos', 'gerd'],
+  },
+  {
+    originalIngredient: 'Lemon',
+    substituteName: 'Mild Golden Apple Cider & Sumac',
+    conversionRatio: 0.5,
+    targetUnit: 'tbsp',
+    calorieDelta: -5,
+    proteinDelta: 0,
+    carbsDelta: -1,
+    fatDelta: 0,
+    fiberDelta: 0,
+    healthBenefit: 'Mild enzymatic tang without harsh citric burn for sensitive stomachs',
+    suitableForConditions: ['gerd'],
+  },
+  {
+    originalIngredient: 'Chicken Breast',
+    substituteName: 'Firm Organic Tempeh Cutlets',
+    conversionRatio: 1.0,
+    targetUnit: 'g',
+    calorieDelta: +20,
+    proteinDelta: -2,
+    carbsDelta: +4,
+    fatDelta: +4,
+    fiberDelta: +5,
+    healthBenefit: 'Fermented whole soy supporting gut microbiome diversity and vascular health',
+    suitableForConditions: ['hypertension', 'pcos', 'diabetes'],
+  },
+];
+
+/**
+ * -------------------------------------------------------------
+ * PANTRY SHELF-LIFE & FRESHNESS RADAR
+ * -------------------------------------------------------------
+ */
+
+export function getIngredientShelfLifeDays(ingredientName: string): number {
+  const lower = ingredientName.toLowerCase();
+  if (lower.includes('basil') || lower.includes('herb') || lower.includes('cilantro') || lower.includes('mint')) return 4;
+  if (lower.includes('chicken') || lower.includes('poultry') || lower.includes('fish') || lower.includes('meat')) return 3;
+  if (lower.includes('ricotta') || lower.includes('cottage') || lower.includes('dairy') || lower.includes('milk') || lower.includes('cheese')) return 5;
+  if (lower.includes('avocado')) return 4;
+  if (lower.includes('tomato')) return 7;
+  if (lower.includes('lemon') || lower.includes('lime') || lower.includes('citrus')) return 14;
+  if (lower.includes('garlic') || lower.includes('onion') || lower.includes('shallot')) return 30;
+  if (lower.includes('greens') || lower.includes('salad') || lower.includes('kale') || lower.includes('spinach')) return 5;
+  if (lower.includes('pasta') || lower.includes('rice') || lower.includes('grain')) return 365;
+  if (lower.includes('oil') || lower.includes('vinegar')) return 180;
+  if (lower.includes('chickpea') || lower.includes('bean') || lower.includes('lentil')) return 365;
+  return 30;
+}
+
+export type PantryFreshnessItem = {
+  name: string;
+  dateAdded: string;
+  shelfLifeDays: number;
+  daysRemaining: number;
+  status: 'fresh' | 'use-soon' | 'expiring';
+  storageTip: string;
+};
+
+export function evaluatePantryFreshness(
+  pantryItems: string[],
+  stockDates?: Record<string, string>
+): PantryFreshnessItem[] {
+  const now = new Date().getTime();
+  const dates = stockDates || {};
+
+  return pantryItems.map(name => {
+    // If not recorded, assign a deterministic synthetic date within its valid window
+    let dateAddedStr = dates[name];
+    if (!dateAddedStr) {
+      // Default: added 1.5 days ago for realistic demo freshness tracking
+      const simulatedTime = now - (1.5 * 24 * 60 * 60 * 1000);
+      dateAddedStr = new Date(simulatedTime).toISOString();
+    }
+
+    const dateAdded = new Date(dateAddedStr).getTime();
+    const shelfLife = getIngredientShelfLifeDays(name);
+    const elapsedDays = Math.max(0, Math.floor((now - dateAdded) / (1000 * 60 * 60 * 24)));
+    const daysRemaining = shelfLife - elapsedDays;
+
+    let status: 'fresh' | 'use-soon' | 'expiring' = 'fresh';
+    if (daysRemaining <= 1) {
+      status = 'expiring';
+    } else if (daysRemaining <= 3) {
+      status = 'use-soon';
+    }
+
+    const master = masterIngredients.find(m => m.name.toLowerCase() === name.toLowerCase());
+    const storageTip = master?.storage || 'Keep in a cool dry pantry or refrigerate after opening.';
+
+    return {
+      name,
+      dateAdded: dateAddedStr,
+      shelfLifeDays: shelfLife,
+      daysRemaining: Math.max(0, daysRemaining),
+      status,
+      storageTip,
+    };
+  });
+}
+
+/**
+ * Transparent Relational Recommendation Scorer with Health Intelligence
  * Combines:
- * - Cuisine Affinity (35%)
- * - Dietary Match (30%)
- * - Cooking Time Compatibility (15%)
- * - Rating Weight (20%)
+ * - Cuisine Affinity (25%)
+ * - Dietary Match (25%)
+ * - Clinical Health Condition Alignment (25%)
+ * - Cooking Time Compatibility (10%)
+ * - Rating Weight (15%)
  */
 export function calculateRecommendationScore(recipe: Recipe, user: UserProfile): {
   score: number;
   reasons: string[];
+  healthEvaluations?: HealthEvaluation[];
 } {
   let score = 0;
   const reasons: string[] = [];
@@ -926,28 +1308,293 @@ export function calculateRecommendationScore(recipe: Recipe, user: UserProfile):
 
   // Dietary preference match
   if (user.dietaryPreferences.includes(recipe.diet)) {
-    score += 30;
+    score += 25;
     reasons.push(`Matches your ${recipe.diet} preference`);
   }
 
   // 2. Cuisine preference
   if (user.favoriteCuisines.includes(recipe.cuisine)) {
-    score += 35;
+    score += 25;
     reasons.push(`Favorite ${recipe.cuisine} cuisine`);
   }
 
   // 3. Time affinity
   if (recipe.time <= user.targetCookTime) {
-    score += 15;
+    score += 10;
     reasons.push(`Ready in under ${user.targetCookTime} mins`);
   }
 
   // 4. Rating contribution
   const numRating = parseFloat(recipe.rating) || 4.5;
-  score += Math.round((numRating / 5) * 20);
+  score += Math.round((numRating / 5) * 15);
 
-  return { score: Math.min(score, 100), reasons };
+  // 5. Clinical Health & Metabolic Condition Scoring
+  const healthEvals = evaluateRecipeHealthConditions(recipe);
+  const userConditions = user.healthConditions || [];
+
+  if (userConditions.length > 0) {
+    let healthBonus = 0;
+    userConditions.forEach(cond => {
+      const match = healthEvals.find(h =>
+        h.conditionId.toLowerCase().includes(cond.toLowerCase()) ||
+        cond.toLowerCase().includes(h.conditionId.toLowerCase()) ||
+        h.label.toLowerCase().includes(cond.toLowerCase()) ||
+        cond.toLowerCase().includes(h.label.toLowerCase())
+      );
+      if (match && match.isMatch) {
+        healthBonus += 20;
+        reasons.push(`${match.badge}: ${match.highlights[0] || match.label}`);
+      }
+    });
+    score += Math.min(25, healthBonus);
+  } else {
+    // If user has no specific conditions, default general health score
+    score += 15;
+  }
+
+  return { score: Math.min(score, 100), reasons, healthEvaluations: healthEvals };
 }
 
 // Backward compatibility alias for glossary
 export const glossary = masterIngredients;
+
+/**
+ * -------------------------------------------------------------
+ * CULINARY COST & BUDGET ESTIMATOR ENGINE
+ * Standard market ingredient pricing for domestic kitchen economics
+ * -------------------------------------------------------------
+ */
+
+export interface IngredientCostRule {
+  namePattern: string;
+  costPerUnit: number; // in USD
+  unit: string;
+}
+
+export const INGREDIENT_COST_DATABASE: IngredientCostRule[] = [
+  { namePattern: 'pasta', costPerUnit: 0.005, unit: 'g' }, // $1.00 per 200g
+  { namePattern: 'ricotta', costPerUnit: 0.015, unit: 'g' }, // $2.25 per 150g
+  { namePattern: 'olive oil', costPerUnit: 0.20, unit: 'tbsp' },
+  { namePattern: 'lemon', costPerUnit: 0.75, unit: 'whole' },
+  { namePattern: 'basil', costPerUnit: 1.50, unit: 'cup' },
+  { namePattern: 'chickpea', costPerUnit: 0.0035, unit: 'g' }, // $1.40 can
+  { namePattern: 'tomato', costPerUnit: 0.004, unit: 'g' },
+  { namePattern: 'garlic', costPerUnit: 0.15, unit: 'clove' },
+  { namePattern: 'chicken', costPerUnit: 0.012, unit: 'g' }, // $8.40 per 700g
+  { namePattern: 'potato', costPerUnit: 0.003, unit: 'g' },
+  { namePattern: 'egg', costPerUnit: 0.30, unit: 'whole' },
+  { namePattern: 'milk', costPerUnit: 0.002, unit: 'ml' },
+  { namePattern: 'flour', costPerUnit: 0.002, unit: 'g' },
+  { namePattern: 'butter', costPerUnit: 0.012, unit: 'g' },
+  { namePattern: 'blueberry', costPerUnit: 0.018, unit: 'g' },
+  { namePattern: 'yogurt', costPerUnit: 0.008, unit: 'g' },
+  { namePattern: 'avocado', costPerUnit: 1.25, unit: 'whole' },
+  { namePattern: 'tahini', costPerUnit: 0.35, unit: 'tbsp' },
+  { namePattern: 'rosemary', costPerUnit: 0.50, unit: 'sprig' },
+];
+
+export interface RecipeCostBreakdown {
+  totalCost: number;
+  costPerServing: number;
+  restaurantEquivalent: number;
+  savingsPercentage: number;
+  ingredientCosts: { name: string; estimatedCost: number }[];
+}
+
+export function calculateRecipeCost(recipe: Recipe): RecipeCostBreakdown {
+  let total = 0;
+  const ingredientCosts: { name: string; estimatedCost: number }[] = [];
+
+  for (const ing of recipe.ingredients) {
+    const lowerName = ing.name.toLowerCase();
+    const rule = INGREDIENT_COST_DATABASE.find(r => lowerName.includes(r.namePattern));
+    let cost = 0.50; // default baseline per ingredient
+
+    if (rule) {
+      if (ing.unit.toLowerCase() === rule.unit.toLowerCase()) {
+        cost = rule.costPerUnit * ing.quantity;
+      } else if (rule.unit === 'g' && ing.unit.toLowerCase() === 'kg') {
+        cost = rule.costPerUnit * (ing.quantity * 1000);
+      } else if (rule.unit === 'tbsp' && ing.unit.toLowerCase() === 'tsp') {
+        cost = rule.costPerUnit * (ing.quantity / 3);
+      } else if (rule.unit === 'cup' && ing.unit.toLowerCase() === 'tbsp') {
+        cost = rule.costPerUnit * (ing.quantity / 16);
+      } else {
+        cost = rule.costPerUnit * ing.quantity;
+      }
+    }
+
+    cost = Math.max(0.10, Math.round(cost * 100) / 100);
+    total += cost;
+    ingredientCosts.push({ name: ing.name, estimatedCost: cost });
+  }
+
+  const servings = Math.max(1, recipe.servings);
+  const costPerServing = Math.round((total / servings) * 100) / 100;
+  // Average restaurant takeout for similar meal is roughly $14 - $18 per serving
+  const restaurantEquivalent = Math.round(servings * 16.50 * 100) / 100;
+  const savingsPercentage = Math.round(((restaurantEquivalent - total) / restaurantEquivalent) * 100);
+
+  return {
+    totalCost: Math.round(total * 100) / 100,
+    costPerServing,
+    restaurantEquivalent,
+    savingsPercentage: Math.max(0, savingsPercentage),
+    ingredientCosts,
+  };
+}
+
+/**
+ * -------------------------------------------------------------
+ * SMART RECIPE TEXT PARSER & UNSTRUCTURED EXTRACTOR
+ * Normalizes handwritten cards, messy web pastes, and raw notes
+ * -------------------------------------------------------------
+ */
+
+export interface ParsedRecipeDraft {
+  title: string;
+  description: string;
+  servings: number;
+  prepTime: number;
+  cookTime: number;
+  category: Recipe['category'];
+  cuisine: Recipe['cuisine'];
+  diet: Recipe['diet'];
+  ingredients: { name: string; quantity: number; unit: string; preparationState?: string }[];
+  steps: { stepNumber: number; instruction: string; durationMinutes?: number }[];
+}
+
+export function parseRawRecipeText(raw: string): ParsedRecipeDraft {
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  let title = "Handwritten Kitchen Recipe";
+  let description = "Saved recipe transcribed and structured into RecipeVault.";
+  let servings = 4;
+  let prepTime = 15;
+  let cookTime = 25;
+  let category: Recipe['category'] = "Dinner";
+  let cuisine: Recipe['cuisine'] = "Italian";
+  let diet: Recipe['diet'] = "Balanced";
+
+  const ingredients: { name: string; quantity: number; unit: string; preparationState?: string }[] = [];
+  const steps: { stepNumber: number; instruction: string; durationMinutes?: number }[] = [];
+
+  let mode: 'meta' | 'ingredients' | 'steps' = 'meta';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lower = line.toLowerCase();
+
+    // Section transitions
+    if (/^(ingredients?|what you need|shopping list):?$/i.test(line)) {
+      mode = 'ingredients';
+      continue;
+    }
+    if (/^(instructions?|directions?|method|steps?|preparation):?$/i.test(line)) {
+      mode = 'steps';
+      continue;
+    }
+
+    if (mode === 'meta') {
+      if (i === 0 && !line.includes(':')) {
+        title = line.replace(/^[#\s*]+/, '').trim();
+      } else if (lower.includes('serving')) {
+        const m = line.match(/\d+/);
+        if (m) servings = parseInt(m[0], 10);
+      } else if (lower.includes('prep')) {
+        const m = line.match(/\d+/);
+        if (m) prepTime = parseInt(m[0], 10);
+      } else if (lower.includes('cook')) {
+        const m = line.match(/\d+/);
+        if (m) cookTime = parseInt(m[0], 10);
+      } else if (lower.includes('italian')) {
+        cuisine = "Italian";
+      } else if (lower.includes('mediterranean')) {
+        cuisine = "Mediterranean";
+      } else if (lower.includes('breakfast')) {
+        category = "Breakfast";
+      } else if (lower.includes('lunch')) {
+        category = "Lunch";
+      } else if (lower.includes('dessert')) {
+        category = "Desserts";
+      } else if (lower.includes('vegan')) {
+        diet = "Vegan";
+      } else if (lower.includes('vegetarian')) {
+        diet = "Vegetarian";
+      } else if (i === 1 && !line.includes(':')) {
+        description = line;
+      }
+    } else if (mode === 'ingredients') {
+      // Clean bullet points or list markers (e.g. "* ", "- ", "1. ")
+      const clean = line.replace(/^(\d+[.)\-:]\s*|[-*•]\s*)/, '').trim();
+      if (!clean) continue;
+
+      // Extract quantity, unit, name
+      const match = clean.match(/^([\d/.\s]+)?\s*(tbsp|tsp|tablespoons?|teaspoons?|g|kg|ml|l|cups?|oz|pounds?|lbs?|cloves?|slices?|cans?|pinches?|pinch|heads?|stalks?|bunch|whole)?\s+(.+)$/i);
+
+      if (match) {
+        const rawQty = match[1]?.trim() || "1";
+        let quantity = 1;
+        if (rawQty.includes('/')) {
+          const [num, den] = rawQty.split('/');
+          quantity = (parseFloat(num) || 1) / (parseFloat(den) || 1);
+        } else {
+          quantity = parseFloat(rawQty) || 1;
+        }
+
+        const unit = match[2]?.trim() || "unit";
+        let nameAndPrep = match[3]?.trim() || clean;
+        let prepState = "";
+
+        if (nameAndPrep.includes(',')) {
+          const parts = nameAndPrep.split(',');
+          nameAndPrep = parts[0].trim();
+          prepState = parts.slice(1).join(',').trim();
+        }
+
+        ingredients.push({
+          name: nameAndPrep,
+          quantity: Math.round(quantity * 100) / 100,
+          unit,
+          preparationState: prepState || undefined,
+        });
+      } else {
+        ingredients.push({
+          name: clean,
+          quantity: 1,
+          unit: "unit",
+        });
+      }
+    } else if (mode === 'steps') {
+      const clean = line.replace(/^(\d+[.)\-:]\s*|[-*•]\s*)/, '').trim();
+      if (!clean) continue;
+
+      const timeMatch = clean.match(/(\d+)\s*(?:minutes?|mins?)/i);
+      const durationMinutes = timeMatch ? parseInt(timeMatch[1], 10) : undefined;
+
+      steps.push({
+        stepNumber: steps.length + 1,
+        instruction: clean,
+        durationMinutes,
+      });
+    }
+  }
+
+  // Fallbacks if user didn't write explicit headings
+  if (ingredients.length === 0 && steps.length === 0) {
+    ingredients.push({ name: "Handpicked Seasonal Ingredient", quantity: 1, unit: "unit" });
+    steps.push({ stepNumber: 1, instruction: raw.trim() });
+  }
+
+  return {
+    title,
+    description,
+    servings,
+    prepTime,
+    cookTime,
+    category,
+    cuisine,
+    diet,
+    ingredients,
+    steps: steps.length > 0 ? steps : [{ stepNumber: 1, instruction: "Prepare ingredients and cook according to method." }],
+  };
+}

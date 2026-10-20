@@ -1,16 +1,26 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+
+interface ClickBurst {
+  id: number;
+}
 
 export function WoodenLadleCursor() {
+  const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isPressing, setIsPressing] = useState(false);
   const [isHoveringClickable, setIsHoveringClickable] = useState(false);
+  const [bursts, setBursts] = useState<ClickBurst[]>([]);
 
   const posRef = useRef({ x: -100, y: -100 });
   const cursorNodeRef = useRef<HTMLDivElement | null>(null);
+  const isVisibleRef = useRef(false);
 
   useEffect(() => {
-    // Only enable if device supports hover/fine pointer (ignore touch mobile screens)
     if (typeof window === 'undefined') return;
+    setMounted(true);
+
+    // Only enable if device supports hover/fine pointer (ignore touch mobile screens)
     const mediaQuery = window.matchMedia('(pointer: fine)');
     if (!mediaQuery.matches) return;
 
@@ -24,36 +34,65 @@ export function WoodenLadleCursor() {
 
     const handleMouseMove = (e: MouseEvent) => {
       posRef.current = { x: e.clientX, y: e.clientY };
-      if (!isVisible) setIsVisible(true);
+
+      if (!isVisibleRef.current) {
+        isVisibleRef.current = true;
+        setIsVisible(true);
+        document.documentElement.classList.add('has-ladle-cursor');
+      }
+
       if (!rAFId) {
         rAFId = requestAnimationFrame(updateCursorPosition);
       }
     };
 
-    const handleMouseDown = () => {
+    const handleMouseDown = (e: MouseEvent) => {
       setIsPressing(true);
+
+      // Trigger tactile dynamic seasoning splash / ripple
+      const burstId = Date.now();
+      setBursts(prev => [...prev.slice(-2), { id: burstId }]);
+
+      window.setTimeout(() => {
+        setBursts(prev => prev.filter(b => b.id !== burstId));
+      }, 420);
     };
 
     const handleMouseUp = () => {
       setIsPressing(false);
     };
 
-    const handleMouseLeave = () => setIsVisible(false);
+    const handleWindowBlur = () => {
+      setIsPressing(false);
+      setIsVisible(false);
+      isVisibleRef.current = false;
+      document.documentElement.classList.remove('has-ladle-cursor');
+    };
+
+    const handleMouseLeave = () => {
+      setIsVisible(false);
+      setIsPressing(false);
+      isVisibleRef.current = false;
+      document.documentElement.classList.remove('has-ladle-cursor');
+    };
+
     const handleMouseEnter = (e: MouseEvent) => {
       posRef.current = { x: e.clientX, y: e.clientY };
       if (cursorNodeRef.current) {
         cursorNodeRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
       }
+      isVisibleRef.current = true;
       setIsVisible(true);
+      document.documentElement.classList.add('has-ladle-cursor');
     };
 
     const handleOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
       const clickable = !!target.closest(
-        'a, button, [role="button"], input, select, textarea, [data-clickable], .cursor-pointer, .pantry-chip, .recipe-card, .collection-item, label, [role="radio"]'
+        'a, button, [role="button"], input, select, textarea, [data-clickable], .cursor-pointer, .pantry-chip, .recipe-card, .collection-item, label, [role="radio"], [data-close-button], [data-button], [data-action], [data-sonner-toast] button'
       );
-      setIsHoveringClickable(clickable);
+      setIsHoveringClickable(prev => (prev !== clickable ? clickable : prev));
     };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
@@ -62,6 +101,7 @@ export function WoodenLadleCursor() {
     window.addEventListener('mouseleave', handleMouseLeave);
     window.addEventListener('mouseenter', handleMouseEnter);
     window.addEventListener('mouseover', handleOver, { passive: true });
+    window.addEventListener('blur', handleWindowBlur);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
@@ -70,37 +110,54 @@ export function WoodenLadleCursor() {
       window.removeEventListener('mouseleave', handleMouseLeave);
       window.removeEventListener('mouseenter', handleMouseEnter);
       window.removeEventListener('mouseover', handleOver);
+      window.removeEventListener('blur', handleWindowBlur);
+      document.documentElement.classList.remove('has-ladle-cursor');
       if (rAFId) cancelAnimationFrame(rAFId);
     };
-  }, [isVisible]);
+  }, []);
 
-  if (!isVisible) return null;
+  // Natural Culinary Ladle Banging & Hover Physics:
+  // - Pivot at handle pommel (45px, 47px).
+  // - Scoop head center at bottom-left (13px, 14px), directly centered on the mouse coordinate.
+  // - Resting posture: 0deg.
+  // - Hovering clickable element: gentle chef windup/lift (+6.5deg, lifting ladle head -3px).
+  // - Clicking: deliberate downward scoop bang (-14deg, dipping +6px) with an elastic rebound!
+  const rotation = isPressing ? -14 : isHoveringClickable ? 6.5 : 0;
+  const headTranslateY = isPressing ? 6 : isHoveringClickable ? -3 : 0;
 
-  // Natural Reversed Culinary Ladle Banging Physics:
-  // - The user holds the handle pommel up-right (pivot at 45px 47px).
-  // - The scoop head is at bottom-left (12px 14px), directly over the target element.
-  // - Resting position: 0deg.
-  // - Hovering over a clickable button: gentle windup/lift (+6deg, lifting the head slightly).
-  // - On MouseDown (Clicking / Banging): The handle rotates COUNTER-CLOCKWISE (-15deg),
-  //   which swings the entire ladle down and forward, driving the ladle head directly down (+6px translateY, -15deg)
-  //   slamming/banging right onto the button surface with maximum natural momentum!
-  // - On MouseUp: springs smoothly back up to resting posture.
-  const rotation = isPressing ? -15 : isHoveringClickable ? 6 : 0;
-  const headTranslateY = isPressing ? 5 : isHoveringClickable ? -3 : 0;
+  if (!mounted || typeof document === 'undefined') {
+    return null;
+  }
 
-  return (
+  const cursorOverlay = (
     <div
       ref={cursorNodeRef}
       className="wooden-ladle-cursor-overlay"
       aria-hidden="true"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: 'none',
+        zIndex: 2147483647,
+      }}
     >
+      {/* Animated Expanding Flavor Ripples on Click */}
+      {bursts.map(b => (
+        <React.Fragment key={b.id}>
+          <div className="ladle-click-ripple" />
+          <div className="ladle-click-spark" style={{ '--spark-x': '-12px', '--spark-y': '-10px' } as React.CSSProperties} />
+          <div className="ladle-click-spark" style={{ '--spark-x': '14px', '--spark-y': '-8px' } as React.CSSProperties} />
+          <div className="ladle-click-spark" style={{ '--spark-x': '10px', '--spark-y': '12px' } as React.CSSProperties} />
+          <div className="ladle-click-spark" style={{ '--spark-x': '-8px', '--spark-y': '11px' } as React.CSSProperties} />
+        </React.Fragment>
+      ))}
+
       <div
         className="ladle-pivot-wrapper"
         style={{
           transform: `rotate(${rotation}deg)`,
           transformOrigin: '45px 47px',
           transition: isPressing
-            ? 'transform 70ms cubic-bezier(0.18, 0.89, 0.32, 1.28)'
+            ? 'transform 75ms cubic-bezier(0.18, 0.89, 0.32, 1.28)'
             : 'transform 190ms cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
       >
@@ -139,14 +196,9 @@ export function WoodenLadleCursor() {
               <stop offset="50%" stopColor="#FDE68A" />
               <stop offset="100%" stopColor="#D97706" />
             </linearGradient>
-
-            {/* Depth & drop shadow */}
-            <filter id="ladle-shadow" x="-20%" y="-20%" width="150%" height="150%">
-              <feDropShadow dx="1.5" dy="2.5" stdDeviation="1.8" floodColor="#1F150D" floodOpacity="0.4" />
-            </filter>
           </defs>
 
-          <g filter="url(#ladle-shadow)">
+          <g>
             {/* LONG TURNED WOODEN HANDLE */}
             {/* Anchored at (45, 47) held by hand */}
             <path
@@ -163,12 +215,12 @@ export function WoodenLadleCursor() {
             {/* Hanging lanyard hole on handle pommel */}
             <circle cx="43.5" cy="46.5" r="1.3" fill="#261205" stroke="#81461B" strokeWidth="0.5" />
 
-            {/* THE LADLE HEAD / BOWL - Bangs directly down onto the clicked button */}
+            {/* THE LADLE HEAD / BOWL - Bangs directly down onto the clicked element */}
             <g
               style={{
                 transform: `translateY(${headTranslateY}px)`,
                 transition: isPressing
-                  ? 'transform 70ms cubic-bezier(0.18, 0.89, 0.32, 1.28)'
+                  ? 'transform 75ms cubic-bezier(0.18, 0.89, 0.32, 1.28)'
                   : 'transform 190ms cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
@@ -212,25 +264,14 @@ export function WoodenLadleCursor() {
                 ry="2.4"
                 transform="rotate(-20 13.2 14)"
                 fill="#D9A441"
-                opacity="0.35"
+                opacity="0.4"
               />
             </g>
           </g>
-
-          {/* Bang / Boink Impact Shockwaves right under the ladle head when banging the button */}
-          {isPressing && (
-            <g className="boink-impact-stars" transform={`translate(12, ${14 + headTranslateY})`}>
-              {/* Expanding Ripple Ring */}
-              <circle cx="0" cy="0" r="8" stroke="#F59E0B" strokeWidth="1.5" fill="none" opacity="0.9" />
-              <circle cx="0" cy="0" r="13" stroke="#E07A2B" strokeWidth="0.8" strokeDasharray="2 3" fill="none" opacity="0.7" />
-              {/* Flavor spark impact stars */}
-              <circle cx="-6" cy="-6" r="1.6" fill="#FFE8C2" />
-              <circle cx="7" cy="-4" r="1.4" fill="#F59E0B" />
-              <circle cx="5" cy="7" r="1.5" fill="#E07A2B" />
-            </g>
-          )}
         </svg>
       </div>
     </div>
   );
+
+  return createPortal(cursorOverlay, document.body);
 }

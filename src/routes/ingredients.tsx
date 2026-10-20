@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Search, Sprout, ArrowUpRight, Check, Sparkles, ShoppingBag } from "lucide-react";
-import { masterIngredients, type IngredientMaster } from "@/lib/recipes";
+import { masterIngredients, type IngredientMaster, getIngredientShelfLifeDays } from "@/lib/recipes";
 import { EmptyState, PageHeading } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,7 +127,7 @@ function Ingredients() {
               </div>
 
               <div className="pt-3 border-t border-border flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground" suppressHydrationWarning>
                   In {recipesUsing.length} {recipesUsing.length === 1 ? "recipe" : "recipes"}
                 </span>
                 <Button
@@ -201,9 +201,14 @@ function Ingredients() {
                 </div>
 
                 <div>
-                  <strong className="text-foreground block font-semibold mb-1">
-                    Storage & Shelf Life:
-                  </strong>
+                  <div className="flex items-center justify-between mb-1">
+                    <strong className="text-foreground block font-semibold">
+                      Storage & Shelf Life:
+                    </strong>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-primary border border-border">
+                      Est. Shelf Life: ~{getIngredientShelfLifeDays(activeIngredient.name)} days
+                    </span>
+                  </div>
                   <p className="text-muted-foreground leading-relaxed">
                     {activeIngredient.storage}
                   </p>

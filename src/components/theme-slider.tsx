@@ -17,7 +17,7 @@ const THEME_OPTIONS: ThemeOption[] = [
   },
   {
     id: "sunset",
-    label: "Sunset",
+    label: "Evening",
     timeLabel: "Warm Pantry (12 PM–7 PM)",
     icon: Sunset,
   },

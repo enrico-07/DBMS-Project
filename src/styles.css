@@ -255,9 +255,16 @@
     margin: 0;
   }
 
-  /* Hide default cursor on fine-pointer devices so ONLY the single animated wooden ladle exists */
+  /* Hide default cursor only when the animated wooden ladle is active and mounted */
   @media (pointer: fine) {
-    body, html, a, button, [role="button"], input, select, textarea, .pantry-chip, .recipe-card, .collection-item, label, .cursor-pointer {
+    html.has-ladle-cursor,
+    html.has-ladle-cursor body,
+    html.has-ladle-cursor *,
+    html.has-ladle-cursor *::before,
+    html.has-ladle-cursor *::after,
+    html.has-ladle-cursor [data-sonner-toaster],
+    html.has-ladle-cursor [data-sonner-toast],
+    html.has-ladle-cursor [data-sonner-toast] * {
       cursor: none !important;
     }
   }
@@ -268,21 +275,82 @@
   }
 }
 
-/* Custom Animated Wooden Ladle Cursor Overlay */
+/* Custom Animated Wooden Ladle Cursor Overlay - highest priority system layer */
 .wooden-ladle-cursor-overlay {
   position: fixed;
   top: 0;
   left: 0;
   pointer-events: none;
-  z-index: 999999;
+  z-index: 2147483647 !important;
   margin-top: -14px;
-  margin-left: -12px;
+  margin-left: -13px;
   will-change: transform;
+  filter: drop-shadow(1.5px 2.5px 2px rgba(31, 21, 13, 0.38));
+  transition: opacity 150ms ease;
+}
+
+/* Ensure notifications stay below the ladle cursor */
+[data-sonner-toaster] {
+  z-index: 999999 !important;
 }
 
 .ladle-pivot-wrapper {
   display: inline-flex;
   will-change: transform;
+}
+
+/* Dynamic Flavor Droplet & Splash Impact Ripples on Click */
+.ladle-click-ripple {
+  position: absolute;
+  top: 14px;
+  left: 13px;
+  width: 28px;
+  height: 28px;
+  margin-top: -14px;
+  margin-left: -14px;
+  pointer-events: none;
+  border-radius: 50%;
+  border: 1.5px solid #F59E0B;
+  animation: ladleRippleExpand 400ms cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+.ladle-click-spark {
+  position: absolute;
+  top: 14px;
+  left: 13px;
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: #F59E0B;
+  pointer-events: none;
+  animation: ladleSparkFly 380ms cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
+}
+
+@keyframes ladleRippleExpand {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+    border-color: #F59E0B;
+  }
+  60% {
+    opacity: 0.85;
+    border-color: #E07A2B;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes ladleSparkFly {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--spark-x, 10px), var(--spark-y, -10px)) scale(0.3);
+    opacity: 0;
+  }
 }
 
 @media (pointer: coarse) {
@@ -1271,7 +1339,96 @@ button:active, .btn:active, [role="button"]:active {
 
 /* Detail & Standard Pages */
 .standard-page {
-  padding: 24px 40px;
+  padding: 28px 40px;
+}
+
+/* Page Heading & Editorial Rhythm */
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 768px) {
+  .page-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+}
+
+.page-heading > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-heading .eyebrow {
+  display: inline-block;
+  margin-bottom: 6px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.page-heading h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 34px;
+  line-height: 1.2;
+  margin: 4px 0 10px;
+  color: var(--foreground);
+  letter-spacing: -0.02em;
+}
+
+.page-heading p {
+  font-size: 14.5px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  max-width: 640px;
+  margin: 0;
+}
+
+/* Content Tabs (e.g., Cookbook Saved / Collections / Drafts) */
+.content-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 28px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.content-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.content-tabs button {
+  height: 38px;
+  padding: 0 18px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  border-radius: 9999px;
+  transition: all 180ms ease;
+  white-space: nowrap;
+}
+
+.content-tabs button:hover {
+  background: var(--secondary);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.content-tabs button.selected {
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border-color: var(--primary) !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(196, 99, 63, 0.25);
 }
 
 .detail-page {
@@ -1296,6 +1453,15 @@ button:active, .btn:active, [role="button"]:active {
   color: var(--muted-foreground);
   font-size: 15px;
   line-height: 1.8;
+}
+
+.detail-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 18px;
+  margin-bottom: 24px;
 }
 
 .detail-cover {
@@ -1564,7 +1730,44 @@ button:active, .btn:active, [role="button"]:active {
   margin: 18px 0 8px;
 }
 
-/* Responsive Media Queries */
+/* Printable Thermal Grocery Receipt & Recipe Cards */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-receipt, .printable-receipt *,
+  .printable-recipe-card, .printable-recipe-card * {
+    visibility: visible;
+  }
+  .printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 450px !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    border: 1px dashed #000 !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+  .printable-recipe-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    padding: 24px !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .detail-actions, .serving-stepper, .sidebar, .vault-topbar, .back-to-top, .notification-bell, .wooden-ladle-cursor-overlay {
+    display: none !important;
+  }
+}
+
 @media (max-width: 1280px) {
   .vault-topbar {
     padding: 0 20px;
@@ -1592,7 +1795,10 @@ button:active, .btn:active, [role="button"]:active {
   .sidebar.sidebar-open {
     transform: translateX(0);
   }
-  .main-content { margin-left: 0; }
+  .main-content {
+    margin-left: 0;
+    padding-bottom: 72px;
+  }
   .vault-topbar { display: none; }
   .discover-page, .standard-page { padding: 22px 20px; }
   .discover-heading h1 { font-size: 32px; }
@@ -1610,4 +1816,38 @@ button:active, .btn:active, [role="button"]:active {
     top: 0;
     z-index: 40;
   }
+  .page-footer {
+    padding-bottom: 84px;
+  }
 }
+
+/* Command Palette (Cmd+K) Warm Pantry Theming */
+[cmdk-root] {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  font-family: 'Nunito Sans', sans-serif !important;
+}
+
+[cmdk-group-heading] {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: var(--clay) !important;
+  padding: 8px 12px 4px !important;
+}
+
+[cmdk-item] {
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+[cmdk-item][data-selected="true"] {
+  background: var(--accent) !important;
+  color: var(--foreground) !important;
+}
+
+/* Tooltip & Popover Enhancements */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
+

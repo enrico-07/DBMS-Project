@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, BookOpen, Heart, FileText, Trash2, ArrowUpRight, FolderPlus } from 'lucide-react';
 import { useVault } from '@/components/vault-provider';
 import { RecipeCard, PageHeading, EmptyState } from '@/components/recipe-card';
@@ -27,17 +27,27 @@ function Cookbook() {
   const [collectionDesc, setCollectionDesc] = useState('');
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
 
-  const activeCollection = collections.find(c => c.id === selectedCollectionId);
+  const activeCollection = useMemo(
+    () => collections.find(c => c.id === selectedCollectionId),
+    [collections, selectedCollectionId]
+  );
 
   // Filter recipes depending on active tab
-  const visibleRecipes = items.filter(r => {
-    if (tab === 'drafts') return r.status === 'Draft';
-    if (tab === 'collections') {
-      return activeCollection ? activeCollection.ids.includes(r.id) : false;
-    }
-    // Saved tab
-    return saved.includes(r.id);
-  });
+  const visibleRecipes = useMemo(() => {
+    return items.filter(r => {
+      if (tab === 'drafts') return r.status === 'Draft';
+      if (tab === 'collections') {
+        return activeCollection ? activeCollection.ids.includes(r.id) : false;
+      }
+      // Saved tab
+      return saved.includes(r.id);
+    });
+  }, [items, tab, activeCollection, saved]);
+
+  const draftCount = useMemo(
+    () => items.filter(r => r.status === 'Draft').length,
+    [items]
+  );
 
   const handleCreateCollection = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,9 +66,9 @@ function Cookbook() {
         title="Recipes worth keeping."
         description="A quiet corner for your bookmarked favorites, curated menus, and works in progress."
         action={
-          <Button asChild className="rounded-full bg-clay text-white gap-2 shadow-sm">
+          <Button asChild className="rounded-full bg-clay text-white gap-2 shadow-sm h-9 px-4 text-xs font-semibold hover:bg-clay/90 shrink-0">
             <Link to="/create">
-              <Plus size={16} /> Add a recipe
+              <Plus size={15} /> Add a recipe
             </Link>
           </Button>
         }
@@ -74,8 +84,9 @@ function Cookbook() {
             setSelectedCollectionId('');
           }}
         >
-          <Heart size={16} className={tab === 'saved' ? 'fill-clay text-clay' : ''} />
-          Saved recipes <span className="tabular font-semibold">({saved.length})</span>
+          <Heart size={15} className={tab === 'saved' ? 'fill-current text-white' : 'text-clay'} />
+          <span>Saved recipes</span>
+          <span className="tabular font-semibold opacity-85">({saved.length})</span>
         </Button>
 
         <Button
@@ -83,8 +94,9 @@ function Cookbook() {
           className={`rounded-full gap-2 ${tab === 'collections' ? 'selected' : ''}`}
           onClick={() => setTab('collections')}
         >
-          <BookOpen size={16} />
-          Collections <span className="tabular font-semibold">({collections.length})</span>
+          <BookOpen size={15} className={tab === 'collections' ? 'text-white' : 'text-muted-foreground'} />
+          <span>Collections</span>
+          <span className="tabular font-semibold opacity-85">({collections.length})</span>
         </Button>
 
         <Button
@@ -95,8 +107,9 @@ function Cookbook() {
             setSelectedCollectionId('');
           }}
         >
-          <FileText size={16} />
-          Drafts <span className="tabular font-semibold">({items.filter(r => r.status === 'Draft').length})</span>
+          <FileText size={15} className={tab === 'drafts' ? 'text-white' : 'text-muted-foreground'} />
+          <span>Drafts</span>
+          <span className="tabular font-semibold opacity-85">({draftCount})</span>
         </Button>
       </div>
 
@@ -151,9 +164,17 @@ function Cookbook() {
                     title="Delete collection"
                     onClick={e => {
                       e.stopPropagation();
+                      const deletedCol = { ...c };
                       deleteCollection(c.id);
                       if (selectedCollectionId === c.id) setSelectedCollectionId('');
-                      toast.info(`Deleted collection "${c.name}"`);
+                      toast.info(`Deleted collection "${c.name}"`, {
+                        action: {
+                          label: 'Undo',
+                          onClick: () => {
+                            createCollection(deletedCol.name, deletedCol.description);
+                          },
+                        },
+                      });
                     }}
                   >
                     <Trash2 size={14} />

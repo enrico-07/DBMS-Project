@@ -1,10 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { Bookmark, Clock, Star, ArrowUpRight, Flame, Sparkles } from 'lucide-react';
+import { Bookmark, Clock, Star, ArrowUpRight, Flame, Sparkles, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useVault } from './vault-provider';
-import type { Recipe } from '@/lib/recipes';
+import { type Recipe, evaluateRecipeHealthConditions } from '@/lib/recipes';
+import { RecipeQuickPreview } from './recipe-quick-preview';
 import { toast } from 'sonner';
+import pasta from '@/assets/lemon-pasta.jpg';
 
 export function RecipeCard({
   recipe,
@@ -13,9 +15,19 @@ export function RecipeCard({
   recipe: Recipe;
   pantryMatchPercentage?: number;
 }) {
-  const { saved, toggleSave } = useVault();
+  const { saved, toggleSave, currentUser } = useVault();
   const isSaved = saved.includes(recipe.id);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const healthEvals = evaluateRecipeHealthConditions(recipe);
+  const userMatches = healthEvals.filter(h =>
+    h.isMatch &&
+    currentUser.healthConditions?.some(
+      c => c.toLowerCase() === h.conditionId.toLowerCase() || c.toLowerCase() === h.label.toLowerCase()
+    )
+  );
+  const primaryHealthBadge = userMatches[0] || healthEvals.find(h => h.isMatch);
 
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -23,46 +35,96 @@ export function RecipeCard({
     setIsAnimating(true);
     toggleSave(recipe.id);
     if (!isSaved) {
-      toast.success(`Tucked "${recipe.title}" into your cookbook!`);
+      toast.success(`Tucked "${recipe.title}" into your cookbook!`, {
+        action: {
+          label: 'Undo',
+          onClick: () => toggleSave(recipe.id),
+        },
+      });
     } else {
-      toast.info(`Removed "${recipe.title}" from saved recipes`);
+      toast.info(`Removed "${recipe.title}" from saved recipes`, {
+        action: {
+          label: 'Undo',
+          onClick: () => toggleSave(recipe.id),
+        },
+      });
     }
     setTimeout(() => setIsAnimating(false), 500);
   };
 
   return (
-    <article className="recipe-card">
-      <div className="recipe-photo">
-        <Link to="/recipe/$id" params={{ id: recipe.id }} aria-label={`View ${recipe.title}`}>
-          <img src={recipe.image} alt={recipe.title} loading="lazy" decoding="async" width={768} height={512} />
-        </Link>
+    <>
+      <article className="recipe-card group">
+        <div className="recipe-photo relative">
+          <Link to="/recipe/$id" params={{ id: recipe.id }} aria-label={`View ${recipe.title}`}>
+            <img
+              src={recipe.image || pasta}
+              alt={recipe.title}
+              loading="lazy"
+              decoding="async"
+              width={768}
+              height={512}
+              onError={e => {
+                (e.currentTarget as HTMLImageElement).src = pasta;
+              }}
+            />
+          </Link>
 
-        {/* Dietary Badge */}
-        <span className="photo-badge">{recipe.diet}</span>
+          {/* Dietary Badge */}
+          <span className="photo-badge">{recipe.diet}</span>
 
-        {/* Pantry Match Indicator if applicable */}
-        {typeof pantryMatchPercentage === 'number' && pantryMatchPercentage > 0 && (
-          <span className="pantry-match-badge flex items-center gap-1">
-            <Sparkles size={11} /> {pantryMatchPercentage}% in pantry
-          </span>
-        )}
+          {/* Pantry Match Indicator if applicable */}
+          {typeof pantryMatchPercentage === 'number' && pantryMatchPercentage > 0 && (
+            <span className="pantry-match-badge flex items-center gap-1">
+              <Sparkles size={11} /> {pantryMatchPercentage}% in pantry
+            </span>
+          )}
 
-        {/* Tactile Bookmark Save Button with Tuck Animation */}
-        <Button
-          variant="secondary"
-          size="icon"
-          className={`save-button ${isSaved ? 'is-saved' : ''} ${isAnimating ? 'tuck-animation' : ''}`}
-          aria-label={`${isSaved ? 'Unsave' : 'Save'} ${recipe.title}`}
-          title={isSaved ? 'Remove from saved recipes' : 'Save to cookbook'}
-          onClick={handleSave}
-        >
-          <Bookmark size={16} fill={isSaved ? 'currentColor' : 'none'} />
-        </Button>
-      </div>
+          {/* Quick Preview Hover Trigger */}
+          <button
+            type="button"
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200 rounded-full bg-card/90 text-foreground backdrop-blur-md text-[11px] font-semibold h-7 px-3 flex items-center gap-1 shadow-md hover:scale-105"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPreviewOpen(true);
+            }}
+            title="Quick preview recipe details"
+          >
+            <Eye size={12} className="text-primary" />
+            <span>Quick view</span>
+          </button>
+
+          {/* Tactile Bookmark Save Button with Tuck Animation */}
+          <Button
+            variant="secondary"
+            size="icon"
+            className={`save-button ${isSaved ? 'is-saved' : ''} ${isAnimating ? 'tuck-animation' : ''}`}
+            aria-label={`${isSaved ? 'Unsave' : 'Save'} ${recipe.title}`}
+            title={isSaved ? 'Remove from saved recipes' : 'Save to cookbook'}
+            onClick={handleSave}
+          >
+            <Bookmark size={16} fill={isSaved ? 'currentColor' : 'none'} />
+          </Button>
+        </div>
 
       <div className="recipe-card-body">
-        <div className="recipe-category">
-          {recipe.cuisine} <span>·</span> {recipe.category}
+        <div className="flex items-center justify-between gap-1 mb-1">
+          <div className="recipe-category">
+            {recipe.cuisine} <span>·</span> {recipe.category}
+          </div>
+          {primaryHealthBadge && (
+            <span
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                userMatches.length > 0
+                  ? 'bg-sage/15 text-sage border-sage/30'
+                  : 'bg-secondary text-muted-foreground border-border'
+              }`}
+              title={primaryHealthBadge.clinicalNote}
+            >
+              {userMatches.length > 0 ? `🩺 ${primaryHealthBadge.badge}` : primaryHealthBadge.badge}
+            </span>
+          )}
         </div>
 
         <Link to="/recipe/$id" params={{ id: recipe.id }} className="recipe-title">
@@ -94,7 +156,14 @@ export function RecipeCard({
         </div>
       </div>
     </article>
-  );
+
+    <RecipeQuickPreview
+      recipe={recipe}
+      open={previewOpen}
+      onOpenChange={setPreviewOpen}
+    />
+  </>
+);
 }
 
 export function PageHeading({
