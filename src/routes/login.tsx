@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   ArrowRight,
   UserPlus,
@@ -20,37 +20,45 @@ import {
   Sun,
   Shield,
   HelpCircle,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useVault } from '@/components/vault-provider';
-import { ThemeSlider } from '@/components/theme-slider';
-import { RecipeVaultLogo } from '@/components/recipe-vault-logo';
-import { pageMeta } from '@/lib/metadata';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useVault } from "@/components/vault-provider";
+import { ThemeSlider } from "@/components/theme-slider";
+import { RecipeVaultLogo } from "@/components/recipe-vault-logo";
+import { pageMeta } from "@/lib/metadata";
+import { toast } from "sonner";
 
-export const Route = createFileRoute('/login')({
+export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () =>
     pageMeta(
-      'Kitchen Sign-In & Registration · RecipeVault',
-      'Sign in with your email or Google Account, register your culinary kitchen profile, or switch demo personas.'
+      "Kitchen Sign-In & Registration · RecipeVault",
+      "Sign in with your email or Google Account, register your culinary kitchen profile, or switch demo personas.",
     ),
 });
 
 export function LoginPage() {
-  const { allUsers, switchUser, registerUser, loginUser, loginWithGoogle, resetPassword, currentUser } = useVault();
+  const {
+    allUsers,
+    switchUser,
+    registerUser,
+    loginUser,
+    loginWithGoogle,
+    resetPassword,
+    currentUser,
+  } = useVault();
   const navigate = useNavigate();
 
   // Mode: 'login' | 'register' | 'forgot'
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
 
   // Form fields
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
-  const [roleTitle, setRoleTitle] = useState('Home Cook');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
+  const [roleTitle, setRoleTitle] = useState("Home Cook");
   const [termsAccepted, setTermsAccepted] = useState(true);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -62,11 +70,19 @@ export function LoginPage() {
 
   // Interactive culinary greeting quotes that alternate
   const [selectedInspiration, setSelectedInspiration] = useState(0);
+  const defaultInspiration = {
+    quote: "Good soup is one of the prime necessities of life.",
+    author: "Louis de Gouy",
+  };
   const inspirations = [
-    { quote: 'Good soup is one of the prime necessities of life.', author: 'Louis de Gouy' },
-    { quote: 'Cooking is at once child’s play and adult joy.', author: 'Craig Claiborne' },
-    { quote: 'To eat is a necessity, but to cook well is an art.', author: 'François de La Rochefoucauld' },
+    defaultInspiration,
+    { quote: "Cooking is at once child’s play and adult joy.", author: "Craig Claiborne" },
+    {
+      quote: "To eat is a necessity, but to cook well is an art.",
+      author: "François de La Rochefoucauld",
+    },
   ];
+  const activeInspiration = inspirations[selectedInspiration] ?? defaultInspiration;
 
   const handleCustomLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,14 +94,18 @@ export function LoginPage() {
       const ok = loginUser(email.trim(), password.trim());
       if (ok) {
         toast.success(`Welcome back to your kitchen shelf!`);
-        navigate({ to: '/' });
+        navigate({ to: "/" });
       } else {
         // If account doesn't exist, provide a helpful prompt or offer 1-click register
-        const existing = allUsers.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+        const existing = allUsers.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
         if (!existing) {
-          const auto = registerUser(email.split('@')[0], email.trim(), password.trim());
+          const auto = registerUser(
+            email.split("@")[0] ?? email.trim(),
+            email.trim(),
+            password.trim(),
+          );
           toast.success(`New profile registered! Welcome, ${auto.name}.`);
-          navigate({ to: '/profile' });
+          navigate({ to: "/profile" });
         }
       }
     }, 450);
@@ -94,15 +114,15 @@ export function LoginPage() {
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
-      toast.error('Please enter your name and email address.');
+      toast.error("Please enter your name and email address.");
       return;
     }
     if (password && confirmPassword && password !== confirmPassword) {
-      toast.error('Passwords do not match. Please re-enter.');
+      toast.error("Passwords do not match. Please re-enter.");
       return;
     }
     if (!termsAccepted) {
-      toast.error('Please accept the culinary privacy policy.');
+      toast.error("Please accept the culinary privacy policy.");
       return;
     }
 
@@ -111,10 +131,10 @@ export function LoginPage() {
       setIsSubmitting(false);
       const u = registerUser(name.trim(), email.trim(), password.trim(), {
         role: roleTitle,
-        avatar: name.trim().charAt(0).toUpperCase() || 'C',
+        avatar: name.trim().charAt(0).toUpperCase() || "C",
       });
       toast.success(`Welcome to RecipeVault, Chef ${u.name}! Your kitchen shelf is ready.`);
-      navigate({ to: '/' });
+      navigate({ to: "/" });
     }, 500);
   };
 
@@ -123,19 +143,19 @@ export function LoginPage() {
     setTimeout(() => {
       setIsGoogleLoading(false);
       const u = loginWithGoogle({
-        name: 'Google Culinary Cook',
-        email: 'culinary.cook@gmail.com',
-        avatar: 'G',
+        name: "Google Culinary Cook",
+        email: "culinary.cook@gmail.com",
+        avatar: "G",
       });
       toast.success(`Google Account connected! Welcome, ${u.name}.`);
-      navigate({ to: '/' });
+      navigate({ to: "/" });
     }, 700);
   };
 
   const handleForgotPassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
-      toast.error('Please enter your account email address.');
+      toast.error("Please enter your account email address.");
       return;
     }
     const sent = resetPassword(email.trim());
@@ -164,20 +184,23 @@ export function LoginPage() {
             </Link>
 
             <h1 className="text-2xl sm:text-3xl font-serif mt-2">
-              {mode === 'login' && 'Welcome back to your kitchen'}
-              {mode === 'register' && 'Open your personal kitchen vault'}
-              {mode === 'forgot' && 'Reset your culinary access'}
+              {mode === "login" && "Welcome back to your kitchen"}
+              {mode === "register" && "Open your personal kitchen vault"}
+              {mode === "forgot" && "Reset your culinary access"}
             </h1>
 
             <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-              {mode === 'login' && 'Relational culinary memory, saved recipes, and pantry intelligence.'}
-              {mode === 'register' && 'Personalized recipes, nutritional tracking, and custom cookbook versions.'}
-              {mode === 'forgot' && 'Enter your email to receive recovery instructions and a secure temporary pass.'}
+              {mode === "login" &&
+                "Relational culinary memory, saved recipes, and pantry intelligence."}
+              {mode === "register" &&
+                "Personalized recipes, nutritional tracking, and custom cookbook versions."}
+              {mode === "forgot" &&
+                "Enter your email to receive recovery instructions and a secure temporary pass."}
             </p>
           </div>
 
           {/* Google Auth Button (Primary Social CTA) */}
-          {mode !== 'forgot' && (
+          {mode !== "forgot" && (
             <div className="space-y-3">
               <button
                 type="button"
@@ -222,7 +245,7 @@ export function LoginPage() {
           )}
 
           {/* Quick Demo Personas Selection (Academic Evaluators & Viva Reviewers) */}
-          {mode !== 'forgot' && (
+          {mode !== "forgot" && (
             <div className="bg-secondary/40 border border-border p-3.5 rounded-2xl">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10.5px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
@@ -232,7 +255,7 @@ export function LoginPage() {
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                {allUsers.slice(0, 3).map(u => {
+                {allUsers.slice(0, 3).map((u) => {
                   const isActive = currentUser.id === u.id;
                   return (
                     <button
@@ -240,17 +263,21 @@ export function LoginPage() {
                       type="button"
                       className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                         isActive
-                          ? 'border-clay bg-card shadow-sm ring-1 ring-clay'
-                          : 'border-border bg-card/70 hover:bg-card hover:border-clay/40'
+                          ? "border-clay bg-card shadow-sm ring-1 ring-clay"
+                          : "border-border bg-card/70 hover:bg-card hover:border-clay/40"
                       }`}
                       onClick={() => {
                         switchUser(u.id);
-                        navigate({ to: '/' });
+                        navigate({ to: "/" });
                       }}
                     >
                       <span className="avatar w-6 h-6 text-xs mx-auto mb-1">{u.avatar}</span>
-                      <strong className="text-[11px] font-semibold block truncate">{u.name.split(' ')[0]}</strong>
-                      <span className="text-[9px] text-muted-foreground block truncate">{u.role.split(' ')[0]}</span>
+                      <strong className="text-[11px] font-semibold block truncate">
+                        {u.name.split(" ")[0]}
+                      </strong>
+                      <span className="text-[9px] text-muted-foreground block truncate">
+                        {u.role.split(" ")[0]}
+                      </span>
                       {isActive && <Check size={10} className="text-clay mx-auto mt-0.5" />}
                     </button>
                   );
@@ -260,23 +287,27 @@ export function LoginPage() {
           )}
 
           {/* Tab Selector: Login vs Register */}
-          {mode !== 'forgot' && (
+          {mode !== "forgot" && (
             <div className="flex rounded-full bg-background border border-border p-1">
               <button
                 type="button"
                 className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
-                  mode === 'login' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  mode === "login"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
-                onClick={() => setMode('login')}
+                onClick={() => setMode("login")}
               >
                 Log in
               </button>
               <button
                 type="button"
                 className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
-                  mode === 'register' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  mode === "register"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
-                onClick={() => setMode('register')}
+                onClick={() => setMode("register")}
               >
                 Sign up
               </button>
@@ -284,7 +315,7 @@ export function LoginPage() {
           )}
 
           {/* FORM: Login Mode */}
-          {mode === 'login' && (
+          {mode === "login" && (
             <form onSubmit={handleCustomLogin} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground block mb-1.5 flex items-center gap-1.5">
@@ -295,7 +326,7 @@ export function LoginPage() {
                   required
                   placeholder="e.g. eric@recipevault.internal"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="text-xs rounded-xl h-10"
                 />
               </div>
@@ -307,7 +338,7 @@ export function LoginPage() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setMode('forgot')}
+                    onClick={() => setMode("forgot")}
                     className="text-[11px] text-clay hover:underline font-semibold cursor-pointer"
                   >
                     Forgot password?
@@ -315,17 +346,17 @@ export function LoginPage() {
                 </div>
                 <div className="relative">
                   <Input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="text-xs rounded-xl h-10 pr-9"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                    title={showPassword ? 'Hide password' : 'Show password'}
+                    title={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
@@ -337,7 +368,7 @@ export function LoginPage() {
                   <input
                     type="checkbox"
                     checked={rememberMe}
-                    onChange={e => setRememberMe(e.target.checked)}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                     className="rounded border-border text-clay focus:ring-clay"
                   />
                   <span>Remember my kitchen session</span>
@@ -361,7 +392,7 @@ export function LoginPage() {
           )}
 
           {/* FORM: Register Mode */}
-          {mode === 'register' && (
+          {mode === "register" && (
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground block mb-1.5 flex items-center gap-1.5">
@@ -371,7 +402,7 @@ export function LoginPage() {
                   required
                   placeholder="e.g. Sofia Chen"
                   value={name}
-                  onChange={e => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value)}
                   className="text-xs rounded-xl h-10"
                 />
               </div>
@@ -385,7 +416,7 @@ export function LoginPage() {
                   required
                   placeholder="e.g. sofia@example.com"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="text-xs rounded-xl h-10"
                 />
               </div>
@@ -400,7 +431,7 @@ export function LoginPage() {
                     required
                     placeholder="Create a password"
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="text-xs rounded-xl h-10"
                   />
                 </div>
@@ -413,7 +444,7 @@ export function LoginPage() {
                     required
                     placeholder="Repeat password"
                     value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="text-xs rounded-xl h-10"
                   />
                 </div>
@@ -425,7 +456,7 @@ export function LoginPage() {
                 </label>
                 <select
                   value={roleTitle}
-                  onChange={e => setRoleTitle(e.target.value)}
+                  onChange={(e) => setRoleTitle(e.target.value)}
                   className="w-full text-xs rounded-xl h-10 px-3 bg-background border border-border text-foreground"
                 >
                   <option value="Home Cook">Home Cook & Everyday Food Lover</option>
@@ -440,11 +471,12 @@ export function LoginPage() {
                 <input
                   type="checkbox"
                   checked={termsAccepted}
-                  onChange={e => setTermsAccepted(e.target.checked)}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
                   className="rounded border-border text-clay focus:ring-clay mt-0.5"
                 />
                 <span>
-                  I agree to store culinary bookmarks and dietary data in accordance with the RecipeVault local privacy architecture.
+                  I agree to store culinary bookmarks and dietary data in accordance with the
+                  RecipeVault local privacy architecture.
                 </span>
               </label>
 
@@ -465,7 +497,7 @@ export function LoginPage() {
           )}
 
           {/* FORM: Forgot Password Mode */}
-          {mode === 'forgot' && (
+          {mode === "forgot" && (
             <div className="space-y-4">
               {resetSent ? (
                 <div className="bg-secondary/60 border border-border p-6 rounded-2xl text-center space-y-3">
@@ -474,14 +506,15 @@ export function LoginPage() {
                   </div>
                   <h3 className="font-serif text-base">Recovery Link Dispatched</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    We have dispatched a secure password reset link to <strong>{email}</strong>. Check your inbox or use our academic demo bypass code <code>VAULT-2026</code>.
+                    We have dispatched a secure password reset link to <strong>{email}</strong>.
+                    Check your inbox or use our academic demo bypass code <code>VAULT-2026</code>.
                   </p>
                   <Button
                     type="button"
                     variant="outline"
                     className="rounded-full text-xs"
                     onClick={() => {
-                      setMode('login');
+                      setMode("login");
                       setResetSent(false);
                     }}
                   >
@@ -499,7 +532,7 @@ export function LoginPage() {
                       required
                       placeholder="e.g. eric@recipevault.internal"
                       value={email}
-                      onChange={e => setEmail(e.target.value)}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="text-xs rounded-xl h-10"
                     />
                   </div>
@@ -514,7 +547,7 @@ export function LoginPage() {
                   <div className="text-center pt-2">
                     <button
                       type="button"
-                      onClick={() => setMode('login')}
+                      onClick={() => setMode("login")}
                       className="text-xs text-clay hover:underline font-semibold cursor-pointer"
                     >
                       Remembered your credentials? Sign In
@@ -532,10 +565,10 @@ export function LoginPage() {
             title="Click for culinary inspiration"
           >
             <p className="text-xs italic text-foreground/80 font-serif mb-0.5">
-              "{inspirations[selectedInspiration].quote}"
+              "{activeInspiration.quote}"
             </p>
             <span className="text-[10px] text-muted-foreground font-semibold">
-              — {inspirations[selectedInspiration].author} (tap for more)
+              — {activeInspiration.author} (tap for more)
             </span>
           </div>
 

@@ -1,5 +1,5 @@
-import { Sun, Sunset, Moon } from 'lucide-react';
-import { useVault, type ThemeMode } from '@/components/vault-provider';
+import { Sun, Sunset, Moon } from "lucide-react";
+import { useVault, type ThemeMode } from "@/components/vault-provider";
 
 interface ThemeOption {
   id: ThemeMode;
@@ -10,39 +10,47 @@ interface ThemeOption {
 
 const THEME_OPTIONS: ThemeOption[] = [
   {
-    id: 'morning',
-    label: 'Morning',
-    timeLabel: 'Dawn Sunshine (6 AM–12 PM)',
+    id: "morning",
+    label: "Morning",
+    timeLabel: "Dawn Sunshine (6 AM–12 PM)",
     icon: Sun,
   },
   {
-    id: 'sunset',
-    label: 'Sunset',
-    timeLabel: 'Warm Pantry (12 PM–7 PM)',
+    id: "sunset",
+    label: "Sunset",
+    timeLabel: "Warm Pantry (12 PM–7 PM)",
     icon: Sunset,
   },
   {
-    id: 'night',
-    label: 'Night',
-    timeLabel: 'Peaceful Rest (7 PM–6 AM)',
+    id: "night",
+    label: "Night",
+    timeLabel: "Peaceful Rest (7 PM–6 AM)",
     icon: Moon,
   },
 ];
 
-export function ThemeSlider({ className = '', compact = false }: { className?: string; compact?: boolean }) {
+export function ThemeSlider({
+  className = "",
+  compact = false,
+}: {
+  className?: string;
+  compact?: boolean;
+}) {
   const { theme, setTheme } = useVault();
-  const activeIndex = THEME_OPTIONS.findIndex(o => o.id === theme);
+  const activeIndex = THEME_OPTIONS.findIndex((o) => o.id === theme);
   const safeIndex = activeIndex >= 0 ? activeIndex : 1;
 
   const handleKeyDown = (e: React.KeyboardEvent, currentIndex: number) => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
       e.preventDefault();
       const nextIndex = (currentIndex + 1) % THEME_OPTIONS.length;
-      setTheme(THEME_OPTIONS[nextIndex].id);
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      const nextOption = THEME_OPTIONS[nextIndex];
+      if (nextOption) setTheme(nextOption.id);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
       e.preventDefault();
       const prevIndex = (currentIndex - 1 + THEME_OPTIONS.length) % THEME_OPTIONS.length;
-      setTheme(THEME_OPTIONS[prevIndex].id);
+      const previousOption = THEME_OPTIONS[prevIndex];
+      if (previousOption) setTheme(previousOption.id);
     }
   };
 
@@ -50,7 +58,7 @@ export function ThemeSlider({ className = '', compact = false }: { className?: s
     <div
       role="radiogroup"
       aria-label="Color scheme mode"
-      className={`theme-slider-track ${compact ? 'compact' : ''} ${className}`}
+      className={`theme-slider-track ${compact ? "compact" : ""} ${className}`}
     >
       {/* Animated Sliding Pill Thumb */}
       <div
@@ -74,17 +82,12 @@ export function ThemeSlider({ className = '', compact = false }: { className?: s
             tabIndex={isActive ? 0 : -1}
             aria-label={`${opt.label} mode (${opt.timeLabel})`}
             title={`${opt.label} Mode · ${opt.timeLabel}`}
-            className={`theme-slider-btn ${isActive ? 'active' : ''}`}
+            className={`theme-slider-btn ${isActive ? "active" : ""}`}
             onClick={() => setTheme(opt.id)}
-            onKeyDown={e => handleKeyDown(e, idx)}
+            onKeyDown={(e) => handleKeyDown(e, idx)}
           >
-            <Icon
-              size={13}
-              className={`theme-slider-icon ${isActive ? 'active-icon' : ''}`}
-            />
-            {!compact && (
-              <span className="theme-slider-text">{opt.label}</span>
-            )}
+            <Icon size={13} className={`theme-slider-icon ${isActive ? "active-icon" : ""}`} />
+            {!compact && <span className="theme-slider-text">{opt.label}</span>}
           </button>
         );
       })}
