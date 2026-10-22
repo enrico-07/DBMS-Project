@@ -311,11 +311,11 @@ CREATE INDEX idx_pantry_user ON user_pantry_items(user_id);
 CREATE INDEX idx_meal_plan_user ON meal_plans(user_id);
 
 -- ----------------------------------------------------------------------------
--- 12. DATABASE VIEWS
+-- 12. DATABASE VIEWS (Defined with SECURITY INVOKER for RLS compliance)
 -- ----------------------------------------------------------------------------
 
 -- View: Top Rated Recipes with review counts
-CREATE VIEW v_top_rated_recipes AS
+CREATE VIEW v_top_rated_recipes WITH (security_invoker = true) AS
 SELECT
     r.recipe_id,
     r.title,
@@ -330,7 +330,7 @@ WHERE r.status = 'Published' AND r.rating >= 4.5
 ORDER BY r.rating DESC, r.rating_count DESC;
 
 -- View: Healthy Recipe Summary with Macro Breakdown
-CREATE VIEW v_healthy_recipe_summary AS
+CREATE VIEW v_healthy_recipe_summary WITH (security_invoker = true) AS
 SELECT
     r.recipe_id,
     r.title,
@@ -345,7 +345,7 @@ FROM recipes r
 WHERE r.calories > 0;
 
 -- View: Diabetic & PCOS Clinical Recommendations
-CREATE VIEW v_diabetic_pcos_recommendations AS
+CREATE VIEW v_diabetic_pcos_recommendations WITH (security_invoker = true) AS
 SELECT
     r.recipe_id,
     r.title,
@@ -363,7 +363,7 @@ WHERE rhs.is_suitable = TRUE AND rhs.condition_id IN ('diabetes', 'pcos')
 ORDER BY net_carbs ASC;
 
 -- View: User Pantry Match Helper (Aggregates available pantry ingredients against recipes)
-CREATE VIEW v_pantry_match_helper AS
+CREATE VIEW v_pantry_match_helper WITH (security_invoker = true) AS
 SELECT
     p.user_id,
     ri.recipe_id,
@@ -380,7 +380,7 @@ JOIN recipe_ingredients ri ON i.ingredient_id = ri.ingredient_id
 GROUP BY p.user_id, ri.recipe_id;
 
 -- View: Active Cook Profiles (Aggregates dietary preferences and health conditions per user)
-CREATE VIEW v_active_cook_profiles AS
+CREATE VIEW v_active_cook_profiles WITH (security_invoker = true) AS
 SELECT
     u.user_id,
     u.full_name,
@@ -401,7 +401,10 @@ GROUP BY u.user_id, u.full_name, u.role, u.cooking_skill, u.target_cook_time;
 
 -- Trigger Function: Recompute Recipe Rating Aggregates
 CREATE OR REPLACE FUNCTION fn_update_recipe_rating()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
 BEGIN
     UPDATE recipes
     SET
@@ -419,7 +422,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 CREATE TRIGGER trg_recipe_review_aggregate
 AFTER INSERT OR UPDATE OR DELETE ON ratings_and_reviews
@@ -428,12 +431,15 @@ EXECUTE FUNCTION fn_update_recipe_rating();
 
 -- Trigger Function: Auto-touch updated_at on recipe modifications
 CREATE OR REPLACE FUNCTION fn_touch_recipe_updated_at()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 CREATE TRIGGER trg_touch_recipe_updated_at
 BEFORE UPDATE ON recipes
@@ -442,6 +448,7 @@ EXECUTE FUNCTION fn_touch_recipe_updated_at();
 
 -- ----------------------------------------------------------------------------
 -- 14. ROW LEVEL SECURITY (RLS) & CLIENT ACCESS CONTROL
+-- (Streamlined to single permissive policy per table to avoid duplicate checks)
 -- ----------------------------------------------------------------------------
 ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipe_steps ENABLE ROW LEVEL SECURITY;
@@ -465,72 +472,25 @@ ALTER TABLE ingredient_substitutes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cuisines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
--- Recipes & Steps Policies
-CREATE POLICY "Public Read Access on Recipes" ON recipes FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipes" ON recipes FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Recipe Steps" ON recipe_steps FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipe Steps" ON recipe_steps FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Recipe Tags" ON recipe_tags FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipe Tags" ON recipe_tags FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Health Suitability" ON recipe_health_suitability FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Health Suitability" ON recipe_health_suitability FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Recipe Versions" ON recipe_versions FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipe Versions" ON recipe_versions FOR ALL USING (true) WITH CHECK (true);
-
--- User Pantry Policies
-CREATE POLICY "Public Read Access on Pantry" ON user_pantry_items FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Pantry" ON user_pantry_items FOR ALL USING (true) WITH CHECK (true);
-
--- User Profile & Multivalued Sub-Profiles Policies
-CREATE POLICY "Public Read Access on Users" ON users FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Users" ON users FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on User Dietary Profiles" ON user_dietary_profiles FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on User Dietary Profiles" ON user_dietary_profiles FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on User Health Profiles" ON user_health_profiles FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on User Health Profiles" ON user_health_profiles FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on User Disliked Ingredients" ON user_disliked_ingredients FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on User Disliked Ingredients" ON user_disliked_ingredients FOR ALL USING (true) WITH CHECK (true);
-
--- Ratings & Reviews Policies
-CREATE POLICY "Public Read Access on Reviews" ON ratings_and_reviews FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Reviews" ON ratings_and_reviews FOR ALL USING (true) WITH CHECK (true);
-
--- Collections & Junction Policies
-CREATE POLICY "Public Read Access on Collections" ON collections FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Collections" ON collections FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Collection Recipes" ON collection_recipes FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Collection Recipes" ON collection_recipes FOR ALL USING (true) WITH CHECK (true);
-
--- Meal Planning Policies
-CREATE POLICY "Public Read Access on Meal Plans" ON meal_plans FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Meal Plans" ON meal_plans FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Meal Plan Items" ON meal_plan_items FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Meal Plan Items" ON meal_plan_items FOR ALL USING (true) WITH CHECK (true);
-
--- Reference Dictionaries Policies
-CREATE POLICY "Public Read Access on Ingredients" ON ingredients FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Ingredients" ON ingredients FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Recipe Ingredients" ON recipe_ingredients FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipe Ingredients" ON recipe_ingredients FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Ingredient Aliases" ON ingredient_aliases FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Ingredient Aliases" ON ingredient_aliases FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Ingredient Substitutes" ON ingredient_substitutes FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Ingredient Substitutes" ON ingredient_substitutes FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Cuisines" ON cuisines FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Cuisines" ON cuisines FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Public Read Access on Categories" ON categories FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Categories" ON categories FOR ALL USING (true) WITH CHECK (true);
+-- Clean Single-Policy per table (Handles SELECT, INSERT, UPDATE, DELETE without overlapping OR-chains)
+CREATE POLICY "Public Access on Recipes" ON recipes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Recipe Steps" ON recipe_steps FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Recipe Tags" ON recipe_tags FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Health Suitability" ON recipe_health_suitability FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Recipe Versions" ON recipe_versions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Pantry" ON user_pantry_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Users" ON users FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on User Dietary Profiles" ON user_dietary_profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on User Health Profiles" ON user_health_profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on User Disliked Ingredients" ON user_disliked_ingredients FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Reviews" ON ratings_and_reviews FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Collections" ON collections FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Collection Recipes" ON collection_recipes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Meal Plans" ON meal_plans FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Meal Plan Items" ON meal_plan_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Ingredients" ON ingredients FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Recipe Ingredients" ON recipe_ingredients FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Ingredient Aliases" ON ingredient_aliases FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Ingredient Substitutes" ON ingredient_substitutes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Cuisines" ON cuisines FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Categories" ON categories FOR ALL USING (true) WITH CHECK (true);

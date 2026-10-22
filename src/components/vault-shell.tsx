@@ -125,30 +125,41 @@ export function VaultShell({ children }: { children: ReactNode }) {
         </Button>
 
         {/* Sidebar Bottom Profile & Controls */}
-        <div className="sidebar-bottom">
+        <div className="mt-auto pt-4 border-t border-border/60">
           {isAuthenticated ? (
-            <div className="flex items-center justify-between gap-2 p-1.5 rounded-2xl border border-border bg-card/60 hover:bg-card transition-colors">
-              <Link to="/profile" className="profile-link flex-1 min-w-0" onClick={() => setOpen(false)}>
-                <span className="avatar shrink-0">{currentUser.avatar}</span>
-                <div className="overflow-hidden">
-                  <strong className="truncate block text-xs font-semibold">{currentUser.name}</strong>
-                  <small className="truncate block text-[10px] text-muted-foreground">{currentUser.role}</small>
+            <div className="flex items-center justify-between gap-2.5">
+              <Link
+                to="/profile"
+                className="flex items-center gap-2.5 flex-1 min-w-0 p-1.5 -ml-1 rounded-xl hover:bg-card/80 transition-colors text-foreground group"
+                onClick={() => setOpen(false)}
+                title={`Signed in as ${currentUser.name} (${currentUser.role})`}
+              >
+                <span className="w-8 h-8 rounded-full bg-clay text-white flex items-center justify-center font-serif font-bold text-xs shrink-0 shadow-2xs">
+                  {currentUser.avatar}
+                </span>
+                <div className="flex-1 min-w-0 leading-tight">
+                  <span className="block text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                    {currentUser.name}
+                  </span>
+                  <span className="block text-[11px] text-muted-foreground truncate mt-0.5">
+                    {currentUser.role}
+                  </span>
                 </div>
               </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+              <button
+                type="button"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 cursor-pointer"
                 onClick={handleLogout}
-                title="Sign out"
+                title="Sign out of kitchen"
+                aria-label="Sign out"
               >
-                <LogOut size={14} />
-              </Button>
+                <LogOut size={15} />
+              </button>
             </div>
           ) : (
-            <Button asChild className="w-full bg-primary text-primary-foreground font-semibold">
+            <Button asChild className="w-full bg-primary text-primary-foreground font-semibold rounded-xl h-9.5">
               <Link to="/login" onClick={() => setOpen(false)}>
-                <LogIn size={15} />
+                <LogIn size={15} className="mr-2" />
                 Sign in to kitchen
               </Link>
             </Button>
@@ -202,14 +213,14 @@ export function VaultShell({ children }: { children: ReactNode }) {
             {/* Notification Center */}
             <NotificationCenter />
 
-            {/* Clean Chef Avatar / Profile Link */}
+            {/* Chef Profile Avatar */}
             <Link
               to="/profile"
-              className="flex items-center gap-2 h-9 pl-1 pr-3 rounded-full border border-border bg-card/60 hover:bg-card hover:border-clay/40 transition-all text-xs text-foreground font-medium"
-              title="Open profile & kitchen preferences"
+              className="w-8.5 h-8.5 rounded-full bg-clay text-white flex items-center justify-center font-serif font-bold text-xs shadow-2xs hover:ring-2 hover:ring-clay/40 hover:scale-105 transition-all shrink-0 cursor-pointer"
+              title={`Chef ${currentUser.name} (${currentUser.role}) · View profile & kitchen preferences`}
+              aria-label="Chef profile"
             >
-              <span className="avatar w-7 h-7 text-xs bg-clay text-white font-bold">{currentUser.avatar}</span>
-              <span className="hidden sm:inline font-semibold">{currentUser.name.split(' ')[0]}</span>
+              {currentUser.avatar}
             </Link>
           </div>
         </header>

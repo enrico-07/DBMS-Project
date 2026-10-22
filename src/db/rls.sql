@@ -2,15 +2,31 @@
 -- RECIPEVAULT: ROW LEVEL SECURITY (RLS) & ACCESS CONTROL POLICIES
 -- Target DBMS: PostgreSQL 14+ / Supabase
 -- ============================================================================
--- This script configures access control policies so the web frontend can
--- safely read and write data through Supabase APIs.
---
--- Safe for idempotent re-execution. Existing policies with the same names are
--- dropped before recreating.
+-- This script completely resolves all Supabase Linter warnings:
+-- 1. Cleans up accumulated duplicate policies ("Multiple Permissive Policies")
+-- 2. Sets fixed search_path on functions ("Function Search Path Mutable")
+-- 3. Sets security_invoker = true on views ("Security Definer View")
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- 1. ENABLE ROW LEVEL SECURITY ON ALL TABLES
+-- STEP 1: DYNAMICALLY DROP ALL EXISTING POLICIES IN PUBLIC SCHEMA
+-- (Prevents accumulation of multiple permissive policies across script runs)
+-- ----------------------------------------------------------------------------
+DO $$ 
+DECLARE 
+    r RECORD;
+BEGIN
+    FOR r IN (
+        SELECT schemaname, tablename, policyname 
+        FROM pg_policies 
+        WHERE schemaname = 'public'
+    ) LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I;', r.policyname, r.schemaname, r.tablename);
+    END LOOP;
+END $$;
+
+-- ----------------------------------------------------------------------------
+-- STEP 2: ENABLE ROW LEVEL SECURITY ON ALL TABLES
 -- ----------------------------------------------------------------------------
 ALTER TABLE IF EXISTS recipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS recipe_steps ENABLE ROW LEVEL SECURITY;
@@ -35,127 +51,45 @@ ALTER TABLE IF EXISTS cuisines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS categories ENABLE ROW LEVEL SECURITY;
 
 -- ----------------------------------------------------------------------------
--- 2. RECIPES, STEPS, TAGS & REVISION LEDGER
+-- STEP 3: CREATE EXACTLY ONE CLEAN POLICY PER TABLE
+-- (A single FOR ALL policy covers SELECT, INSERT, UPDATE, DELETE with zero
+-- redundant OR-chain evaluations, eliminating "Multiple Permissive Policies")
 -- ----------------------------------------------------------------------------
-DROP POLICY IF EXISTS "Public Read Access on Recipes" ON recipes;
-DROP POLICY IF EXISTS "Public Modify Access on Recipes" ON recipes;
-CREATE POLICY "Public Read Access on Recipes" ON recipes FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipes" ON recipes FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Recipe Steps" ON recipe_steps;
-DROP POLICY IF EXISTS "Public Modify Access on Recipe Steps" ON recipe_steps;
-CREATE POLICY "Public Read Access on Recipe Steps" ON recipe_steps FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipe Steps" ON recipe_steps FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Recipe Tags" ON recipe_tags;
-DROP POLICY IF EXISTS "Public Modify Access on Recipe Tags" ON recipe_tags;
-CREATE POLICY "Public Read Access on Recipe Tags" ON recipe_tags FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipe Tags" ON recipe_tags FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Health Suitability" ON recipe_health_suitability;
-DROP POLICY IF EXISTS "Public Modify Access on Health Suitability" ON recipe_health_suitability;
-CREATE POLICY "Public Read Access on Health Suitability" ON recipe_health_suitability FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Health Suitability" ON recipe_health_suitability FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Recipe Versions" ON recipe_versions;
-DROP POLICY IF EXISTS "Public Modify Access on Recipe Versions" ON recipe_versions;
-CREATE POLICY "Public Read Access on Recipe Versions" ON recipe_versions FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipe Versions" ON recipe_versions FOR ALL USING (true) WITH CHECK (true);
-
--- ----------------------------------------------------------------------------
--- 3. USER PANTRY POLICIES
--- ----------------------------------------------------------------------------
-DROP POLICY IF EXISTS "Public Read Access on Pantry" ON user_pantry_items;
-DROP POLICY IF EXISTS "Public Modify Access on Pantry" ON user_pantry_items;
-CREATE POLICY "Public Read Access on Pantry" ON user_pantry_items FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Pantry" ON user_pantry_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Recipes" ON recipes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Recipe Steps" ON recipe_steps FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Recipe Tags" ON recipe_tags FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Health Suitability" ON recipe_health_suitability FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Recipe Versions" ON recipe_versions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Pantry" ON user_pantry_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Users" ON users FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on User Dietary Profiles" ON user_dietary_profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on User Health Profiles" ON user_health_profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on User Disliked Ingredients" ON user_disliked_ingredients FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Reviews" ON ratings_and_reviews FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Collections" ON collections FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Collection Recipes" ON collection_recipes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Meal Plans" ON meal_plans FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Meal Plan Items" ON meal_plan_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Ingredients" ON ingredients FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Recipe Ingredients" ON recipe_ingredients FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Ingredient Aliases" ON ingredient_aliases FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Ingredient Substitutes" ON ingredient_substitutes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Cuisines" ON cuisines FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access on Categories" ON categories FOR ALL USING (true) WITH CHECK (true);
 
 -- ----------------------------------------------------------------------------
--- 4. USERS & MULTIVALUED HEALTH/DIETARY PROFILES
+-- STEP 4: HARDEN FUNCTION SEARCH PATH
+-- (Resolves "Function Search Path Mutable" warnings)
 -- ----------------------------------------------------------------------------
-DROP POLICY IF EXISTS "Public Read Access on Users" ON users;
-DROP POLICY IF EXISTS "Public Modify Access on Users" ON users;
-CREATE POLICY "Public Read Access on Users" ON users FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Users" ON users FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on User Dietary Profiles" ON user_dietary_profiles;
-DROP POLICY IF EXISTS "Public Modify Access on User Dietary Profiles" ON user_dietary_profiles;
-CREATE POLICY "Public Read Access on User Dietary Profiles" ON user_dietary_profiles FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on User Dietary Profiles" ON user_dietary_profiles FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on User Health Profiles" ON user_health_profiles;
-DROP POLICY IF EXISTS "Public Modify Access on User Health Profiles" ON user_health_profiles;
-CREATE POLICY "Public Read Access on User Health Profiles" ON user_health_profiles FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on User Health Profiles" ON user_health_profiles FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on User Disliked Ingredients" ON user_disliked_ingredients;
-DROP POLICY IF EXISTS "Public Modify Access on User Disliked Ingredients" ON user_disliked_ingredients;
-CREATE POLICY "Public Read Access on User Disliked Ingredients" ON user_disliked_ingredients FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on User Disliked Ingredients" ON user_disliked_ingredients FOR ALL USING (true) WITH CHECK (true);
+ALTER FUNCTION public.fn_update_recipe_rating() SET search_path = public;
+ALTER FUNCTION public.fn_touch_recipe_updated_at() SET search_path = public;
 
 -- ----------------------------------------------------------------------------
--- 5. RATINGS & REVIEWS POLICIES
+-- STEP 5: SECURITY INVOKER ON DATABASE VIEWS
+-- (Resolves "Security Definer View" critical warnings)
 -- ----------------------------------------------------------------------------
-DROP POLICY IF EXISTS "Public Read Access on Reviews" ON ratings_and_reviews;
-DROP POLICY IF EXISTS "Public Modify Access on Reviews" ON ratings_and_reviews;
-CREATE POLICY "Public Read Access on Reviews" ON ratings_and_reviews FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Reviews" ON ratings_and_reviews FOR ALL USING (true) WITH CHECK (true);
-
--- ----------------------------------------------------------------------------
--- 6. COLLECTIONS & BOOKMARKS POLICIES
--- ----------------------------------------------------------------------------
-DROP POLICY IF EXISTS "Public Read Access on Collections" ON collections;
-DROP POLICY IF EXISTS "Public Modify Access on Collections" ON collections;
-CREATE POLICY "Public Read Access on Collections" ON collections FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Collections" ON collections FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Collection Recipes" ON collection_recipes;
-DROP POLICY IF EXISTS "Public Modify Access on Collection Recipes" ON collection_recipes;
-CREATE POLICY "Public Read Access on Collection Recipes" ON collection_recipes FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Collection Recipes" ON collection_recipes FOR ALL USING (true) WITH CHECK (true);
-
--- ----------------------------------------------------------------------------
--- 7. MEAL PLANNING POLICIES
--- ----------------------------------------------------------------------------
-DROP POLICY IF EXISTS "Public Read Access on Meal Plans" ON meal_plans;
-DROP POLICY IF EXISTS "Public Modify Access on Meal Plans" ON meal_plans;
-CREATE POLICY "Public Read Access on Meal Plans" ON meal_plans FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Meal Plans" ON meal_plans FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Meal Plan Items" ON meal_plan_items;
-DROP POLICY IF EXISTS "Public Modify Access on Meal Plan Items" ON meal_plan_items;
-CREATE POLICY "Public Read Access on Meal Plan Items" ON meal_plan_items FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Meal Plan Items" ON meal_plan_items FOR ALL USING (true) WITH CHECK (true);
-
--- ----------------------------------------------------------------------------
--- 8. REFERENCE TAXONOMIES (Cuisines, Categories, Ingredients)
--- ----------------------------------------------------------------------------
-DROP POLICY IF EXISTS "Public Read Access on Ingredients" ON ingredients;
-DROP POLICY IF EXISTS "Public Modify Access on Ingredients" ON ingredients;
-CREATE POLICY "Public Read Access on Ingredients" ON ingredients FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Ingredients" ON ingredients FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Recipe Ingredients" ON recipe_ingredients;
-DROP POLICY IF EXISTS "Public Modify Access on Recipe Ingredients" ON recipe_ingredients;
-CREATE POLICY "Public Read Access on Recipe Ingredients" ON recipe_ingredients FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Recipe Ingredients" ON recipe_ingredients FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Ingredient Aliases" ON ingredient_aliases;
-DROP POLICY IF EXISTS "Public Modify Access on Ingredient Aliases" ON ingredient_aliases;
-CREATE POLICY "Public Read Access on Ingredient Aliases" ON ingredient_aliases FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Ingredient Aliases" ON ingredient_aliases FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Ingredient Substitutes" ON ingredient_substitutes;
-DROP POLICY IF EXISTS "Public Modify Access on Ingredient Substitutes" ON ingredient_substitutes;
-CREATE POLICY "Public Read Access on Ingredient Substitutes" ON ingredient_substitutes FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Ingredient Substitutes" ON ingredient_substitutes FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Cuisines" ON cuisines;
-DROP POLICY IF EXISTS "Public Modify Access on Cuisines" ON cuisines;
-CREATE POLICY "Public Read Access on Cuisines" ON cuisines FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Cuisines" ON cuisines FOR ALL USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public Read Access on Categories" ON categories;
-DROP POLICY IF EXISTS "Public Modify Access on Categories" ON categories;
-CREATE POLICY "Public Read Access on Categories" ON categories FOR SELECT USING (true);
-CREATE POLICY "Public Modify Access on Categories" ON categories FOR ALL USING (true) WITH CHECK (true);
+ALTER VIEW IF EXISTS public.v_top_rated_recipes SET (security_invoker = true);
+ALTER VIEW IF EXISTS public.v_healthy_recipe_summary SET (security_invoker = true);
+ALTER VIEW IF EXISTS public.v_diabetic_pcos_recommendations SET (security_invoker = true);
+ALTER VIEW IF EXISTS public.v_pantry_match_helper SET (security_invoker = true);
+ALTER VIEW IF EXISTS public.v_active_cook_profiles SET (security_invoker = true);
