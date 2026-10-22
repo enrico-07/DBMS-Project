@@ -10,19 +10,11 @@ import {
   Plus,
   Menu,
   X,
-  ArrowUpRight,
-  RotateCcw,
-  UserCheck,
   LogIn,
   LogOut,
   Sun,
-  Sunrise,
   Sunset,
   Moon,
-  ShoppingBag,
-  ShoppingBasket,
-  Bookmark,
-  Sparkles,
   Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,6 +31,7 @@ const navigation = [
   { to: '/planner' as const, label: 'Meal planner', icon: CalendarDays },
   { to: '/ingredients' as const, label: 'Ingredient library', icon: Sprout },
   { to: '/nutrition' as const, label: 'Nutrition & wellbeing', icon: HeartPulse },
+  { to: '/settings' as const, label: 'Settings', icon: Settings2 },
 ];
 
 export function VaultShell({ children }: { children: ReactNode }) {
@@ -46,7 +39,7 @@ export function VaultShell({ children }: { children: ReactNode }) {
   const [commandOpen, setCommandOpen] = useState(false);
   const router = useRouter();
   const path = useRouterState({ select: s => s.location.pathname });
-  const { currentUser, allUsers, switchUser, resetDatabase, pantry, plan, saved, theme, logoutUser, isAuthenticated } = useVault();
+  const { currentUser, theme, logoutUser, isAuthenticated } = useVault();
 
   const handleLogout = () => {
     setOpen(false);
@@ -104,26 +97,8 @@ export function VaultShell({ children }: { children: ReactNode }) {
         </Link>
         <p className="sidebar-caption">A LITTLE SPACE FOR GOOD FOOD</p>
 
-        {/* Quick Search in Sidebar */}
-        <button
-          type="button"
-          onClick={() => {
-            setOpen(false);
-            setCommandOpen(true);
-          }}
-          className="my-3 mx-1 flex items-center justify-between p-2.5 rounded-xl border border-border bg-card/60 hover:bg-card text-muted-foreground hover:text-foreground text-xs shadow-2xs transition-all duration-200 cursor-pointer"
-        >
-          <span className="flex items-center gap-2">
-            <Search size={14} className="text-primary" />
-            <span>Search or jump to...</span>
-          </span>
-          <kbd className="inline-flex h-4.5 select-none items-center rounded border border-border/80 bg-muted px-1.5 font-mono text-[9px] font-medium text-muted-foreground">
-            Ctrl+K
-          </kbd>
-        </button>
-
         {/* Navigation Items */}
-        <div className="nav-group">
+        <div className="nav-group mt-3">
           <span className="nav-label">YOUR KITCHEN</span>
           {navigation.map(({ to, label, icon: Icon }) => (
             <Button
@@ -149,85 +124,35 @@ export function VaultShell({ children }: { children: ReactNode }) {
           </Link>
         </Button>
 
-        {/* Quick Switch Persona Card */}
-        {isAuthenticated && (
-          <div className="persona-switch-card">
-            <div className="persona-label">
-              <span>ACTIVE COOK</span>
-              <UserCheck size={11} className="text-clay" />
-            </div>
-            <div className="persona-pills">
-              {allUsers.slice(0, 3).map(u => (
-                <button
-                  key={u.id}
-                  type="button"
-                  className={`persona-pill ${currentUser.id === u.id ? 'active' : ''}`}
-                  onClick={() => switchUser(u.id)}
-                  title={`Switch to ${u.name} (${u.role})`}
-                >
-                  {u.name.split(' ')[0]}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Sidebar Bottom Profile & Controls */}
         <div className="sidebar-bottom">
-          <Button asChild variant="ghost" className="nav-item">
-            <Link to="/profile" onClick={() => setOpen(false)}>
-              <Settings2 size={16} />
-              Kitchen preferences
-            </Link>
-          </Button>
-
           {isAuthenticated ? (
-            <>
-              <Button asChild variant="ghost" className="nav-item">
-                <Link to="/login" onClick={() => setOpen(false)}>
-                  <LogIn size={16} />
-                  Account & switch
-                </Link>
-              </Button>
-
+            <div className="flex items-center justify-between gap-2 p-1.5 rounded-2xl border border-border bg-card/60 hover:bg-card transition-colors">
+              <Link to="/profile" className="profile-link flex-1 min-w-0" onClick={() => setOpen(false)}>
+                <span className="avatar shrink-0">{currentUser.avatar}</span>
+                <div className="overflow-hidden">
+                  <strong className="truncate block text-xs font-semibold">{currentUser.name}</strong>
+                  <small className="truncate block text-[10px] text-muted-foreground">{currentUser.role}</small>
+                </div>
+              </Link>
               <Button
                 variant="ghost"
-                className="nav-item text-destructive hover:text-destructive hover:bg-destructive/10"
+                size="sm"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
                 onClick={handleLogout}
+                title="Sign out"
               >
-                <LogOut size={16} />
-                Lock & sign out
+                <LogOut size={14} />
               </Button>
-
-              <Link to="/profile" className="profile-link" onClick={() => setOpen(false)}>
-                <span className="avatar">{currentUser.avatar}</span>
-                <div className="overflow-hidden">
-                  <strong className="truncate">{currentUser.name}</strong>
-                  <small className="truncate">{currentUser.role}</small>
-                </div>
-                <ArrowUpRight size={14} className="text-muted-foreground ml-auto shrink-0" />
-              </Link>
-            </>
+            </div>
           ) : (
-            <Button asChild className="nav-item bg-primary text-primary-foreground font-semibold">
+            <Button asChild className="w-full bg-primary text-primary-foreground font-semibold">
               <Link to="/login" onClick={() => setOpen(false)}>
-                <LogIn size={16} />
+                <LogIn size={15} />
                 Sign in to kitchen
               </Link>
             </Button>
           )}
-
-          <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-border text-[9.5px] text-muted-foreground">
-            <span>Relational Store · Active</span>
-            <button
-              type="button"
-              onClick={resetDatabase}
-              className="flex items-center gap-1 hover:text-clay transition-colors"
-              title="Reset database to initial demo state"
-            >
-              <RotateCcw size={10} /> Reset
-            </button>
-          </div>
         </div>
       </aside>
 

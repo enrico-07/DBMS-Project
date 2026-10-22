@@ -6,7 +6,6 @@ import {
   Calendar,
   BookOpen,
   MessageSquare,
-  Sparkles,
   Shield,
   ShieldCheck,
   Clock,
@@ -232,8 +231,8 @@ function Profile() {
       {/* Quick Switch Demo Personas Section */}
       <div className="bg-secondary/60 border border-border p-5 rounded-2xl mb-8">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-            <Sparkles size={13} /> Quick-Switch Academic Personas
+          <span className="text-xs font-bold text-primary uppercase tracking-wider">
+            Quick-Switch Demo Personas
           </span>
           <span className="text-[11px] text-muted-foreground">
             Instantly view distinct personalized shelves
@@ -557,8 +556,7 @@ function Profile() {
           <section className="bg-card border border-border p-6 rounded-2xl shadow-sm">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
               <div>
-                <h3 className="text-lg font-serif mb-1 flex items-center gap-2">
-                  <Sparkles size={16} className="text-primary" />
+                <h3 className="text-lg font-serif mb-1">
                   Kitchen Atmosphere
                 </h3>
                 <p className="text-xs text-muted-foreground">

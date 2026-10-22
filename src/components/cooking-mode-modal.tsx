@@ -8,7 +8,7 @@ import {
   ChevronRight,
   CheckCircle2,
   Clock,
-  Sparkles,
+  ChefHat,
   ListFilter,
   Maximize2,
   Volume2,
@@ -119,7 +119,7 @@ export function CookingModeModal({
         <div className="flex items-center justify-between p-5 border-b border-border bg-card/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <Sparkles size={18} />
+              <ChefHat size={18} />
             </div>
             <div>
               <DialogTitle className="text-base sm:text-lg font-serif font-bold text-foreground truncate max-w-sm sm:max-w-md">
@@ -186,8 +186,7 @@ export function CookingModeModal({
                 </p>
 
                 {activeStep?.tip && (
-                  <div className="mt-6 pt-4 border-t border-border flex items-start gap-2.5 text-xs text-muted-foreground">
-                    <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                  <div className="mt-6 pt-4 border-t border-border flex items-start gap-2 text-xs text-muted-foreground">
                     <span>
                       <strong className="text-foreground">Chef's Tip:</strong> {activeStep.tip}
                     </span>

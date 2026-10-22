@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Search, Sprout, ArrowUpRight, Check, Sparkles, ShoppingBag } from "lucide-react";
+import { Search, Sprout, ArrowUpRight, Check, ShoppingBag } from "lucide-react";
 import { masterIngredients, type IngredientMaster, getIngredientShelfLifeDays } from "@/lib/recipes";
 import { EmptyState, PageHeading } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";

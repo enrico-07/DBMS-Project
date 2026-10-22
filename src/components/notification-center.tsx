@@ -8,7 +8,7 @@ import {
   Calendar,
   Sprout,
   ChefHat,
-  Sparkles,
+  Info,
   ExternalLink,
   Inbox,
   X,
@@ -54,7 +54,7 @@ function getNotificationIcon(type: VaultNotification["type"]) {
       return <ChefHat size={15} className="text-primary" />;
     case "system":
     default:
-      return <Sparkles size={15} className="text-amber-500" />;
+      return <Info size={15} className="text-amber-500" />;
   }
 }
 

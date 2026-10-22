@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { HeartPulse, ArrowUpRight, Scale, Sparkles, ShieldCheck, Coins } from 'lucide-react';
+import { HeartPulse, ArrowUpRight, Scale, ShieldCheck, Coins } from 'lucide-react';
 import { PageHeading, RecipeCard } from '@/components/recipe-card';
 import { useVault } from '@/components/vault-provider';
 import { pageMeta } from '@/lib/metadata';
@@ -236,8 +236,8 @@ function Nutrition() {
       {/* Culinary & Nutrition FAQs */}
       <section className="faq-section bg-card border border-border p-8 rounded-3xl shadow-sm my-10">
         <div className="mb-6">
-          <span className="eyebrow flex items-center gap-1.5">
-            <Sparkles size={14} /> CULINARY SCIENCE & NUTRITION
+          <span className="eyebrow">
+            CULINARY SCIENCE & NUTRITION
           </span>
           <h2 className="text-2xl font-serif mt-1">Frequently Asked Questions</h2>
           <p className="text-xs text-muted-foreground mt-1">

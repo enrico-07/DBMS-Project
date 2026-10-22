@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Bookmark, Clock, Star, ArrowUpRight, Flame, Sparkles, Eye } from 'lucide-react';
+import { Bookmark, Clock, Star, ArrowUpRight, Flame, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useVault } from './vault-provider';
@@ -75,8 +75,8 @@ export function RecipeCard({
 
           {/* Pantry Match Indicator if applicable */}
           {typeof pantryMatchPercentage === 'number' && pantryMatchPercentage > 0 && (
-            <span className="pantry-match-badge flex items-center gap-1">
-              <Sparkles size={11} /> {pantryMatchPercentage}% in pantry
+            <span className="pantry-match-badge">
+              {pantryMatchPercentage}% in pantry
             </span>
           )}
 

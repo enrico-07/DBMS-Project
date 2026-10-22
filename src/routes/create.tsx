@@ -7,7 +7,6 @@ import {
   Check,
   Save,
   Clock,
-  Sparkles,
   ArrowLeft,
   GitCommit,
   Wand2,
@@ -679,7 +678,7 @@ Instructions:
                   className="bg-clay text-white hover:bg-clay/90 gap-1.5"
                   onClick={handleSmartExtract}
                 >
-                  <Sparkles size={14} /> Extract & Populate
+                  Parse & Populate
                 </Button>
               </div>
             </div>

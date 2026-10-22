@@ -14,7 +14,6 @@ import {
   Moon,
   UserCheck,
   RotateCcw,
-  Sparkles,
   ShoppingBag,
   Flame,
   Clock,

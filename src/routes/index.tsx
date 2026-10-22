@@ -12,7 +12,6 @@ import {
   Utensils,
   Cookie,
   Heart,
-  Sparkles,
   ShoppingBag,
   Flame,
   Check,
@@ -24,7 +23,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useVault } from '@/components/vault-provider';
 import { RecipeCard, EmptyState } from '@/components/recipe-card';
-import { OnboardingGuide } from '@/components/onboarding-guide';
 import { RecipeGridSkeleton } from '@/components/ui/skeleton-loaders';
 import {
   calculatePantryMatch,
@@ -182,14 +180,11 @@ function Index() {
 
   return (
     <div className="discover-page">
-      {/* Onboarding Guide for New & Exploring Cooks */}
-      <OnboardingGuide />
-
       {/* Main Discover Heading */}
       <header className="discover-heading">
         <div>
           <span className="eyebrow mb-1">
-            <Sparkles size={13} /> CURATED FOR {currentUser.cookingSkill.toUpperCase()}
+            CURATED FOR {currentUser.cookingSkill.toUpperCase()}
           </span>
           <h1>
             A little inspiration<br />
@@ -199,9 +194,9 @@ function Index() {
             Database-backed culinary intelligence meets the warmth of a handwritten family cookbook.
           </p>
         </div>
-        <div className="hidden md:flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-full text-xs text-muted-foreground shadow-sm">
-          <Heart size={14} className="text-clay fill-clay" />
-          <span>Personalized for {currentUser.name.split(' ')[0]}</span>
+        <div className="hidden md:flex items-center gap-2 bg-card border border-border px-3.5 py-1.5 rounded-full text-xs text-muted-foreground shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-clay" />
+          <span>Kitchen of {currentUser.name.split(' ')[0]}</span>
         </div>
       </header>
 
@@ -410,7 +405,7 @@ function Index() {
           />
           <div className="featured-copy">
             <span className="eyebrow">
-              <Sparkles size={13} /> RECIPE OF THE DAY
+              RECIPE OF THE DAY
             </span>
             <h2>
               Lemon, ricotta<br />

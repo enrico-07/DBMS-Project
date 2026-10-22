@@ -2,8 +2,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { PageHeading } from '@/components/recipe-card';
 import { useVault, type ThemeMode } from '@/components/vault-provider';
 import { ThemeSlider } from '@/components/theme-slider';
+import { Button } from '@/components/ui/button';
 import { pageMeta } from '@/lib/metadata';
-import { Sun, Sunset, Moon, Sparkles, Clock, Compass } from 'lucide-react';
+import { Sun, Sunset, Moon, Clock, Compass, Database, RotateCcw, UserCheck, ShieldCheck } from 'lucide-react';
 
 export const Route = createFileRoute('/settings')({
   component: SettingsPage,
@@ -15,7 +16,18 @@ export const Route = createFileRoute('/settings')({
 });
 
 function SettingsPage() {
-  const { theme, setTheme } = useVault();
+  const {
+    theme,
+    setTheme,
+    currentUser,
+    allUsers,
+    switchUser,
+    items,
+    saved,
+    plan,
+    pantry,
+    resetDatabase,
+  } = useVault();
 
   const themes: Array<{
     id: ThemeMode;
@@ -67,10 +79,7 @@ function SettingsPage() {
       <div className="bg-card border border-border p-6 rounded-3xl shadow-sm my-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={16} className="text-primary" />
-              <h2 className="text-lg font-serif">Active Kitchen Atmosphere</h2>
-            </div>
+            <h2 className="text-lg font-serif mb-1">Active Kitchen Atmosphere</h2>
             <p className="text-xs text-muted-foreground">
               Instant site-wide palette shift across all pages, typography, and controls.
             </p>
@@ -143,6 +152,111 @@ function SettingsPage() {
             Circadian Rhythm Sync
           </strong>
           RecipeVault continuously observes your local system time (Morning: 6 AM–12 PM, Afternoon: 12 PM–7 PM, Night: 7 PM–6 AM) to automatically illuminate your kitchen in harmony with the real world, while preserving your freedom to switch atmospheres manually whenever you desire.
+        </div>
+      </div>
+
+      {/* Active Cook Persona Section */}
+      <div className="bg-card border border-border p-6 rounded-3xl shadow-sm my-6">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
+          <div>
+            <h2 className="text-lg font-serif mb-1">Active Cook Persona</h2>
+            <p className="text-xs text-muted-foreground">
+              Switch test accounts to preview meal plans, dietary filters, and collections across different culinary profiles.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-secondary text-foreground border border-border">
+            <UserCheck size={13} className="text-clay" />
+            <span>Active: {currentUser.name.split(' ')[0]}</span>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-5">
+          {allUsers.map(user => {
+            const isUserActive = currentUser.id === user.id;
+            return (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => switchUser(user.id)}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-3.5 ${
+                  isUserActive
+                    ? 'border-primary bg-secondary/60 shadow-sm ring-1 ring-primary'
+                    : 'border-border bg-card hover:border-primary/50 hover:bg-background/80'
+                }`}
+              >
+                <span className="w-10 h-10 rounded-full bg-clay text-white font-bold flex items-center justify-center shrink-0 text-sm">
+                  {user.avatar}
+                </span>
+                <div className="overflow-hidden min-w-0">
+                  <div className="font-serif font-semibold text-sm truncate">{user.name}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{user.role}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Relational Database & State Management Section */}
+      <div className="bg-card border border-border p-6 rounded-3xl shadow-sm mb-12">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-border">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Database size={16} className="text-primary" />
+              <h2 className="text-lg font-serif">Relational Database & Storage State</h2>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              RecipeVault uses local-first relational caching synchronized with PostgreSQL schemas.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <ShieldCheck size={13} />
+            <span>Schema Synchronized</span>
+          </span>
+        </div>
+
+        {/* Database Metric Counters */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
+          <div className="p-3.5 rounded-xl border border-border bg-background/50">
+            <span className="text-[10px] uppercase font-semibold text-muted-foreground block mb-0.5">
+              Total Recipes
+            </span>
+            <span className="text-xl font-bold font-serif text-foreground">{items.length}</span>
+          </div>
+          <div className="p-3.5 rounded-xl border border-border bg-background/50">
+            <span className="text-[10px] uppercase font-semibold text-muted-foreground block mb-0.5">
+              Saved in Vault
+            </span>
+            <span className="text-xl font-bold font-serif text-foreground">{saved.length}</span>
+          </div>
+          <div className="p-3.5 rounded-xl border border-border bg-background/50">
+            <span className="text-[10px] uppercase font-semibold text-muted-foreground block mb-0.5">
+              Planner Items
+            </span>
+            <span className="text-xl font-bold font-serif text-foreground">{plan.length}</span>
+          </div>
+          <div className="p-3.5 rounded-xl border border-border bg-background/50">
+            <span className="text-[10px] uppercase font-semibold text-muted-foreground block mb-0.5">
+              Pantry Stocked
+            </span>
+            <span className="text-xl font-bold font-serif text-foreground">{pantry.length}</span>
+          </div>
+        </div>
+
+        {/* Reset Action */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-border">
+          <p className="text-xs text-muted-foreground">
+            Want to restart your evaluation demo or restore all initial recipes and planner slots?
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={resetDatabase}
+            className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 gap-2 shrink-0 cursor-pointer"
+          >
+            <RotateCcw size={13} />
+            Reset Database State
+          </Button>
         </div>
       </div>
     </div>

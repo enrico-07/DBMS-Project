@@ -4,7 +4,6 @@ import {
   ArrowRight,
   UserPlus,
   LogIn,
-  Sparkles,
   Check,
   Eye,
   EyeOff,
@@ -248,8 +247,8 @@ function LoginPage() {
           {mode !== "forgot" && (
             <div className="bg-secondary/40 border border-border p-3.5 rounded-2xl">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10.5px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles size={13} /> 1-Click Academic Personas
+                <span className="text-[10.5px] font-bold text-primary uppercase tracking-wider">
+                  1-Click Demo Personas
                 </span>
                 <span className="text-[9.5px] text-muted-foreground">Viva / Demo Fast-Switch</span>
               </div>

@@ -8,7 +8,6 @@ import {
   Bookmark,
   Calendar,
   Check,
-  Sparkles,
   ExternalLink,
   ChefHat,
   Plus,

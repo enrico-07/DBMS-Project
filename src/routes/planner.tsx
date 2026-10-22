@@ -7,7 +7,6 @@ import {
   ShoppingBasket,
   Trash2,
   Calendar,
-  Sparkles,
   Check,
   Copy,
   RotateCcw,
@@ -461,7 +460,7 @@ function Planner() {
 
           {totalIngredientsCount === 0 ? (
             <div className="text-center py-10">
-              <Sparkles size={28} className="text-clay mx-auto mb-2" />
+              <ShoppingBasket size={28} className="text-clay mx-auto mb-2" />
               <p className="text-sm font-semibold">No meals planned yet for this week.</p>
               <small className="text-muted-foreground text-xs">
                 Add recipes to the calendar above to generate an aisle-by-aisle shopping list.

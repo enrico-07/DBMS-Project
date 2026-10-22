@@ -15,7 +15,6 @@ import {
   ChefHat,
   History,
   RotateCcw,
-  Sparkles,
   Flame,
   MessageSquare,
   X,
@@ -862,7 +861,7 @@ function RecipeDetail() {
                     <p className="text-sm leading-relaxed">{step.instruction}</p>
                     {step.tip && (
                       <div className="mt-2 text-xs text-primary bg-secondary p-2.5 rounded-xl border border-border flex items-start gap-1.5">
-                        <Sparkles size={13} className="shrink-0 mt-0.5" />
+                        <ChefHat size={13} className="shrink-0 mt-0.5" />
                         <span>Chef’s tip: {step.tip}</span>
                       </div>
                     )}
@@ -1010,7 +1009,7 @@ function RecipeDetail() {
 
             {recipe.steps[activeStepIndex]?.tip && (
               <div className="bg-card border border-border p-4 rounded-2xl max-w-xl mx-auto text-sm text-primary flex items-center justify-center gap-2">
-                <Sparkles size={16} />
+                <ChefHat size={16} />
                 <span>Chef’s Tip: {recipe.steps[activeStepIndex]?.tip}</span>
               </div>
             )}
