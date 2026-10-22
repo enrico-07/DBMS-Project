@@ -165,7 +165,7 @@ function SettingsPage() {
             </p>
           </div>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-secondary text-foreground border border-border">
-            <UserCheck size={13} className="text-clay" />
+            <UserCheck size={13} className="text-primary" />
             <span>Active: {currentUser.name.split(' ')[0]}</span>
           </span>
         </div>
@@ -184,7 +184,7 @@ function SettingsPage() {
                     : 'border-border bg-card hover:border-primary/50 hover:bg-background/80'
                 }`}
               >
-                <span className="w-10 h-10 rounded-full bg-clay text-white font-bold flex items-center justify-center shrink-0 text-sm">
+                <span className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center shrink-0 text-sm font-serif shadow-2xs">
                   {user.avatar}
                 </span>
                 <div className="overflow-hidden min-w-0">

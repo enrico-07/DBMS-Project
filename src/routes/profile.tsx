@@ -196,7 +196,7 @@ function Profile() {
               {currentUser.role}
             </span>
             {currentUser.loginMethod && (
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-peach/60 text-clay border border-clay/20 w-fit mx-auto md:mx-0">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 w-fit mx-auto md:mx-0">
                 {currentUser.loginMethod === 'google' ? 'Google Account Connected' : 'Email Verified'}
               </span>
             )}
@@ -212,15 +212,15 @@ function Profile() {
         {/* Live Relational Stats */}
         <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 text-center shrink-0">
           <div>
-            <strong className="text-xl font-serif text-clay block tabular">{saved.length}</strong>
+            <strong className="text-xl font-serif text-primary block tabular">{saved.length}</strong>
             <span className="text-[10px] text-muted-foreground font-semibold uppercase">Saved</span>
           </div>
           <div>
-            <strong className="text-xl font-serif text-clay block tabular">{plan.length}</strong>
+            <strong className="text-xl font-serif text-primary block tabular">{plan.length}</strong>
             <span className="text-[10px] text-muted-foreground font-semibold uppercase">Planned</span>
           </div>
           <div>
-            <strong className="text-xl font-serif text-clay block tabular">
+            <strong className="text-xl font-serif text-primary block tabular">
               {items.filter(r => r.createdBy === currentUser.id).length}
             </strong>
             <span className="text-[10px] text-muted-foreground font-semibold uppercase">Created</span>
@@ -281,7 +281,7 @@ function Profile() {
           onClick={() => setActiveTab('profile')}
           className={`px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
             activeTab === 'profile'
-              ? 'bg-clay text-white shadow-sm'
+              ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground hover:bg-card'
           }`}
         >
@@ -293,7 +293,7 @@ function Profile() {
           onClick={() => setActiveTab('security')}
           className={`px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
             activeTab === 'security'
-              ? 'bg-clay text-white shadow-sm'
+              ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground hover:bg-card'
           }`}
         >
@@ -305,7 +305,7 @@ function Profile() {
           onClick={() => setActiveTab('preferences')}
           className={`px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
             activeTab === 'preferences'
-              ? 'bg-clay text-white shadow-sm'
+              ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground hover:bg-card'
           }`}
         >
@@ -409,7 +409,7 @@ function Profile() {
             </div>
 
             <div className="flex justify-end pt-3">
-              <Button type="submit" className="rounded-full bg-clay text-white gap-1.5 text-xs">
+              <Button type="submit" className="rounded-full bg-primary text-primary-foreground gap-1.5 text-xs shadow-xs">
                 <Save size={14} /> Save Profile Changes
               </Button>
             </div>
@@ -425,7 +425,7 @@ function Profile() {
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
                 <h3 className="text-lg font-serif flex items-center gap-2">
-                  <KeyRound size={16} className="text-clay" />
+                  <KeyRound size={16} className="text-primary" />
                   Password & Authentication
                 </h3>
                 <p className="text-xs text-muted-foreground">
@@ -470,7 +470,7 @@ function Profile() {
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button type="submit" className="rounded-full bg-clay text-white gap-1.5 text-xs">
+              <Button type="submit" className="rounded-full bg-primary text-primary-foreground gap-1.5 text-xs shadow-xs">
                 <Lock size={14} /> Update Security Passphrase
               </Button>
             </div>
@@ -631,7 +631,7 @@ function Profile() {
                 onChange={e => setDislikedInput(e.target.value)}
                 className="text-xs"
               />
-              <Button type="submit" size="sm" className="rounded-full bg-clay text-white">
+              <Button type="submit" size="sm" className="rounded-full bg-primary text-primary-foreground shadow-xs">
                 <Plus size={14} className="mr-1" /> Add
               </Button>
             </form>

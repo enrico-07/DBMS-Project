@@ -132,7 +132,7 @@ function Ingredients() {
                 </span>
                 <Button
                   variant="link"
-                  className="text-xs p-0 gap-1 text-clay hover:underline"
+                  className="text-xs p-0 gap-1 text-primary hover:underline"
                   onClick={() => setActiveIngredient(ing)}
                 >
                   Explore culinary profile <ArrowUpRight size={14} />
@@ -151,7 +151,7 @@ function Ingredients() {
           actionLabel="Clear Filters"
           customAction={
             <Button
-              className="rounded-full bg-clay text-white px-5 text-xs shadow-sm"
+              className="rounded-full bg-primary text-primary-foreground px-5 text-xs shadow-sm"
               onClick={() => {
                 setQuery("");
                 setSelectedCategory("All categories");

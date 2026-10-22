@@ -66,7 +66,7 @@ function Cookbook() {
         title="Recipes worth keeping."
         description="A quiet corner for your bookmarked favorites, curated menus, and works in progress."
         action={
-          <Button asChild className="rounded-full bg-clay text-white gap-2 shadow-sm h-9 px-4 text-xs font-semibold hover:bg-clay/90 shrink-0">
+          <Button asChild className="rounded-full bg-primary text-primary-foreground gap-2 shadow-sm h-9 px-4 text-xs font-semibold hover:bg-primary/90 shrink-0">
             <Link to="/create">
               <Plus size={15} /> Add a recipe
             </Link>
@@ -84,7 +84,7 @@ function Cookbook() {
             setSelectedCollectionId('');
           }}
         >
-          <Heart size={15} className={tab === 'saved' ? 'fill-current text-white' : 'text-clay'} />
+          <Heart size={15} className={tab === 'saved' ? 'fill-current text-primary-foreground' : 'text-primary'} />
           <span>Saved recipes</span>
           <span className="tabular font-semibold opacity-85">({saved.length})</span>
         </Button>
@@ -94,7 +94,7 @@ function Cookbook() {
           className={`rounded-full gap-2 ${tab === 'collections' ? 'selected' : ''}`}
           onClick={() => setTab('collections')}
         >
-          <BookOpen size={15} className={tab === 'collections' ? 'text-white' : 'text-muted-foreground'} />
+          <BookOpen size={15} className={tab === 'collections' ? 'text-primary-foreground' : 'text-muted-foreground'} />
           <span>Collections</span>
           <span className="tabular font-semibold opacity-85">({collections.length})</span>
         </Button>
@@ -107,7 +107,7 @@ function Cookbook() {
             setSelectedCollectionId('');
           }}
         >
-          <FileText size={15} className={tab === 'drafts' ? 'text-white' : 'text-muted-foreground'} />
+          <FileText size={15} className={tab === 'drafts' ? 'text-primary-foreground' : 'text-muted-foreground'} />
           <span>Drafts</span>
           <span className="tabular font-semibold opacity-85">({draftCount})</span>
         </Button>
@@ -152,7 +152,7 @@ function Cookbook() {
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                       {c.description}
                     </p>
-                    <span className="text-[11px] font-semibold text-clay mt-2 inline-block">
+                    <span className="text-[11px] font-semibold text-primary mt-2 inline-block">
                       {c.ids.length} {c.ids.length === 1 ? 'recipe' : 'recipes'}
                     </span>
                   </div>
@@ -262,7 +262,7 @@ function Cookbook() {
               <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="rounded-full bg-clay text-white">
+              <Button type="submit" className="rounded-full bg-primary text-primary-foreground shadow-xs">
                 Create Collection
               </Button>
             </div>

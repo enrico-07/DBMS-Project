@@ -116,14 +116,17 @@ export function WoodenLadleCursor() {
     };
   }, []);
 
-  // Natural Culinary Ladle Banging & Hover Physics:
-  // - Pivot at handle pommel (45px, 47px).
-  // - Scoop head center at bottom-left (13px, 14px), directly centered on the mouse coordinate.
-  // - Resting posture: 0deg.
-  // - Hovering clickable element: gentle chef windup/lift (+6.5deg, lifting ladle head -3px).
-  // - Clicking: deliberate downward scoop bang (-14deg, dipping +6px) with an elastic rebound!
-  const rotation = isPressing ? -14 : isHoveringClickable ? 6.5 : 0;
-  const headTranslateY = isPressing ? 6 : isHoveringClickable ? -3 : 0;
+  // Natural Culinary Ladle Tapping & Hover Physics:
+  // - Hotspot & Pivot Anchor: Spoon bowl center at (13px, 14px), directly pinned on the mouse click coordinate (clientX, clientY).
+  // - Resting posture: 0deg, scale 1.
+  // - Hovering clickable element: handle raises up slightly (-7deg, scale 1.04) in ready-to-tap anticipation, while bowl stays anchored on the target.
+  // - Clicking / Tap Strike: handle taps firmly down (+4deg, scale 0.90) right onto the screen surface, with the bowl staying locked on the exact click pixel!
+  // - Release: snappy elastic rebound back to resting/hover.
+  const transform = isPressing
+    ? 'rotate(4deg) scale(0.90)'
+    : isHoveringClickable
+    ? 'rotate(-7deg) scale(1.04)'
+    : 'rotate(0deg) scale(1)';
 
   if (!mounted || typeof document === 'undefined') {
     return null;
@@ -132,7 +135,7 @@ export function WoodenLadleCursor() {
   const cursorOverlay = (
     <div
       ref={cursorNodeRef}
-      className="wooden-ladle-cursor-overlay"
+      className={`wooden-ladle-cursor-overlay ${isPressing ? 'is-pressing' : ''} ${isHoveringClickable ? 'is-hovering' : ''}`}
       aria-hidden="true"
       style={{
         opacity: isVisible ? 1 : 0,
@@ -154,11 +157,11 @@ export function WoodenLadleCursor() {
       <div
         className="ladle-pivot-wrapper"
         style={{
-          transform: `rotate(${rotation}deg)`,
-          transformOrigin: '45px 47px',
+          transform,
+          transformOrigin: '13px 14px',
           transition: isPressing
-            ? 'transform 75ms cubic-bezier(0.18, 0.89, 0.32, 1.28)'
-            : 'transform 190ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+            ? 'transform 60ms cubic-bezier(0.1, 0.9, 0.2, 1)'
+            : 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
       >
         <svg
@@ -215,15 +218,8 @@ export function WoodenLadleCursor() {
             {/* Hanging lanyard hole on handle pommel */}
             <circle cx="43.5" cy="46.5" r="1.3" fill="#261205" stroke="#81461B" strokeWidth="0.5" />
 
-            {/* THE LADLE HEAD / BOWL - Bangs directly down onto the clicked element */}
-            <g
-              style={{
-                transform: `translateY(${headTranslateY}px)`,
-                transition: isPressing
-                  ? 'transform 75ms cubic-bezier(0.18, 0.89, 0.32, 1.28)'
-                  : 'transform 190ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-              }}
-            >
+            {/* THE LADLE HEAD / BOWL - Anchored directly on the clicked element */}
+            <g id="ladle-bowl-head">
               {/* Outer Rim */}
               <ellipse
                 cx="13"

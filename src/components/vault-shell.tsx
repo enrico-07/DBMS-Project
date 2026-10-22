@@ -134,7 +134,7 @@ export function VaultShell({ children }: { children: ReactNode }) {
                 onClick={() => setOpen(false)}
                 title={`Signed in as ${currentUser.name} (${currentUser.role})`}
               >
-                <span className="w-8 h-8 rounded-full bg-clay text-white flex items-center justify-center font-serif font-bold text-xs shrink-0 shadow-2xs">
+                <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold text-xs shrink-0 shadow-2xs">
                   {currentUser.avatar}
                 </span>
                 <div className="flex-1 min-w-0 leading-tight">
@@ -216,7 +216,7 @@ export function VaultShell({ children }: { children: ReactNode }) {
             {/* Chef Profile Avatar */}
             <Link
               to="/profile"
-              className="w-8.5 h-8.5 rounded-full bg-clay text-white flex items-center justify-center font-serif font-bold text-xs shadow-2xs hover:ring-2 hover:ring-clay/40 hover:scale-105 transition-all shrink-0 cursor-pointer"
+              className="w-8.5 h-8.5 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold text-xs shadow-2xs hover:ring-2 hover:ring-primary/40 hover:scale-105 transition-all shrink-0 cursor-pointer"
               title={`Chef ${currentUser.name} (${currentUser.role}) · View profile & kitchen preferences`}
               aria-label="Chef profile"
             >
@@ -229,7 +229,7 @@ export function VaultShell({ children }: { children: ReactNode }) {
 
         <footer className="page-footer">
           <span>
-            RecipeVault <span className="text-clay">♥</span> A Database-Driven Culinary Intelligence System
+            RecipeVault <span className="text-primary">♥</span> A Database-Driven Culinary Intelligence System
           </span>
           <span>Crafted with love for home cooks and food lovers</span>
         </footer>
@@ -256,7 +256,7 @@ export function VaultShell({ children }: { children: ReactNode }) {
           </Link>
           <Link
             to="/create"
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-clay text-white shadow-md -mt-4 hover:scale-105 active:scale-95 transition-all"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground shadow-md -mt-4 hover:scale-105 active:scale-95 transition-all"
             title="Add recipe"
           >
             <Plus size={20} />

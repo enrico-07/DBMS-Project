@@ -95,7 +95,7 @@ export function NotificationCenter() {
         >
           <Bell size={17} />
           {unreadNotificationsCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-clay text-[10px] font-bold text-white shadow-sm ring-2 ring-background animate-in zoom-in-50 duration-200">
+            <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm ring-2 ring-background animate-in zoom-in-50 duration-200">
               {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
             </span>
           )}
@@ -112,7 +112,7 @@ export function NotificationCenter() {
               </div>
               <SheetTitle className="text-base font-serif font-semibold">Kitchen Activity</SheetTitle>
               {unreadNotificationsCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-clay/15 text-clay">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-primary">
                   {unreadNotificationsCount} new
                 </span>
               )}

@@ -420,12 +420,12 @@ function RecipeDetail() {
         {/* Metadata Badges */}
         <div className="detail-meta">
           <span className="flex items-center gap-1.5">
-            <Clock size={15} className="text-clay" />
+            <Clock size={15} className="text-primary" />
             <strong className="tabular">{recipe.time} min</strong> total
           </span>
 
           <span className="flex items-center gap-1.5">
-            <Users size={15} className="text-clay" />
+            <Users size={15} className="text-primary" />
             <strong className="tabular">{recipe.servings} servings</strong> original
           </span>
 
@@ -434,7 +434,7 @@ function RecipeDetail() {
             <strong>{recipe.rating}</strong> ({recipe.ratingCount} reviews)
           </span>
 
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-peach text-clay border border-clay/20 shadow-xs">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-xs">
             {recipe.diet}
           </span>
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-secondary/80 border border-border text-foreground">
@@ -487,7 +487,7 @@ function RecipeDetail() {
           </Button>
 
           <Button
-            className="rounded-full gap-2 bg-clay text-white shadow-md hover:bg-clay/90"
+            className="rounded-full gap-2 bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
             onClick={() => {
               setCookingMode(true);
               setActiveStepIndex(0);
@@ -536,7 +536,7 @@ function RecipeDetail() {
           {Object.keys(activeSwaps).length > 0 && (
             <div className="mb-4 p-3 bg-secondary/70 border border-border rounded-xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <ArrowLeftRight size={14} className="text-clay shrink-0" />
+                <ArrowLeftRight size={14} className="text-primary shrink-0" />
                 <span>
                   <strong>{Object.keys(activeSwaps).length} active ingredient substitution(s)</strong>
                   <span className="text-[11px] text-muted-foreground block">
@@ -547,7 +547,7 @@ function RecipeDetail() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-xs gap-1 text-clay hover:bg-clay/10"
+                className="h-7 text-xs gap-1 text-primary hover:bg-primary/10"
                 onClick={() => {
                   setActiveSwaps({});
                   toast.info('All ingredient substitutions cleared');
@@ -592,7 +592,7 @@ function RecipeDetail() {
                         </strong>
                         <span className="font-medium text-foreground">{displayName}</span>
                         {swap && (
-                          <span className="text-[11px] text-clay ml-1.5 font-semibold bg-peach/60 px-1.5 py-0.5 rounded">
+                          <span className="text-[11px] text-primary ml-1.5 font-semibold bg-primary/10 px-1.5 py-0.5 rounded">
                             (Swapped for {i.name})
                           </span>
                         )}
@@ -651,7 +651,7 @@ function RecipeDetail() {
                 <strong className="tabular">{effectiveCalories}<small>kcal</small></strong>
                 <span>Energy</span>
                 {macroDeltas.calorieDelta !== 0 && (
-                  <span className={`text-[10px] font-bold ${macroDeltas.calorieDelta < 0 ? 'text-sage' : 'text-clay'}`}>
+                  <span className={`text-[10px] font-bold ${macroDeltas.calorieDelta < 0 ? 'text-sage' : 'text-primary'}`}>
                     {macroDeltas.calorieDelta > 0 ? `+${macroDeltas.calorieDelta}` : macroDeltas.calorieDelta} kcal
                   </span>
                 )}
@@ -660,7 +660,7 @@ function RecipeDetail() {
                 <strong className="tabular">{effectiveProtein}<small>g</small></strong>
                 <span>Protein</span>
                 {macroDeltas.proteinDelta !== 0 && (
-                  <span className={`text-[10px] font-bold ${macroDeltas.proteinDelta > 0 ? 'text-sage' : 'text-clay'}`}>
+                  <span className={`text-[10px] font-bold ${macroDeltas.proteinDelta > 0 ? 'text-sage' : 'text-primary'}`}>
                     {macroDeltas.proteinDelta > 0 ? `+${macroDeltas.proteinDelta}g` : `${macroDeltas.proteinDelta}g`}
                   </span>
                 )}
@@ -669,7 +669,7 @@ function RecipeDetail() {
                 <strong className="tabular">{effectiveCarbs}<small>g</small></strong>
                 <span>Carbs</span>
                 {macroDeltas.carbsDelta !== 0 && (
-                  <span className={`text-[10px] font-bold ${macroDeltas.carbsDelta < 0 ? 'text-sage' : 'text-clay'}`}>
+                  <span className={`text-[10px] font-bold ${macroDeltas.carbsDelta < 0 ? 'text-sage' : 'text-primary'}`}>
                     {macroDeltas.carbsDelta > 0 ? `+${macroDeltas.carbsDelta}g` : `${macroDeltas.carbsDelta}g`}
                   </span>
                 )}
@@ -678,7 +678,7 @@ function RecipeDetail() {
                 <strong className="tabular">{effectiveFat}<small>g</small></strong>
                 <span>Fat</span>
                 {macroDeltas.fatDelta !== 0 && (
-                  <span className={`text-[10px] font-bold ${macroDeltas.fatDelta < 0 ? 'text-sage' : 'text-clay'}`}>
+                  <span className={`text-[10px] font-bold ${macroDeltas.fatDelta < 0 ? 'text-sage' : 'text-primary'}`}>
                     {macroDeltas.fatDelta > 0 ? `+${macroDeltas.fatDelta}g` : `${macroDeltas.fatDelta}g`}
                   </span>
                 )}
@@ -802,7 +802,7 @@ function RecipeDetail() {
                     Batch Total ({servings} servings)
                   </span>
                   <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-xl font-bold font-serif text-clay tabular">
+                    <span className="text-xl font-bold font-serif text-primary tabular">
                       ${scaledBatchCost.toFixed(2)}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-medium">total</span>
@@ -1000,7 +1000,7 @@ function RecipeDetail() {
 
           {/* Active Step Presentation */}
           <div className="max-w-3xl mx-auto w-full my-auto py-10 text-center">
-            <div className="step-number w-14 h-14 text-2xl mx-auto mb-6 bg-clay text-white">
+            <div className="step-number w-14 h-14 text-2xl mx-auto mb-6 bg-primary text-primary-foreground shadow-md">
               {activeStepIndex + 1}
             </div>
             <p className="text-2xl font-serif leading-relaxed mb-6">
@@ -1052,7 +1052,7 @@ function RecipeDetail() {
                 ) : (
                   <Button
                     size="sm"
-                    className="rounded-full bg-clay text-white gap-2 text-xs h-9 px-5 shadow-md hover:bg-clay/90"
+                    className="rounded-full bg-primary text-primary-foreground gap-2 text-xs h-9 px-5 shadow-md hover:bg-primary/90"
                     onClick={() =>
                       startOrAddTimer(
                         `Step ${activeStepIndex + 1}: ${recipe.steps[activeStepIndex]?.instruction.slice(0, 32)}…`,
@@ -1078,7 +1078,7 @@ function RecipeDetail() {
               </Button>
               {activeStepIndex < recipe.steps.length - 1 ? (
                 <Button
-                  className="rounded-full px-8 bg-clay text-white"
+                  className="rounded-full px-8 bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
                   onClick={() => setActiveStepIndex(p => p + 1)}
                 >
                   Next Step
@@ -1103,7 +1103,7 @@ function RecipeDetail() {
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent className="max-w-lg">
           <DialogTitle className="flex items-center gap-2">
-            <History size={18} className="text-clay" />
+            <History size={18} className="text-primary" />
             Recipe Version Control
           </DialogTitle>
           <DialogDescription>
@@ -1125,7 +1125,7 @@ function RecipeDetail() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-7 text-xs gap-1 hover:text-clay"
+                    className="h-7 text-xs gap-1 hover:text-primary"
                     onClick={() => {
                       restoreRecipeVersion(id, ver.versionId);
                       setHistoryOpen(false);
@@ -1219,7 +1219,7 @@ function RecipeDetail() {
               <Button type="button" variant="ghost" onClick={() => setReviewOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="rounded-full bg-clay text-white">
+              <Button type="submit" className="rounded-full bg-primary text-primary-foreground shadow-xs">
                 Submit Review
               </Button>
             </div>
@@ -1283,7 +1283,7 @@ function RecipeDetail() {
       <Dialog open={Boolean(substitutionModalIngredient)} onOpenChange={() => setSubstitutionModalIngredient(null)}>
         <DialogContent className="max-w-md">
           <DialogTitle className="text-xl font-serif flex items-center gap-2">
-            <ArrowLeftRight size={18} className="text-clay" />
+            <ArrowLeftRight size={18} className="text-primary" />
             Healthy Swaps for {substitutionModalIngredient}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -1299,7 +1299,7 @@ function RecipeDetail() {
                   <div
                     key={sub.substituteName}
                     className={`p-3.5 rounded-xl border text-xs transition-all flex flex-col gap-2 ${
-                      isCurrent ? 'border-clay bg-peach/40' : 'border-border bg-card hover:border-border/80'
+                      isCurrent ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-border/80'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -1313,7 +1313,7 @@ function RecipeDetail() {
                     </p>
                     <div className="flex items-center justify-between pt-2 border-t border-border/50 text-[10px]">
                       <div className="flex items-center gap-2 tabular font-medium">
-                        <span className={sub.calorieDelta < 0 ? 'text-sage' : sub.calorieDelta > 0 ? 'text-clay' : 'text-muted-foreground'}>
+                        <span className={sub.calorieDelta < 0 ? 'text-sage' : sub.calorieDelta > 0 ? 'text-primary' : 'text-muted-foreground'}>
                           {sub.calorieDelta > 0 ? `+${sub.calorieDelta}` : sub.calorieDelta} kcal
                         </span>
                         <span>·</span>
@@ -1327,7 +1327,7 @@ function RecipeDetail() {
                       </div>
                       <Button
                         size="sm"
-                        className={`rounded-full h-7 text-xs ${isCurrent ? 'bg-secondary text-foreground' : 'bg-clay text-white'}`}
+                        className={`rounded-full h-7 text-xs ${isCurrent ? 'bg-secondary text-foreground' : 'bg-primary text-primary-foreground'}`}
                         onClick={() => {
                           if (isCurrent) {
                             setActiveSwaps(prev => {
@@ -1364,7 +1364,7 @@ function RecipeDetail() {
         >
           <div className="flex items-center justify-between border-b border-border/70 pb-2 mb-2.5">
             <div className="flex items-center gap-1.5 text-xs font-serif font-bold text-foreground">
-              <Timer size={15} className="text-clay animate-pulse" />
+              <Timer size={15} className="text-primary animate-pulse" />
               <span>Kitchen Multi-Timers ({timers.length})</span>
             </div>
             <Button
@@ -1385,7 +1385,7 @@ function RecipeDetail() {
                   key={timer.id}
                   className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 transition-all ${
                     isDone
-                      ? 'bg-clay/15 border-clay text-clay animate-bounce'
+                      ? 'bg-primary/15 border-primary text-primary animate-bounce'
                       : timer.isRunning
                       ? 'bg-secondary/60 border-sage/40'
                       : 'bg-muted/40 border-border text-muted-foreground'

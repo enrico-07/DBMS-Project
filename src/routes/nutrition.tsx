@@ -122,7 +122,7 @@ function Nutrition() {
                 <div className="flex items-center justify-between text-xs font-semibold mb-2">
                   <span>{label}</span>
                   <div className="flex gap-6 tabular">
-                    <span className="text-clay font-bold">
+                    <span className="text-primary font-bold">
                       {recipeA?.title.slice(0, 16)}…: {valA} {unit}
                     </span>
                     <span className="text-sage font-bold">
@@ -135,7 +135,7 @@ function Nutrition() {
                 <div className="space-y-1.5">
                   <div className="h-2 w-full bg-border/50 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-clay transition-all duration-500 rounded-full"
+                      className="h-full bg-primary transition-all duration-500 rounded-full"
                       style={{ width: `${pctA}%` }}
                     />
                   </div>
@@ -164,7 +164,7 @@ function Nutrition() {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Est. Cost / Serving:</span>
-                <strong className="text-clay tabular">
+                <strong className="text-primary tabular">
                   ${recipeA ? calculateRecipeCost(recipeA).costPerServing.toFixed(2) : '0.00'}
                 </strong>
               </div>
@@ -192,7 +192,7 @@ function Nutrition() {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Est. Cost / Serving:</span>
-                <strong className="text-clay tabular">
+                <strong className="text-primary tabular">
                   ${recipeB ? calculateRecipeCost(recipeB).costPerServing.toFixed(2) : '0.00'}
                 </strong>
               </div>

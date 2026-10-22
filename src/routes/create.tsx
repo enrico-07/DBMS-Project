@@ -213,7 +213,7 @@ function CreateRecipe() {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-full gap-1.5 text-xs text-clay border-clay/40 hover:bg-peach shrink-0"
+                className="rounded-full gap-1.5 text-xs text-primary border-primary/40 hover:bg-primary/10 shrink-0"
                 onClick={() => setSmartImportOpen(true)}
               >
                 <Wand2 size={14} /> Smart Paste / Import
@@ -242,8 +242,8 @@ function CreateRecipe() {
           <section className="space-y-8">
             {/* Version Commit Note (Only on edit) */}
             {edit && (
-              <div className="bg-peach border border-clay/30 p-4 rounded-2xl">
-                <label className="text-xs font-bold text-clay uppercase flex items-center gap-1.5 mb-2">
+              <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl">
+                <label className="text-xs font-bold text-primary uppercase flex items-center gap-1.5 mb-2">
                   <GitCommit size={15} /> Version Control Commit Note
                 </label>
                 <Input
@@ -593,7 +593,7 @@ function CreateRecipe() {
             <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-3">
               <Button
                 type="submit"
-                className="w-full rounded-full bg-clay text-white gap-2 shadow-md hover:bg-clay/90"
+                className="w-full rounded-full bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90"
               >
                 <Check size={16} />
                 {edit ? 'Commit Revisions' : 'Publish to Vault'}
@@ -617,7 +617,7 @@ function CreateRecipe() {
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl flex items-center gap-2">
-              <Wand2 size={18} className="text-clay" /> Fast Recipe Text Importer
+              <Wand2 size={18} className="text-primary" /> Fast Recipe Text Importer
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Paste unformatted recipe notes, a family recipe card, or an online snippet. Our relational parser extracts ingredients, quantities, units, and numbered steps instantly.
@@ -675,7 +675,7 @@ Instructions:
                 <Button
                   type="button"
                   size="sm"
-                  className="bg-clay text-white hover:bg-clay/90 gap-1.5"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
                   onClick={handleSmartExtract}
                 >
                   Parse & Populate

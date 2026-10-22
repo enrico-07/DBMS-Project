@@ -179,10 +179,10 @@ function Planner() {
         action={
           <Button
             variant="outline"
-            className="rounded-full gap-2 text-xs h-9 px-4 shadow-sm hover:border-clay/50 shrink-0"
+            className="rounded-full gap-2 text-xs h-9 px-4 shadow-sm hover:border-primary/50 shrink-0"
             onClick={() => setShoppingModalOpen(true)}
           >
-            <ShoppingBasket size={15} className="text-clay" />
+            <ShoppingBasket size={15} className="text-primary" />
             Market Basket (<span suppressHydrationWarning>{totalIngredientsCount}</span>)
           </Button>
         }
@@ -191,7 +191,7 @@ function Planner() {
       {/* Week Navigator & Clear */}
       <div className="section-heading mt-6 mb-6">
         <div className="flex items-center gap-3">
-          <Calendar size={20} className="text-clay" />
+          <Calendar size={20} className="text-primary" />
           <h2 className="text-2xl font-serif">
             {weekOffset === 0
               ? "This Week’s Menu"
@@ -302,7 +302,7 @@ function Planner() {
                       ) : (
                         <button
                           type="button"
-                          className="w-full py-4 border border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-clay hover:text-clay transition-all mt-2"
+                          className="w-full py-4 border border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-all mt-2"
                           onClick={() => {
                             setActiveSlot({ day: dayIndex, meal });
                             setSelectedRecipeId(items[0]?.id || "");
@@ -353,7 +353,7 @@ function Planner() {
                 Cancel
               </Button>
               <Button
-                className="rounded-full bg-clay text-white"
+                className="rounded-full bg-primary text-primary-foreground shadow-xs"
                 onClick={() => {
                   if (activeSlot && selectedRecipeId) {
                     setMeal(activeSlot.day, activeSlot.meal, selectedRecipeId);
@@ -375,7 +375,7 @@ function Planner() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
             <div>
               <DialogTitle className="flex items-center gap-2 text-xl font-serif">
-                <ShoppingBasket size={20} className="text-clay" />
+                <ShoppingBasket size={20} className="text-primary" />
                 Your Market Basket
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -390,7 +390,7 @@ function Planner() {
                   type="button"
                   variant={!receiptView ? "default" : "ghost"}
                   size="sm"
-                  className={`h-7 text-[11px] rounded-full px-2.5 ${!receiptView ? "bg-clay text-white shadow-none" : "hover:bg-background/50"}`}
+                  className={`h-7 text-[11px] rounded-full px-2.5 ${!receiptView ? "bg-primary text-primary-foreground shadow-none" : "hover:bg-background/50"}`}
                   onClick={() => setReceiptView(false)}
                 >
                   <ListFilter size={12} className="mr-1" /> Aisles
@@ -399,7 +399,7 @@ function Planner() {
                   type="button"
                   variant={receiptView ? "default" : "ghost"}
                   size="sm"
-                  className={`h-7 text-[11px] rounded-full px-2.5 ${receiptView ? "bg-clay text-white shadow-none" : "hover:bg-background/50"}`}
+                  className={`h-7 text-[11px] rounded-full px-2.5 ${receiptView ? "bg-primary text-primary-foreground shadow-none" : "hover:bg-background/50"}`}
                   onClick={() => setReceiptView(true)}
                 >
                   <Receipt size={12} className="mr-1" /> Slip
@@ -440,12 +440,12 @@ function Planner() {
 
           {/* Estimated Weekly Grocery Budget Pill (Phase 3) */}
           {totalIngredientsCount > 0 && (
-            <div className="bg-peach/60 border border-clay/20 p-3 rounded-2xl flex items-center justify-between my-3 text-xs">
+            <div className="bg-primary/5 border border-primary/20 p-3 rounded-2xl flex items-center justify-between my-3 text-xs">
               <div className="flex items-center gap-2">
                 <Coins size={15} className="text-honey" />
                 <span className="font-semibold text-foreground">Estimated Grocery Budget:</span>
               </div>
-              <span className="font-serif font-bold text-clay text-sm tabular">
+              <span className="font-serif font-bold text-primary text-sm tabular">
                 ~${(
                   Object.values(shoppingListByAisle)
                     .flat()
@@ -460,7 +460,7 @@ function Planner() {
 
           {totalIngredientsCount === 0 ? (
             <div className="text-center py-10">
-              <ShoppingBasket size={28} className="text-clay mx-auto mb-2" />
+              <ShoppingBasket size={28} className="text-primary mx-auto mb-2" />
               <p className="text-sm font-semibold">No meals planned yet for this week.</p>
               <small className="text-muted-foreground text-xs">
                 Add recipes to the calendar above to generate an aisle-by-aisle shopping list.
@@ -485,7 +485,7 @@ function Planner() {
               <div className="py-4 space-y-4">
                 {Object.entries(shoppingListByAisle).map(([category, itemsList]) => (
                   <div key={category} className="space-y-1">
-                    <p className="font-bold text-[11px] text-clay dark:text-clay/90 tracking-wider">
+                    <p className="font-bold text-[11px] text-primary tracking-wider">
                       [ {category.toUpperCase()} ]
                     </p>
                     {itemsList.map((item) => {

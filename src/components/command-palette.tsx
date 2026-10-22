@@ -278,7 +278,7 @@ export function CommandPalette({
               className="flex items-center justify-between py-2 px-3 rounded-xl cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
+                <span className="w-5 h-5 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[10px] font-bold font-serif">
                   {u.avatar}
                 </span>
                 <span className="text-xs">{u.name}</span>
