@@ -79,7 +79,10 @@ type VaultContextType = {
   saved: string[];
   versions: RecipeVersion[];
   toggleSave: (id: string) => void;
-  addRecipe: (recipe: Recipe, changeSummary?: string) => void;
+  addRecipe: (
+    recipe: Recipe,
+    changeSummary?: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   deleteRecipe: (id: string) => void;
   restoreRecipeVersion: (recipeId: string, versionId: string) => void;
 
@@ -1163,8 +1166,13 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const addRecipe = (recipe: Recipe, changeSummary?: string) => {
+  const addRecipe = async (
+    recipe: Recipe,
+    changeSummary?: string,
+  ): Promise<{ success: boolean; error?: string }> => {
     const isExisting = items.some((x) => x.id === recipe.id);
+    const activeUserId = recipe.createdBy || currentUser?.id || "user-eric";
+
     setItems((prev) => {
       const exists = prev.some((x) => x.id === recipe.id);
       if (exists) {
@@ -1175,7 +1183,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           recipeId: recipe.id,
           versionNumber: currentVersionCount + 1,
           changeSummary: changeSummary || `Revision ${currentVersionCount + 1}`,
-          authorId: currentUser.id,
+          authorId: activeUserId,
           authorName: currentUser.name,
           createdAt: new Date().toISOString(),
           snapshot: { ...existingRecipe },
@@ -1191,7 +1199,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           recipeId: recipe.id,
           versionNumber: 1,
           changeSummary: "Initial recipe creation and publication into RecipeVault.",
-          authorId: currentUser.id,
+          authorId: activeUserId,
           authorName: currentUser.name,
           createdAt: new Date().toISOString(),
           snapshot: { ...recipe },
@@ -1201,9 +1209,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    (async () => {
+    try {
       // 1. Proactively ensure user entity exists in public.users to prevent FK violations
-      const activeUserId = recipe.createdBy || currentUser?.id || "user-eric";
       try {
         await supabase.from("users").upsert(
           {
@@ -1226,12 +1233,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
       // 2. Upsert main recipe record
       const dbRow = mapAppRecipeToDbRow(recipe, activeUserId);
-      const { error } = await supabase.from("recipes").upsert(dbRow);
+      const { error: recError } = await supabase.from("recipes").upsert(dbRow);
 
-      if (error) {
-        console.error("Supabase Recipe Upsert Error:", error);
-        toast.error(`Could not sync recipe to cloud: ${error.message || "Constraint failure"}`);
-        return;
+      if (recError) {
+        console.error("Supabase Recipe Upsert Error:", recError);
+        toast.error(`Could not sync recipe to cloud: ${recError.message || "Constraint failure"}`);
+        return { success: false, error: recError.message };
       }
 
       // 3. Sync recipe steps
@@ -1280,11 +1287,11 @@ export function VaultProvider({ children }: { children: ReactNode }) {
                   substitute_summary: matchedMaster.substitutes?.join(", ") || null,
                   storage_guidelines: matchedMaster.storage || null,
                   common_uses: matchedMaster.commonUses || null,
-                  calories_per_100g: matchedMaster.nutritionPer100g?.calories || 0,
-                  protein_per_100g: matchedMaster.nutritionPer100g?.protein || 0,
-                  carbs_per_100g: matchedMaster.nutritionPer100g?.carbs || 0,
-                  fat_per_100g: matchedMaster.nutritionPer100g?.fat || 0,
-                  fiber_per_100g: matchedMaster.nutritionPer100g?.fiber || 0,
+                  calories_per_100g: Math.max(0, Math.round(Number(matchedMaster.nutritionPer100g?.calories) || 0)),
+                  protein_per_100g: Math.max(0, Math.round(Number(matchedMaster.nutritionPer100g?.protein) || 0)),
+                  carbs_per_100g: Math.max(0, Math.round(Number(matchedMaster.nutritionPer100g?.carbs) || 0)),
+                  fat_per_100g: Math.max(0, Math.round(Number(matchedMaster.nutritionPer100g?.fat) || 0)),
+                  fiber_per_100g: Math.max(0, Math.round(Number(matchedMaster.nutritionPer100g?.fiber) || 0)),
                   glycemic_index: matchedMaster.glycemicIndex || "Low",
                   is_diabetic_friendly: matchedMaster.isDiabeticFriendly ?? true,
                   is_pcos_friendly: matchedMaster.isPcosFriendly ?? true,
@@ -1303,6 +1310,11 @@ export function VaultProvider({ children }: { children: ReactNode }) {
                   canonical_name: ing.name.trim(),
                   category: "Pantry & Spices",
                   flavor_profile: "Pantry staple",
+                  calories_per_100g: 0,
+                  protein_per_100g: 0,
+                  carbs_per_100g: 0,
+                  fat_per_100g: 0,
+                  fiber_per_100g: 0,
                   glycemic_index: "Low",
                   is_diabetic_friendly: true,
                   is_pcos_friendly: true,
@@ -1327,7 +1339,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
               recipe_id: recipe.id,
               ingredient_id: resolvedId,
               variety_id: i.varietyId || null,
-              quantity: Number(i.quantity) > 0 ? Number(i.quantity) : 1,
+              quantity: Math.max(0.1, Number(Number(i.quantity).toFixed(2)) || 1.0),
               unit: (i.unit || "g").slice(0, 30),
               preparation_state: i.preparationState || null,
               is_optional: Boolean(i.isOptional),
@@ -1354,7 +1366,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           await supabase.from("recipe_tags").insert(
             uniqueTags.map((tag) => ({
               recipe_id: recipe.id,
-              tag_name: tag,
+              tag_name: tag.slice(0, 50),
             })),
           );
         }
@@ -1377,7 +1389,13 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         },
         { onConflict: "version_id" },
       );
-    })();
+
+      return { success: true };
+    } catch (err: any) {
+      console.error("Recipe Vault sync error:", err);
+      toast.error(`Sync error: ${err.message || String(err)}`);
+      return { success: false, error: err.message || String(err) };
+    }
   };
 
   const deleteRecipe = (id: string) => {

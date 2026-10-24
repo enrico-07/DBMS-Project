@@ -73,6 +73,7 @@ function CreateRecipe() {
   const [visibility, setVisibility] = useState<'Public' | 'Private' | 'Unlisted'>('Public');
   const [source, setSource] = useState('My Kitchen');
   const [image, setImage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Structured Ingredients & Steps
   const [ingredients, setIngredients] = useState<RecipeIngredient[]>([
@@ -160,7 +161,8 @@ function CreateRecipe() {
     }
   }, [original]);
 
-  const handleSubmit = (status: 'Published' | 'Draft') => {
+  const handleSubmit = async (status: 'Published' | 'Draft') => {
+    if (isSubmitting) return;
     if (!title.trim()) {
       toast.error('Please enter a recipe title.');
       return;
@@ -176,67 +178,79 @@ function CreateRecipe() {
       return;
     }
 
-    const id = edit ?? `rec-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || crypto.randomUUID().slice(0, 8)}`;
-    const totalTime = Number(prepTime) + Number(cookTime);
+    setIsSubmitting(true);
+    try {
+      const id = edit ?? `rec-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || crypto.randomUUID().slice(0, 8)}`;
+      const totalTime = Number(prepTime) + Number(cookTime);
 
-    // Precise nutritional calculation from semantic ontology
-    const calculatedNutrition = intelligence.nutrition;
-    const calories = original?.calories && edit ? original.calories : calculatedNutrition.calories;
-    const protein = original?.protein && edit ? original.protein : calculatedNutrition.protein;
-    const carbs = original?.carbs && edit ? original.carbs : calculatedNutrition.carbs;
-    const fat = original?.fat && edit ? original.fat : calculatedNutrition.fat;
-    const fiber = calculatedNutrition.fiber || original?.fiber || 4;
+      // Precise nutritional calculation from semantic ontology
+      const calculatedNutrition = intelligence.nutrition;
+      const calories = original?.calories && edit ? original.calories : calculatedNutrition.calories;
+      const protein = original?.protein && edit ? original.protein : calculatedNutrition.protein;
+      const carbs = original?.carbs && edit ? original.carbs : calculatedNutrition.carbs;
+      const fat = original?.fat && edit ? original.fat : calculatedNutrition.fat;
+      const fiber = calculatedNutrition.fiber || original?.fiber || 4;
 
-    const harmonizedTags = Array.from(new Set([
-      cuisine,
-      category,
-      diet,
-      ...intelligence.inferredTags,
-    ])).filter(Boolean);
-
-    addRecipe(
-      {
-        id,
-        title: title.trim(),
-        description: description.trim() || 'A delightful homemade recipe worth savoring.',
-        image: image || original?.image || items[0]?.image || '',
-        category,
+      const harmonizedTags = Array.from(new Set([
         cuisine,
+        category,
         diet,
-        difficulty,
-        prepTime: Number(prepTime),
-        cookTime: Number(cookTime),
-        time: totalTime,
-        servings: Number(servings),
-        rating: original?.rating || '5.0',
-        ratingCount: original?.ratingCount || 1,
-        calories,
-        protein,
-        carbs,
-        fat,
-        fiber,
-        source: source.trim() || `${currentUser.name}’s Kitchen`,
-        visibility,
-        status,
-        createdBy: original?.createdBy || currentUser.id,
-        createdAt: original?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ingredients: validIngredients,
-        steps: validSteps.map((s, idx) => ({ ...s, stepNumber: idx + 1 })),
-        tags: harmonizedTags,
-      },
-      edit ? changeSummary.trim() || undefined : undefined
-    );
+        ...intelligence.inferredTags,
+      ])).filter(Boolean);
 
-    toast.success(
-      status === 'Draft'
-        ? 'Draft saved to your cookbook.'
-        : edit
-        ? 'Recipe revisions committed to version history!'
-        : 'Recipe published to RecipeVault!'
-    );
+      const syncResult = await addRecipe(
+        {
+          id,
+          title: title.trim(),
+          description: description.trim() || 'A delightful homemade recipe worth savoring.',
+          image: image || original?.image || items[0]?.image || '',
+          category,
+          cuisine,
+          diet,
+          difficulty,
+          prepTime: Number(prepTime),
+          cookTime: Number(cookTime),
+          time: totalTime,
+          servings: Number(servings),
+          rating: original?.rating || '5.0',
+          ratingCount: original?.ratingCount || 1,
+          calories,
+          protein,
+          carbs,
+          fat,
+          fiber,
+          source: source.trim() || `${currentUser.name}’s Kitchen`,
+          visibility,
+          status,
+          createdBy: original?.createdBy || currentUser.id,
+          createdAt: original?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          ingredients: validIngredients,
+          steps: validSteps.map((s, idx) => ({ ...s, stepNumber: idx + 1 })),
+          tags: harmonizedTags,
+        },
+        edit ? changeSummary.trim() || undefined : undefined
+      );
 
-    navigate({ to: '/recipe/$id', params: { id } });
+      if (syncResult && syncResult.success === false) {
+        toast.error(`Database save note: ${syncResult.error || 'Check connectivity'}`);
+        return;
+      }
+
+      toast.success(
+        status === 'Draft'
+          ? 'Draft saved to your cookbook.'
+          : edit
+          ? 'Recipe revisions committed to version history!'
+          : 'Recipe published to RecipeVault!'
+      );
+
+      navigate({ to: '/recipe/$id', params: { id } });
+    } catch (e: any) {
+      toast.error(`Save error: ${e.message || String(e)}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -765,16 +779,18 @@ function CreateRecipe() {
             <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-3">
               <Button
                 type="submit"
-                className="w-full rounded-full bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90"
+                disabled={isSubmitting}
+                className="w-full rounded-full bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90 disabled:opacity-50"
               >
                 <Check size={16} />
-                {edit ? 'Commit Revisions' : 'Publish to Vault'}
+                {isSubmitting ? 'Saving to Vault...' : edit ? 'Commit Revisions' : 'Publish to Vault'}
               </Button>
 
               <Button
                 type="button"
                 variant="outline"
-                className="w-full rounded-full gap-2"
+                disabled={isSubmitting}
+                className="w-full rounded-full gap-2 disabled:opacity-50"
                 onClick={() => handleSubmit('Draft')}
               >
                 <Save size={15} /> Save as Draft
