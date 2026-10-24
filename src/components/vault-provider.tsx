@@ -335,16 +335,16 @@ function mapAppRecipeToDbRow(recipe: Recipe, fallbackUserId: string = "user-eric
     title: recipe.title?.trim() || "Untitled Recipe",
     description: recipe.description?.trim() || "A delicious homemade recipe.",
     image_url: recipe.image?.trim() || null,
-    servings: Number(recipe.servings) > 0 ? Number(recipe.servings) : 4,
-    prep_time: Number(recipe.prepTime) >= 0 ? Number(recipe.prepTime) : 10,
-    cook_time: Number(recipe.cookTime) >= 0 ? Number(recipe.cookTime) : 15,
+    servings: Math.max(1, Math.round(Number(recipe.servings) || 4)),
+    prep_time: Math.max(0, Math.round(Number(recipe.prepTime) || 10)),
+    cook_time: Math.max(0, Math.round(Number(recipe.cookTime) || 15)),
     difficulty: safeDifficulty,
     diet_tag: recipe.diet || "Balanced",
-    calories: Number(recipe.calories) >= 0 ? Number(recipe.calories) : 0,
-    protein: Number(recipe.protein) >= 0 ? Number(recipe.protein) : 0,
-    carbs: Number(recipe.carbs) >= 0 ? Number(recipe.carbs) : 0,
-    fat: Number(recipe.fat) >= 0 ? Number(recipe.fat) : 0,
-    fiber: Number(recipe.fiber) >= 0 ? Number(recipe.fiber) : 0,
+    calories: Math.max(0, Math.round(Number(recipe.calories) || 0)),
+    protein: Math.max(0, Math.round(Number(recipe.protein) || 0)),
+    carbs: Math.max(0, Math.round(Number(recipe.carbs) || 0)),
+    fat: Math.max(0, Math.round(Number(recipe.fat) || 0)),
+    fiber: Math.max(0, Math.round(Number(recipe.fiber) || 0)),
     source_attribution: recipe.source?.trim() || "RecipeVault Kitchen",
     visibility: safeVisibility,
     status: safeStatus,
@@ -1242,7 +1242,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
             recipe_id: recipe.id,
             step_number: idx + 1,
             instruction: s.instruction.trim(),
-            duration_minutes: Number(s.durationMinutes) > 0 ? Number(s.durationMinutes) : 0,
+            duration_minutes: Math.max(0, Math.round(Number(s.durationMinutes) || 0)),
             culinary_tip: s.tip ? s.tip.trim() : null,
           }));
 
@@ -1363,11 +1363,13 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       // 6. Record version history ledger
       const versionSummary =
         changeSummary || (isExisting ? "Recipe revisions updated." : "Initial recipe publication.");
+      const existingVersionCount = versions.filter((v) => v.recipeId === recipe.id).length;
+      const versionNum = Math.min(2147483647, Math.max(1, existingVersionCount + 1));
       await supabase.from("recipe_versions").upsert(
         {
-          version_id: `ver-${recipe.id}-${Date.now()}`,
+          version_id: `ver-${recipe.id}-${versionNum}-${Date.now().toString().slice(-6)}`,
           recipe_id: recipe.id,
-          version_number: Date.now(),
+          version_number: versionNum,
           change_summary: versionSummary,
           author_id: activeUserId,
           author_name: currentUser.name,
