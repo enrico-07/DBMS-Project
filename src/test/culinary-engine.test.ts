@@ -10,6 +10,10 @@ import {
   evaluatePantryFreshness,
   calculateRecipeCost,
   parseRawRecipeText,
+  findMasterIngredient,
+  inferRecipeAllergens,
+  inferRecipeDietaryTags,
+  estimateRecipeNutrition,
   recipes,
   demoUsers,
   masterIngredients,
@@ -172,5 +176,99 @@ Instructions:
     expect(parsed.ingredients[0].unit).toBe('g');
     expect(parsed.steps.length).toBe(3);
     expect(parsed.steps[0].durationMinutes).toBe(10);
+  });
+
+  it('resolves semantic ingredients and their subdivisions/varieties', () => {
+    // 1. Lookup by variety name: All-Purpose Flour
+    const apFlour = findMasterIngredient({ name: 'All-Purpose Flour' });
+    expect(apFlour).toBeDefined();
+    expect(apFlour?.id).toBe('ing-flour');
+    expect(apFlour?.category).toBe('Baking');
+    expect(apFlour?.allergens).toContain('Gluten');
+
+    // 2. Lookup by butter variety: Melted Butter
+    const meltedButter = findMasterIngredient({ name: 'Melted Warm Butter' });
+    expect(meltedButter).toBeDefined();
+    expect(meltedButter?.id).toBe('ing-butter');
+    expect(meltedButter?.category).toBe('Dairy & Eggs');
+    expect(meltedButter?.allergens).toContain('Dairy');
+
+    // 3. Lookup by chocolate variety: 70% Dark Chocolate
+    const darkChoc = findMasterIngredient({ name: '70% Bittersweet Dark Chocolate' });
+    expect(darkChoc).toBeDefined();
+    expect(darkChoc?.id).toBe('ing-chocolate');
+
+    // 4. Lookup by sugar variety: Powdered / Confectioners Sugar
+    const powderedSugar = findMasterIngredient({ name: 'Powdered / Confectioners Sugar' });
+    expect(powderedSugar).toBeDefined();
+    expect(powderedSugar?.id).toBe('ing-sugar');
+
+    // 5. Lookup by peanut butter
+    const peanutButter = findMasterIngredient({ name: 'Creamy Smooth Peanut Butter' });
+    expect(peanutButter).toBeDefined();
+    expect(peanutButter?.id).toBe('ing-peanuts');
+    expect(peanutButter?.allergens).toContain('Peanuts');
+  });
+
+  it('accurately infers allergens in real-time from ingredient formulations', () => {
+    // Chocolate Lava Cake formulation
+    const lavaCakeIngredients = [
+      { name: '70% Bittersweet Dark Chocolate', quantity: 150, unit: 'g' },
+      { name: 'Unsalted European Butter', quantity: 100, unit: 'g' },
+      { name: 'All-Purpose Flour', quantity: 50, unit: 'g' },
+      { name: 'Granulated White Sugar', quantity: 80, unit: 'g' },
+      { name: 'Whole Fresh Eggs', quantity: 3, unit: 'whole' },
+    ];
+
+    const allergens = inferRecipeAllergens(lavaCakeIngredients);
+    expect(allergens).toContain('Dairy'); // from chocolate & butter
+    expect(allergens).toContain('Gluten'); // from flour
+    expect(allergens).toContain('Eggs'); // from eggs
+    expect(allergens).not.toContain('Peanuts');
+
+    // Adding peanut butter
+    const withPeanuts = [
+      ...lavaCakeIngredients,
+      { name: 'Creamy Smooth Peanut Butter', quantity: 2, unit: 'tbsp' },
+    ];
+    const allergensWithPeanuts = inferRecipeAllergens(withPeanuts);
+    expect(allergensWithPeanuts).toContain('Peanuts');
+  });
+
+  it('infers dietary tags and diabetic-friendly status accurately', () => {
+    // Formulation 1: Sweet potato and brown rice bowl
+    const diabeticBowl = [
+      { name: 'Beauregard Orange Sweet Potato', quantity: 200, unit: 'g' },
+      { name: 'Whole Grain Brown Rice', quantity: 150, unit: 'g' },
+      { name: 'Ripe Hass Avocado', quantity: 1, unit: 'whole' },
+    ];
+    const diabeticEval = inferRecipeDietaryTags(diabeticBowl);
+    expect(diabeticEval.isDiabeticFriendly).toBe(true);
+    expect(diabeticEval.isVegan).toBe(true);
+    expect(diabeticEval.isGlutenFree).toBe(true);
+    expect(diabeticEval.detectedAllergens.length).toBe(0);
+
+    // Formulation 2: High sugar dessert
+    const sugaryCake = [
+      { name: 'Granulated White Sugar', quantity: 200, unit: 'g' },
+      { name: 'All-Purpose Flour', quantity: 200, unit: 'g' },
+      { name: 'Whole Dairy Milk (3.25%)', quantity: 200, unit: 'ml' },
+    ];
+    const sugarEval = inferRecipeDietaryTags(sugaryCake);
+    expect(sugarEval.isDiabeticFriendly).toBe(false);
+    expect(sugarEval.isGlutenFree).toBe(false);
+    expect(sugarEval.isVegan).toBe(false);
+  });
+
+  it('dynamically computes nutritional macros based on ingredient quantities', () => {
+    const bowl = [
+      { name: 'Chicken Breast', quantity: 200, unit: 'g' }, // ~330 kcal, 62g protein, 0 carbs, 7.2g fat
+      { name: 'Extra Virgin Olive Oil', quantity: 1, unit: 'tbsp' }, // 15g ~ 132 kcal, 15g fat
+    ];
+    const nutrition = estimateRecipeNutrition(bowl, 1);
+    expect(nutrition.calories).toBeGreaterThan(400);
+    expect(nutrition.calories).toBeLessThan(550);
+    expect(nutrition.protein).toBeGreaterThan(50);
+    expect(nutrition.fat).toBeGreaterThan(15);
   });
 });

@@ -4,6 +4,7 @@ import pasta from "@/assets/lemon-pasta.jpg";
 import {
   recipes as initialRecipes,
   masterIngredients,
+  findMasterIngredient,
   initialRecipeVersions,
   initialReviews,
   demoUsers,
@@ -289,14 +290,17 @@ function mapDbRecipeToAppRecipe(dbRecipe: DbRecipeRow): Recipe {
       dbRecipe.diet_tag,
       ...(dbRecipe.recipe_tags || []).map((t) => t.tag_name),
     ].filter((t): t is string => Boolean(t)),
-    ingredients: (dbRecipe.recipe_ingredients || []).map((ri) => ({
-      ingredientId: ri.ingredient_id || "",
-      name: ri.ingredients?.canonical_name || ri.ingredient_id || "Ingredient",
-      quantity: Number(ri.quantity || 1),
-      unit: ri.unit || "unit",
-      preparationState: ri.preparation_state || "",
-      isOptional: Boolean(ri.is_optional),
-    })),
+    ingredients:
+      dbRecipe.recipe_ingredients && dbRecipe.recipe_ingredients.length > 0
+        ? dbRecipe.recipe_ingredients.map((ri) => ({
+            ingredientId: ri.ingredient_id || "",
+            name: ri.ingredients?.canonical_name || ri.ingredient_id || "Ingredient",
+            quantity: Number(ri.quantity || 1),
+            unit: ri.unit || "unit",
+            preparationState: ri.preparation_state || "",
+            isOptional: Boolean(ri.is_optional),
+          }))
+        : canonical?.ingredients || [],
     steps:
       dbRecipe.recipe_steps && dbRecipe.recipe_steps.length > 0
         ? [...dbRecipe.recipe_steps]
@@ -307,7 +311,7 @@ function mapDbRecipeToAppRecipe(dbRecipe: DbRecipeRow): Recipe {
               durationMinutes: s.duration_minutes || undefined,
               tip: s.culinary_tip || undefined,
             }))
-        : dbRecipe.snapshot_data?.steps || [
+        : canonical?.steps || dbRecipe.snapshot_data?.steps || [
             { stepNumber: 1, instruction: "Refer to recipe details for directions." },
           ],
   };
@@ -719,6 +723,42 @@ export function VaultProvider({ children }: { children: ReactNode }) {
             verifiedCook: r.verified_cook,
           }));
           setReviews(mappedReviews);
+        }
+
+        const { data: dbCollections, error: colErr } = await supabase
+          .from("collections")
+          .select(`
+            collection_id,
+            collection_name,
+            description,
+            user_id,
+            created_at,
+            collection_recipes (
+              recipe_id
+            )
+          `);
+
+        if (!colErr && dbCollections && dbCollections.length > 0) {
+          interface DbColRow {
+            collection_id: string;
+            collection_name: string;
+            description?: string;
+            user_id: string;
+            created_at: string;
+            collection_recipes?: { recipe_id: string }[];
+          }
+          const mappedCollections: Collection[] = (dbCollections as DbColRow[]).map((c) => ({
+            id: c.collection_id,
+            name: c.collection_name,
+            description: c.description || "",
+            ids: (c.collection_recipes || []).map((cr) => cr.recipe_id),
+            createdBy: c.user_id,
+            createdAt: c.created_at,
+          }));
+          setCollections((prev) => {
+            const customLocal = prev.filter((p) => !mappedCollections.some((m) => m.id === p.id));
+            return [...mappedCollections, ...customLocal];
+          });
         }
       } catch (err) {
         console.warn("Supabase offline or unreachable, using local storage cache.", err);
@@ -1147,6 +1187,36 @@ export function VaultProvider({ children }: { children: ReactNode }) {
               culinary_tip: s.tip || null,
             })),
           );
+        }
+
+        if (recipe.ingredients && recipe.ingredients.length > 0) {
+          await supabase.from("recipe_ingredients").delete().eq("recipe_id", recipe.id);
+          const ingredientRows = recipe.ingredients
+            .filter((i) => (i.name || "").trim().length > 0)
+            .map((i) => {
+              const matchedMaster = findMasterIngredient(i);
+              const resolvedId =
+                i.ingredientId ||
+                matchedMaster?.id ||
+                `ing-${i.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+              return {
+                recipe_id: recipe.id,
+                ingredient_id: resolvedId,
+                quantity: i.quantity || 1,
+                unit: i.unit || "g",
+                preparation_state: i.preparationState || null,
+                is_optional: Boolean(i.isOptional),
+              };
+            });
+
+          if (ingredientRows.length > 0) {
+            const { error: ingSyncErr } = await supabase
+              .from("recipe_ingredients")
+              .insert(ingredientRows);
+            if (ingSyncErr) {
+              console.warn("Recipe ingredients cloud sync note:", ingSyncErr.message);
+            }
+          }
         }
 
         if (changeSummary) {

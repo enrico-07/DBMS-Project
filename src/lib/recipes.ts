@@ -30,11 +30,47 @@ export type UserProfile = {
   createdAt?: string;
 };
 
+export type AllergenType =
+  | 'Dairy'
+  | 'Gluten'
+  | 'Peanuts'
+  | 'Tree Nuts'
+  | 'Eggs'
+  | 'Soy'
+  | 'Fish'
+  | 'Shellfish'
+  | 'Sesame';
+
+export interface IngredientVariety {
+  id: string;
+  ingredientId: string;
+  name: string;
+  defaultUnit?: string;
+  culinaryRole?: string;
+  relativeCaloriesMultiplier?: number;
+  isDiabeticFriendly?: boolean;
+  isGlutenFree?: boolean;
+  isVegan?: boolean;
+  isVegetarian?: boolean;
+  allergens?: AllergenType[];
+}
+
+export type IngredientCategory =
+  | 'Produce'
+  | 'Dairy & Eggs'
+  | 'Grains & Pasta'
+  | 'Legumes'
+  | 'Pantry & Spices'
+  | 'Proteins'
+  | 'Baking'
+  | 'Condiments'
+  | 'Nuts & Seeds';
+
 export type IngredientMaster = {
   id: string;
   name: string;
   aliases: string;
-  category: 'Produce' | 'Dairy & Eggs' | 'Grains & Pasta' | 'Legumes' | 'Pantry & Spices' | 'Proteins' | 'Baking' | 'Condiments';
+  category: IngredientCategory;
   flavor: string;
   substitute: string;
   storage: string;
@@ -45,10 +81,20 @@ export type IngredientMaster = {
   fatPer100g: number;
   fiberPer100g: number;
   isUncommon?: boolean;
+  glycemicIndex?: 'Low' | 'Medium' | 'High';
+  isDiabeticFriendly?: boolean;
+  isPcosFriendly?: boolean;
+  isGlutenFree?: boolean;
+  isVegan?: boolean;
+  isVegetarian?: boolean;
+  allergens?: AllergenType[];
+  varieties?: IngredientVariety[];
 };
 
 export type RecipeIngredient = {
   ingredientId?: string;
+  varietyId?: string;
+  varietyName?: string;
   name: string;
   quantity: number;
   unit: string;
@@ -197,13 +243,448 @@ export const demoUsers: UserProfile[] = [
 // -------------------------------------------------------------
 
 export const masterIngredients: IngredientMaster[] = [
+  // --- BAKING ESSENTIALS & FLOURS ---
+  {
+    id: 'ing-flour',
+    name: 'Wheat Flour',
+    aliases: 'Wheat flour · Maida · Atta · Triticum flour',
+    category: 'Baking',
+    flavor: 'Mild, clean, wheaty starchy base providing gluten structure',
+    substitute: 'Almond flour, gluten-free 1-to-1 baking blend, or oat flour',
+    storage: 'Cool, dark pantry in airtight container; freeze for long-term storage.',
+    commonUses: 'Cakes, pastries, bread doughs, thickening roux, cookies.',
+    caloriesPer100g: 364,
+    proteinPer100g: 10.3,
+    carbsPer100g: 76.3,
+    fatPer100g: 1.0,
+    fiberPer100g: 2.7,
+    glycemicIndex: 'High',
+    isDiabeticFriendly: false,
+    isPcosFriendly: false,
+    isGlutenFree: false,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Gluten'],
+    varieties: [
+      { id: 'var-flour-ap', ingredientId: 'ing-flour', name: 'All-Purpose Flour', defaultUnit: 'g', culinaryRole: 'Standard versatile baking flour (10-12% protein)' },
+      { id: 'var-flour-bread', ingredientId: 'ing-flour', name: 'High-Protein Bread Flour', defaultUnit: 'g', culinaryRole: 'High gluten (12-14%) for chewy artisan breads' },
+      { id: 'var-flour-cake', ingredientId: 'ing-flour', name: 'Low-Protein Cake & Pastry Flour', defaultUnit: 'g', culinaryRole: 'Fine bleached starch (7-9%) for tender, delicate crumbs' },
+      { id: 'var-flour-wholewheat', ingredientId: 'ing-flour', name: 'Whole Wheat Flour', defaultUnit: 'g', culinaryRole: 'Contains bran and germ with nutty flavor and higher fiber' },
+    ],
+  },
+  {
+    id: 'ing-almond-flour',
+    name: 'Almond Flour',
+    aliases: 'Ground almonds · Almond meal · Badam powder',
+    category: 'Baking',
+    flavor: 'Sweet, buttery, rich nutty flavor with tender crumb moisture',
+    substitute: 'Hazelnut flour, sunflower seed flour, or oat flour',
+    storage: 'Refrigerate in sealed mason jar to preserve delicate nut oils.',
+    commonUses: 'Macarons, keto cakes, gluten-free crumbles, financiers.',
+    caloriesPer100g: 571,
+    proteinPer100g: 21.4,
+    carbsPer100g: 21.4,
+    fatPer100g: 50.0,
+    fiberPer100g: 10.7,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Tree Nuts'],
+    varieties: [
+      { id: 'var-almond-blanched', ingredientId: 'ing-almond-flour', name: 'Super-Fine Blanched Almond Flour', defaultUnit: 'g', culinaryRole: 'Skinless finely milled powder for delicate pastries' },
+      { id: 'var-almond-meal', ingredientId: 'ing-almond-flour', name: 'Coarse Natural Almond Meal', defaultUnit: 'g', culinaryRole: 'Unblanched ground almonds for rustic crusts and crumbles' },
+    ],
+  },
+
+  // --- SUGARS & SWEETENERS ---
+  {
+    id: 'ing-sugar',
+    name: 'Sugar',
+    aliases: 'Table sugar · Sucrose · Cane sugar · Beet sugar',
+    category: 'Baking',
+    flavor: 'Pure, crystalline clean sweetness that aerates fats and retains baked moisture',
+    substitute: 'Coconut sugar, pure maple syrup, monkfruit sweetener, or erythritol',
+    storage: 'Cool, dry pantry in strictly airtight moisture-proof container.',
+    commonUses: 'Caramelization, creaming with butter, macerating fruit, structure in cakes.',
+    caloriesPer100g: 387,
+    proteinPer100g: 0,
+    carbsPer100g: 100,
+    fatPer100g: 0,
+    fiberPer100g: 0,
+    glycemicIndex: 'High',
+    isDiabeticFriendly: false,
+    isPcosFriendly: false,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+    varieties: [
+      { id: 'var-sugar-granulated', ingredientId: 'ing-sugar', name: 'Granulated White Sugar', defaultUnit: 'g', culinaryRole: 'Standard crystalline white sugar for everyday baking' },
+      { id: 'var-sugar-powdered', ingredientId: 'ing-sugar', name: 'Powdered / Confectioners Sugar', defaultUnit: 'g', culinaryRole: 'Finely pulverized sugar with cornstarch for frostings and dusting' },
+      { id: 'var-sugar-light-brown', ingredientId: 'ing-sugar', name: 'Light Brown Sugar', defaultUnit: 'g', culinaryRole: 'Sugar with 3.5% molasses for subtle caramel notes and chewiness' },
+      { id: 'var-sugar-dark-brown', ingredientId: 'ing-sugar', name: 'Dark Brown Sugar', defaultUnit: 'g', culinaryRole: 'Sugar with 6.5% molasses for deep toffee flavor and rich moisture' },
+      { id: 'var-sugar-caster', ingredientId: 'ing-sugar', name: 'Superfine Caster Sugar', defaultUnit: 'g', culinaryRole: 'Ultra-fine crystals for meringues, soufflés, and light sponges' },
+      { id: 'var-sugar-demerara', ingredientId: 'ing-sugar', name: 'Demerara / Turbinado Raw Sugar', defaultUnit: 'g', culinaryRole: 'Large golden crunchy crystals for muffin tops and pie crusts' },
+    ],
+  },
+  {
+    id: 'ing-sweeteners-natural',
+    name: 'Natural Syrups & Honey',
+    aliases: 'Maple syrup · Honey · Agave nectar · Molasses',
+    category: 'Baking',
+    flavor: 'Complex floral, woody, mineral sweetness with natural humectant properties',
+    substitute: 'Pure date syrup or coconut nectar',
+    storage: 'Refrigerate real maple syrup after opening; store honey at room temperature.',
+    commonUses: 'Glazes, pancake syrups, granola, marinades, cake hydration.',
+    caloriesPer100g: 260,
+    proteinPer100g: 0.1,
+    carbsPer100g: 67.0,
+    fatPer100g: 0.1,
+    fiberPer100g: 0,
+    glycemicIndex: 'Medium',
+    isDiabeticFriendly: false,
+    isPcosFriendly: false,
+    isGlutenFree: true,
+    isVegan: false,
+    isVegetarian: true,
+    allergens: [],
+    varieties: [
+      { id: 'var-sweet-maple', ingredientId: 'ing-sweeteners-natural', name: 'Grade A Pure Maple Syrup', defaultUnit: 'ml', culinaryRole: 'Woody, caramel notes tapped from sugar maples (Vegan)' },
+      { id: 'var-sweet-honey', ingredientId: 'ing-sweeteners-natural', name: 'Raw Wildflower Honey', defaultUnit: 'tbsp', culinaryRole: 'Floral, antibacterial viscous sweetener' },
+      { id: 'var-sweet-agave', ingredientId: 'ing-sweeteners-natural', name: 'Blue Agave Nectar', defaultUnit: 'tbsp', culinaryRole: 'Mild, neutral liquid plant sweetener with lower glycemic spike' },
+      { id: 'var-sweet-molasses', ingredientId: 'ing-sweeteners-natural', name: 'Blackstrap Molasses', defaultUnit: 'tbsp', culinaryRole: 'Robust, iron-rich bitter-sweet syrup for gingerbread' },
+    ],
+  },
+
+  // --- CHOCOLATE & COCOA ---
+  {
+    id: 'ing-chocolate',
+    name: 'Chocolate',
+    aliases: 'Baking chocolate · Cocoa liquor · Couverture · Dark chocolate · Milk chocolate',
+    category: 'Baking',
+    flavor: 'Complex roasted cacao, bitter-sweet, rich cocoa butter velvet melt',
+    substitute: 'Cocoa powder whisked with melted coconut oil or butter',
+    storage: 'Cool, dark pantry (16-18°C) away from direct sunlight; avoid fridge condensation.',
+    commonUses: 'Lava cakes, ganaches, brownies, truffles, chocolate glazes.',
+    caloriesPer100g: 546,
+    proteinPer100g: 4.9,
+    carbsPer100g: 61.0,
+    fatPer100g: 31.0,
+    fiberPer100g: 7.0,
+    glycemicIndex: 'Medium',
+    isDiabeticFriendly: false,
+    isPcosFriendly: false,
+    isGlutenFree: true,
+    isVegan: false,
+    isVegetarian: true,
+    allergens: ['Dairy'],
+    varieties: [
+      { id: 'var-choc-dark70', ingredientId: 'ing-chocolate', name: '70% Bittersweet Dark Chocolate', defaultUnit: 'g', culinaryRole: 'High cacao content for intense chocolate flavor with minimal sugar' },
+      { id: 'var-choc-semisweet', ingredientId: 'ing-chocolate', name: 'Semi-Sweet Chocolate (55-60%)', defaultUnit: 'g', culinaryRole: 'Balanced sweetness ideal for chocolate chip cookies and molten cakes' },
+      { id: 'var-choc-milk', ingredientId: 'ing-chocolate', name: 'Creamy Milk Chocolate', defaultUnit: 'g', culinaryRole: 'Sweet, lactic chocolate with milk solids for mild desserts' },
+      { id: 'var-choc-white', ingredientId: 'ing-chocolate', name: 'Pure White Chocolate', defaultUnit: 'g', culinaryRole: 'Cocoa butter and vanilla without cocoa solids for mousse and ganache' },
+      { id: 'var-choc-chips', ingredientId: 'ing-chocolate', name: 'Baking Chocolate Chips', defaultUnit: 'g', culinaryRole: 'Lower cocoa butter content designed to hold shape during baking' },
+    ],
+  },
+  {
+    id: 'ing-cocoa',
+    name: 'Cocoa Powder',
+    aliases: 'Cacao powder · Dutch cocoa · Baking cocoa',
+    category: 'Baking',
+    flavor: 'Deep, earthy, concentrated bittersweet chocolate essence without fats',
+    substitute: 'Melted unsweetened chocolate (reduce butter/oil proportionally)',
+    storage: 'Cool, dry cupboard in an airtight container.',
+    commonUses: 'Chocolate dusting, devil’s food cake, chocolate frosting, hot cocoa.',
+    caloriesPer100g: 228,
+    proteinPer100g: 19.6,
+    carbsPer100g: 57.9,
+    fatPer100g: 13.7,
+    fiberPer100g: 33.2,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+    varieties: [
+      { id: 'var-cocoa-dutch', ingredientId: 'ing-cocoa', name: 'Dutch-Processed Alkalized Cocoa Powder', defaultUnit: 'g', culinaryRole: 'Neutralized acid with deep dark hue and mellow, smooth flavor' },
+      { id: 'var-cocoa-natural', ingredientId: 'ing-cocoa', name: 'Natural Unsweetened Cocoa Powder', defaultUnit: 'g', culinaryRole: 'Acidic, lighter color; pairs with baking soda for leavening' },
+      { id: 'var-cocoa-black', ingredientId: 'ing-cocoa', name: 'Black Cocoa Powder', defaultUnit: 'g', culinaryRole: 'Ultra-dutched jet black powder for Oreo-style cookies and visual punch' },
+    ],
+  },
+
+  // --- BUTTER & FATS ---
+  {
+    id: 'ing-butter',
+    name: 'Butter',
+    aliases: 'Creamery butter · Sweet butter · Ghee · Brown butter',
+    category: 'Dairy & Eggs',
+    flavor: 'Rich, creamy, luscious dairy fat with delicate nutty sweetness',
+    substitute: 'Refined coconut oil, extra virgin olive oil, or vegan cultured butter',
+    storage: 'Refrigerate wrapped at 2-4°C; keep a small covered butter dish at room temp for spreading.',
+    commonUses: 'Laminated pastry dough, pan sauces, creaming cakes, frying, basting proteins.',
+    caloriesPer100g: 717,
+    proteinPer100g: 0.9,
+    carbsPer100g: 0.1,
+    fatPer100g: 81.1,
+    fiberPer100g: 0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: false,
+    isVegetarian: true,
+    allergens: ['Dairy'],
+    varieties: [
+      { id: 'var-butter-unsalted', ingredientId: 'ing-butter', name: 'Unsalted European Butter', defaultUnit: 'g', culinaryRole: '82%+ butterfat without sodium for precise baking control' },
+      { id: 'var-butter-salted', ingredientId: 'ing-butter', name: 'Salted Sweet Cream Butter', defaultUnit: 'g', culinaryRole: 'Everyday table butter with ~1.5% salt for savory sautéing' },
+      { id: 'var-butter-brown', ingredientId: 'ing-butter', name: 'Brown Butter (Beurre Noisette)', defaultUnit: 'g', culinaryRole: 'Toasted milk solids yielding nutty hazelnut aroma for baked goods' },
+      { id: 'var-butter-melted', ingredientId: 'ing-butter', name: 'Melted Warm Butter', defaultUnit: 'g', culinaryRole: 'Liquid emulsified fat for chocolate lava cakes, muffins, and quick breads' },
+      { id: 'var-butter-clarified', ingredientId: 'ing-butter', name: 'Clarified Butter / Desi Ghee', defaultUnit: 'tbsp', culinaryRole: 'Pure 100% milk fat with solids removed; high 485°F smoke point' },
+    ],
+  },
+
+  // --- MILKS & CREAMS ---
+  {
+    id: 'ing-milk',
+    name: 'Milk & Dairy Cream',
+    aliases: 'Dairy milk · Heavy cream · Buttermilk · Whole milk · Cream',
+    category: 'Dairy & Eggs',
+    flavor: 'Mildly sweet, creamy, silky emulsion of butterfat and dairy proteins',
+    substitute: 'Oat milk, almond milk, or coconut cream',
+    storage: 'Keep refrigerated between 1-4°C; seal caps tightly to prevent absorbing aromas.',
+    commonUses: 'Custards, cakes, enriching sauces, baking doughs, coffee.',
+    caloriesPer100g: 61,
+    proteinPer100g: 3.2,
+    carbsPer100g: 4.8,
+    fatPer100g: 3.3,
+    fiberPer100g: 0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: false,
+    isVegetarian: true,
+    allergens: ['Dairy'],
+    varieties: [
+      { id: 'var-milk-whole', ingredientId: 'ing-milk', name: 'Whole Dairy Milk (3.25%)', defaultUnit: 'ml', culinaryRole: 'Full fat dairy milk for balanced moisture and browning' },
+      { id: 'var-milk-skim', ingredientId: 'ing-milk', name: 'Skim / Non-Fat Milk', defaultUnit: 'ml', culinaryRole: 'Low fat milk for light nutrition' },
+      { id: 'var-milk-heavy-cream', ingredientId: 'ing-milk', name: 'Heavy Whipping Cream (36%)', defaultUnit: 'ml', culinaryRole: 'High fat cream that whips to stiff peaks and enriches ganaches' },
+      { id: 'var-milk-buttermilk', ingredientId: 'ing-milk', name: 'Cultured Buttermilk', defaultUnit: 'ml', culinaryRole: 'Lactic acid liquid that tenderizes pancakes and activates baking soda' },
+      { id: 'var-milk-evaporated', ingredientId: 'ing-milk', name: 'Evaporated Milk', defaultUnit: 'ml', culinaryRole: '60% water removed for velvety mac and cheese and pie fillings' },
+      { id: 'var-milk-condensed', ingredientId: 'ing-milk', name: 'Sweetened Condensed Milk', defaultUnit: 'ml', culinaryRole: 'Thick, caramelized sugary dairy for fudge and banoffee pie' },
+    ],
+  },
+  {
+    id: 'ing-plant-milk',
+    name: 'Plant-Based Milk',
+    aliases: 'Dairy-free milk · Oat milk · Almond milk · Soy milk',
+    category: 'Dairy & Eggs',
+    flavor: 'Creamy, plant-derived milk alternative with nutty or cereal sweetness',
+    substitute: 'Dairy milk or coconut milk',
+    storage: 'Shelf stable until opened; refrigerate and consume within 7-10 days.',
+    commonUses: 'Vegan baking, smoothies, dairy-free lattes, cereal.',
+    caloriesPer100g: 45,
+    proteinPer100g: 1.5,
+    carbsPer100g: 6.5,
+    fatPer100g: 1.5,
+    fiberPer100g: 0.8,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Tree Nuts', 'Soy'],
+    varieties: [
+      { id: 'var-milk-oat', ingredientId: 'ing-plant-milk', name: 'Creamy Barista Oat Milk', defaultUnit: 'ml', culinaryRole: 'Naturally sweet oat beverage with smooth body for baking' },
+      { id: 'var-milk-almond', ingredientId: 'ing-plant-milk', name: 'Unsweetened Almond Milk', defaultUnit: 'ml', culinaryRole: 'Low calorie, nutty beverage ideal for keto and light cakes' },
+      { id: 'var-milk-soy', ingredientId: 'ing-plant-milk', name: 'Organic Soy Milk', defaultUnit: 'ml', culinaryRole: 'High protein plant milk that curdles like dairy when acid is added' },
+    ],
+  },
+
+  // --- NUTS, SEEDS & PEANUTS (ALLERGEN CRITICAL) ---
+  {
+    id: 'ing-peanuts',
+    name: 'Peanuts',
+    aliases: 'Groundnuts · Goobers · Arachis hypogaea · Peanut butter',
+    category: 'Nuts & Seeds',
+    flavor: 'Deeply roasted, nutty, savory-sweet legumes with high oil content',
+    substitute: 'Sunflower seed butter, toasted almonds, or pumpkin seeds',
+    storage: 'Airtight container in cool pantry; refrigerate peanut butter to prevent separation.',
+    commonUses: 'Peanut butter cookies, satay sauce, pad thai garnish, crunchy crumbles.',
+    caloriesPer100g: 567,
+    proteinPer100g: 25.8,
+    carbsPer100g: 16.1,
+    fatPer100g: 49.2,
+    fiberPer100g: 8.5,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Peanuts'],
+    varieties: [
+      { id: 'var-peanuts-roasted', ingredientId: 'ing-peanuts', name: 'Roasted Salted Peanuts', defaultUnit: 'g', culinaryRole: 'Golden crunchy roasted peanuts for toppings and brittle' },
+      { id: 'var-peanuts-raw', ingredientId: 'ing-peanuts', name: 'Raw Shelled Peanuts', defaultUnit: 'g', culinaryRole: 'Unroasted peanuts for boiling, roasting, and stir-fries' },
+      { id: 'var-peanut-butter-creamy', ingredientId: 'ing-peanuts', name: 'Creamy Smooth Peanut Butter', defaultUnit: 'tbsp', culinaryRole: 'Emulsified peanut paste for cookies, frostings, and satay' },
+      { id: 'var-peanut-butter-crunchy', ingredientId: 'ing-peanuts', name: 'Natural Crunchy Peanut Butter', defaultUnit: 'tbsp', culinaryRole: '100% peanuts with crushed nut chunks and natural oil separation' },
+    ],
+  },
+  {
+    id: 'ing-tree-nuts',
+    name: 'Tree Nuts',
+    aliases: 'Walnuts · Almonds · Pecans · Pistachios · Hazelnuts',
+    category: 'Nuts & Seeds',
+    flavor: 'Buttery, rich, earthy with varied crunch and high heart-healthy omega-3s',
+    substitute: 'Toasted pumpkin seeds or sunflower seeds',
+    storage: 'Refrigerate or freeze in airtight glass jars to prevent rancidity.',
+    commonUses: 'Banana breads, brownies, pesto alla genovese, pie toppings, granolas.',
+    caloriesPer100g: 654,
+    proteinPer100g: 15.2,
+    carbsPer100g: 13.7,
+    fatPer100g: 65.2,
+    fiberPer100g: 6.7,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Tree Nuts'],
+    varieties: [
+      { id: 'var-nuts-walnuts', ingredientId: 'ing-tree-nuts', name: 'Shelled English Walnuts', defaultUnit: 'g', culinaryRole: 'Earthy, tannin-rich nut halves for brownies and breads' },
+      { id: 'var-nuts-pecans', ingredientId: 'ing-tree-nuts', name: 'Southern Pecan Halves', defaultUnit: 'g', culinaryRole: 'Sweet buttery nut halves for pecan pies and pralines' },
+      { id: 'var-nuts-almonds', ingredientId: 'ing-tree-nuts', name: 'Sliced Toasted Almonds', defaultUnit: 'g', culinaryRole: 'Crisp shaved nuts for garnishing tarts and salads' },
+      { id: 'var-nuts-pistachios', ingredientId: 'ing-tree-nuts', name: 'Roasted Shelled Pistachios', defaultUnit: 'g', culinaryRole: 'Vibrant green aromatic nuts for gelato and baklava' },
+    ],
+  },
+
+  // --- BAKING LEAVENERS & AROMATICS ---
+  {
+    id: 'ing-vanilla',
+    name: 'Vanilla',
+    aliases: 'Vanilla extract · Vanilla bean · Vanilla paste',
+    category: 'Baking',
+    flavor: 'Sweet, floral, aromatic vanillin notes that bridge and elevate dessert profiles',
+    substitute: 'Almond extract or ground tonka bean',
+    storage: 'Cool, dark cupboard; never refrigerate vanilla beans which can mold.',
+    commonUses: 'All baked cakes, custard fillings, ice creams, cookies.',
+    caloriesPer100g: 288,
+    proteinPer100g: 0.1,
+    carbsPer100g: 12.7,
+    fatPer100g: 0.1,
+    fiberPer100g: 0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+    varieties: [
+      { id: 'var-vanilla-extract', ingredientId: 'ing-vanilla', name: 'Pure Madagascar Bourbon Vanilla Extract', defaultUnit: 'tsp', culinaryRole: 'Standard double-fold alcohol vanilla tincture' },
+      { id: 'var-vanilla-bean', ingredientId: 'ing-vanilla', name: 'Whole Tahitian Vanilla Bean Pod', defaultUnit: 'whole', culinaryRole: 'Split pod with millions of aromatic seeds for panna cotta and ice cream' },
+      { id: 'var-vanilla-paste', ingredientId: 'ing-vanilla', name: 'Concentrated Vanilla Bean Paste', defaultUnit: 'tsp', culinaryRole: 'Viscous syrup speckled with visible vanilla caviar' },
+    ],
+  },
+  {
+    id: 'ing-leaveners',
+    name: 'Baking Leaveners',
+    aliases: 'Baking powder · Baking soda · Active dry yeast',
+    category: 'Baking',
+    flavor: 'Neutral to slightly salty; produces carbon dioxide micro-bubbles for rise',
+    substitute: 'Whipping egg whites for mechanical rise or lemon juice + baking soda',
+    storage: 'Tightly sealed dry pantry; check expiration dates for active fizzing.',
+    commonUses: 'Quick breads, cookies, cakes, pizza doughs, fluffy pancakes.',
+    caloriesPer100g: 53,
+    proteinPer100g: 0,
+    carbsPer100g: 28.0,
+    fatPer100g: 0,
+    fiberPer100g: 0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+    varieties: [
+      { id: 'var-leaven-powder', ingredientId: 'ing-leaveners', name: 'Double-Acting Baking Powder', defaultUnit: 'tsp', culinaryRole: 'Releases gas twice: when moistened and again when heated in oven' },
+      { id: 'var-leaven-soda', ingredientId: 'ing-leaveners', name: 'Pure Baking Soda (Sodium Bicarbonate)', defaultUnit: 'tsp', culinaryRole: 'Requires acid (buttermilk, cocoa, brown sugar) to react and leaven' },
+      { id: 'var-leaven-yeast', ingredientId: 'ing-leaveners', name: 'Active Dry Baker’s Yeast', defaultUnit: 'tsp', culinaryRole: 'Live fungal culture requiring warm hydration to ferment dough' },
+    ],
+  },
+
+  // --- HEALTH & DIABETIC HERO PRODUCE ---
+  {
+    id: 'ing-sweet-potato',
+    name: 'Sweet Potato',
+    aliases: 'Yams · Ipomoea batatas · Shakarkandi',
+    category: 'Produce',
+    flavor: 'Sweet, earthy, velvety starch packed with beta-carotene and prebiotic fiber',
+    substitute: 'Butternut squash, kabocha pumpkin, or carrots',
+    storage: 'Cool, dark, well-ventilated dry pantry (not in refrigerator).',
+    commonUses: 'Roasted wedges, silky mash, gnocchi, healthy brownies, soups.',
+    caloriesPer100g: 86,
+    proteinPer100g: 1.6,
+    carbsPer100g: 20.1,
+    fatPer100g: 0.1,
+    fiberPer100g: 3.0,
+    glycemicIndex: 'Medium',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+    varieties: [
+      { id: 'var-sweetpot-orange', ingredientId: 'ing-sweet-potato', name: 'Beauregard Orange Sweet Potato', defaultUnit: 'g', culinaryRole: 'Moist, high sugar and carotene flesh for baking and roasting' },
+      { id: 'var-sweetpot-purple', ingredientId: 'ing-sweet-potato', name: 'Japanese Murasaki Purple Sweet Potato', defaultUnit: 'g', culinaryRole: 'Nutty, chestnut-like flavor with dense starch and anthocyanins' },
+    ],
+  },
+  {
+    id: 'ing-rice',
+    name: 'Rice',
+    aliases: 'Oryza sativa · Brown rice · Jasmine · Basmati · Arborio',
+    category: 'Grains & Pasta',
+    flavor: 'Mild, fragrant cereal grain with comforting chew',
+    substitute: 'Quinoa, riced cauliflower, or farro',
+    storage: 'Airtight container in cool dry pantry.',
+    commonUses: 'Grain bowls, risottos, pilafs, sushi, side dishes.',
+    caloriesPer100g: 130,
+    proteinPer100g: 2.7,
+    carbsPer100g: 28.0,
+    fatPer100g: 0.3,
+    fiberPer100g: 0.4,
+    glycemicIndex: 'Medium',
+    isDiabeticFriendly: false,
+    isPcosFriendly: false,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+    varieties: [
+      { id: 'var-rice-brown', ingredientId: 'ing-rice', name: 'Whole Grain Brown Rice', defaultUnit: 'g', culinaryRole: 'High fiber whole grain with low glycemic impact (Diabetic Friendly)', isDiabeticFriendly: true, isGlutenFree: true, isVegan: true, isVegetarian: true },
+      { id: 'var-rice-jasmine', ingredientId: 'ing-rice', name: 'Fragrant Jasmine Rice', defaultUnit: 'g', culinaryRole: 'Floral, soft, slightly sticky Thai long-grain rice' },
+      { id: 'var-rice-basmati', ingredientId: 'ing-rice', name: 'Aged Himalayan Basmati Rice', defaultUnit: 'g', culinaryRole: 'Slender, non-sticky aromatic grains for curries and pilafs' },
+      { id: 'var-rice-arborio', ingredientId: 'ing-rice', name: 'Italian Arborio Risotto Rice', defaultUnit: 'g', culinaryRole: 'High amylopectin short grain releasing creamy starch for risotto' },
+    ],
+  },
+
+  // --- CORE KITCHEN PANTRY & PRODUCE ---
   {
     id: 'ing-ricotta',
     name: 'Ricotta',
     aliases: 'Italian whey cheese · Ricotta fresca',
     category: 'Dairy & Eggs',
     flavor: 'Mild, silky, subtly sweet and lactic',
-    substitute: 'Whipped whole milk cottage cheese or silken tofu with a pinch of nutritional yeast',
+    substitute: 'Whipped whole milk cottage cheese or silken tofu with nutritional yeast',
     storage: 'Keep refrigerated at 2-4°C in its whey; consume within 3-5 days of opening.',
     commonUses: 'Filled pastas (ravioli, cannelloni), delicate cheesecakes, fluffy lemon pancakes.',
     caloriesPer100g: 174,
@@ -211,7 +692,13 @@ export const masterIngredients: IngredientMaster[] = [
     carbsPer100g: 3.0,
     fatPer100g: 13.0,
     fiberPer100g: 0,
-    isUncommon: false,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: false,
+    isVegetarian: true,
+    allergens: ['Dairy'],
   },
   {
     id: 'ing-chickpeas',
@@ -220,13 +707,20 @@ export const masterIngredients: IngredientMaster[] = [
     category: 'Legumes',
     flavor: 'Nutty, buttery, earthy with firm bite',
     substitute: 'Cannellini beans, navy beans, or cooked green lentils',
-    storage: 'Store dried chickpeas indefinitely in an airtight jar. Refrigerate cooked beans in cooking liquid for 4 days.',
+    storage: 'Store dried chickpeas in airtight jar. Refrigerate cooked beans in cooking liquid for 4 days.',
     commonUses: 'Silky hummus, crisp oven snacks, hearty Mediterranean harvest salads and curries.',
     caloriesPer100g: 164,
     proteinPer100g: 8.9,
     carbsPer100g: 27.4,
     fatPer100g: 2.6,
     fiberPer100g: 7.6,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
   {
     id: 'ing-basil',
@@ -234,14 +728,21 @@ export const masterIngredients: IngredientMaster[] = [
     aliases: 'Sweet Genovese basil · Ocimum basilicum',
     category: 'Produce',
     flavor: 'Peppery, sweet, with warm notes of clove and anise',
-    substitute: 'Fresh Italian flat-leaf parsley blended with a hint of fresh mint',
-    storage: 'Treat like fresh flowers: trim stems and stand in a glass of water on the counter at room temp. Avoid refrigerating which turns leaves black.',
+    substitute: 'Fresh Italian flat-leaf parsley blended with fresh mint',
+    storage: 'Treat like fresh flowers: trim stems and stand in water glass at room temp.',
     commonUses: 'Pesto alla Genovese, Caprese salads, tomato sauces, finishing herb for pasta.',
     caloriesPer100g: 23,
     proteinPer100g: 3.2,
     carbsPer100g: 2.7,
     fatPer100g: 0.6,
     fiberPer100g: 1.6,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
   {
     id: 'ing-tahini',
@@ -249,270 +750,444 @@ export const masterIngredients: IngredientMaster[] = [
     aliases: 'Sesame paste · Tahina · Rashi',
     category: 'Condiments',
     flavor: 'Deeply toasted, nutty, rich with a pleasing bitter edge',
-    substitute: 'Unsweetened sunflower seed butter, cashew butter, or Chinese sesame paste',
-    storage: 'Store unopened at room temp in a cool cupboard; once opened, refrigerate and stir oil back in.',
-    commonUses: 'Hummus, lemon-garlic salad dressings, halva, drizzled over roasted cauliflower.',
+    substitute: 'Unsweetened sunflower seed butter or cashew butter',
+    storage: 'Store in cool cupboard; once opened, refrigerate and stir oil back in.',
+    commonUses: 'Hummus, lemon-garlic salad dressings, halva, roasted vegetable drizzle.',
     caloriesPer100g: 595,
     proteinPer100g: 17.0,
     carbsPer100g: 21.2,
     fatPer100g: 53.8,
     fiberPer100g: 9.3,
-    isUncommon: true,
-  },
-  {
-    id: 'ing-tomatoes',
-    name: 'Tomatoes',
-    aliases: 'Roma plum tomatoes · San Marzano · Heirloom',
-    category: 'Produce',
-    flavor: 'Juicy, bright acidity balanced by natural umami and sweetness',
-    substitute: 'Whole canned San Marzano tomatoes or roasted red bell peppers for sweetness',
-    storage: 'Always store at room temperature stem-down to preserve aromatics. Refrigeration dulls flavor enzymes.',
-    commonUses: 'Slow-roasted soups, marinara sauce, gazpacho, raw salads.',
-    caloriesPer100g: 18,
-    proteinPer100g: 0.9,
-    carbsPer100g: 3.9,
-    fatPer100g: 0.2,
-    fiberPer100g: 1.2,
-  },
-  {
-    id: 'ing-garlic',
-    name: 'Garlic',
-    aliases: 'Allium sativum · Purple stripe garlic',
-    category: 'Produce',
-    flavor: 'Pungent and spicy when raw; mellow, sweet and nutty when roasted',
-    substitute: 'Shallots, garlic scapes, or a pinch of asafoetida (hing) in hot oil',
-    storage: 'Keep in an open basket in a cool, dry, dark pantry with good airflow. Never in plastic.',
-    commonUses: 'Foundational aromatic for sautéing, dressings, roasting whole in foil with thyme.',
-    caloriesPer100g: 149,
-    proteinPer100g: 6.4,
-    carbsPer100g: 33.1,
-    fatPer100g: 0.5,
-    fiberPer100g: 2.1,
-  },
-  {
-    id: 'ing-olive-oil',
-    name: 'Extra Virgin Olive Oil',
-    aliases: 'EVOO · Cold-pressed olive oil',
-    category: 'Pantry & Spices',
-    flavor: 'Fruity, grassy, peppery finish from polyphenol antioxidants',
-    substitute: 'Cold-pressed avocado oil or mild unrefined walnut oil',
-    storage: 'Keep in dark glass or tin away from stove heat, daylight and oxygen.',
-    commonUses: 'Finishing warm pastas, salad vinaigrettes, confit garlic, dipping rustic bread.',
-    caloriesPer100g: 884,
-    proteinPer100g: 0,
-    carbsPer100g: 0,
-    fatPer100g: 100,
-    fiberPer100g: 0,
-  },
-  {
-    id: 'ing-lemon',
-    name: 'Lemon',
-    aliases: 'Citrus limon · Eureka · Meyer lemon',
-    category: 'Produce',
-    flavor: 'Sharp citric acidity; fragrant aromatic essential oils in the zest',
-    substitute: 'Lime juice for acidity, or white wine vinegar; sumac for dry tang',
-    storage: 'Keep at room temp for up to 1 week, or in crisper drawer for up to 3 weeks.',
-    commonUses: 'Salad dressings, balancing creamy sauces, brightening roasted poultry, baking.',
-    caloriesPer100g: 29,
-    proteinPer100g: 1.1,
-    carbsPer100g: 9.3,
-    fatPer100g: 0.3,
-    fiberPer100g: 2.8,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Sesame'],
   },
   {
     id: 'ing-pasta',
     name: 'Artisan Pasta',
-    aliases: 'Bronze-cut semolina pasta · Penne / Rigatoni',
+    aliases: 'Penne · Rigatoni · Spaghetti · Durum wheat semolina',
     category: 'Grains & Pasta',
-    flavor: 'Clean, wheaty, comforting starch with pleasant toothsome chew',
-    substitute: 'Gluten-free brown rice pasta, soba noodles, or zucchini ribbons',
+    flavor: 'Clean, wheaty, comforting starch with al dente bite',
+    substitute: 'Gluten-free brown rice pasta, soba noodles, or chickpea pasta',
     storage: 'Cool, dry pantry in sealed airtight container.',
-    commonUses: 'Pasta dishes, cold pasta salads, minestrone soup additions.',
+    commonUses: 'Pasta courses, minestrone additions, pasta bakes.',
     caloriesPer100g: 371,
     proteinPer100g: 13.0,
     carbsPer100g: 74.0,
     fatPer100g: 1.5,
     fiberPer100g: 3.2,
+    glycemicIndex: 'Medium',
+    isDiabeticFriendly: false,
+    isPcosFriendly: false,
+    isGlutenFree: false,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Gluten'],
+  },
+  {
+    id: 'ing-lemon',
+    name: 'Lemon',
+    aliases: 'Eureka lemon · Lisbon lemon · Citrus limon',
+    category: 'Produce',
+    flavor: 'Sharp citric acidity; fragrant aromatic zest oils',
+    substitute: 'Lime juice, white wine vinegar, or ground sumac',
+    storage: 'Room temp for 1 week; crisper drawer for 3 weeks.',
+    commonUses: 'Dressings, marinades, baking balance, deglazing.',
+    caloriesPer100g: 29,
+    proteinPer100g: 1.1,
+    carbsPer100g: 9.3,
+    fatPer100g: 0.3,
+    fiberPer100g: 2.8,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+  },
+  {
+    id: 'ing-olive-oil',
+    name: 'Extra Virgin Olive Oil',
+    aliases: 'EVOO · Cold-pressed olive oil · Aceite de oliva',
+    category: 'Pantry & Spices',
+    flavor: 'Fruity, peppery, grassy finish with monounsaturated polyphenols',
+    substitute: 'Avocado oil for cooking; walnut oil for dressings',
+    storage: 'Cool dark cupboard away from oven heat; consume within 60 days of opening.',
+    commonUses: 'Finishing pastas, salad emulsifications, gentle sautéing.',
+    caloriesPer100g: 884,
+    proteinPer100g: 0,
+    carbsPer100g: 0,
+    fatPer100g: 100,
+    fiberPer100g: 0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+  },
+  {
+    id: 'ing-tomatoes',
+    name: 'Tomatoes',
+    aliases: 'Roma tomatoes · San Marzano · Plum tomatoes',
+    category: 'Produce',
+    flavor: 'Sweet, savory umami with bright malic acidity and rich lycopene',
+    substitute: 'Canned whole peeled tomatoes or roasted red bell peppers',
+    storage: 'Stem-down at room temperature; do not refrigerate whole raw tomatoes.',
+    commonUses: 'Slow soups, marinara sauce, fresh salads, roasting.',
+    caloriesPer100g: 18,
+    proteinPer100g: 0.9,
+    carbsPer100g: 3.9,
+    fatPer100g: 0.2,
+    fiberPer100g: 1.2,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+  },
+  {
+    id: 'ing-garlic',
+    name: 'Garlic',
+    aliases: 'Allium sativum · Fresh garlic bulbs · Lahsun',
+    category: 'Produce',
+    flavor: 'Pungent, sharp allicin bite when raw; sweet, caramelized butteriness when roasted',
+    substitute: 'Shallots, garlic scapes, or asafoetida (hing)',
+    storage: 'Mesh bag in cool, dark pantry with good airflow. Avoid plastic.',
+    commonUses: 'Aromatic base, roasted garlic soups, marinades, aioli.',
+    caloriesPer100g: 149,
+    proteinPer100g: 6.4,
+    carbsPer100g: 33.1,
+    fatPer100g: 0.5,
+    fiberPer100g: 2.1,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
   {
     id: 'ing-chicken',
     name: 'Chicken Breast',
-    aliases: 'Free-range poultry breast · Pollo',
+    aliases: 'Boneless skinless chicken breast · Murgh',
     category: 'Proteins',
-    flavor: 'Mild, lean, receptive to herb marinades and roasting caramelization',
-    substitute: 'Firm tofu steaks, tempeh, or turkey tenderloin',
-    storage: 'Keep in the coldest back shelf of the fridge (0-2°C) for up to 2 days or freeze.',
-    commonUses: 'Roasts, skillet sautés, grain bowls, nourishing chicken broths.',
+    flavor: 'Clean, savory lean poultry protein ready to absorb marinades',
+    substitute: 'Extra-firm pressed tofu, turkey cutlets, or seitan',
+    storage: 'Refrigerate at 1-2°C for 2 days; freeze airtight for up to 6 months.',
+    commonUses: 'Roasts, skillet sears, curries, protein meal-prepping.',
     caloriesPer100g: 165,
     proteinPer100g: 31.0,
     carbsPer100g: 0,
     fatPer100g: 3.6,
     fiberPer100g: 0,
-  },
-  {
-    id: 'ing-blueberries',
-    name: 'Fresh Blueberries',
-    aliases: 'Wild berries · Vaccinium corymbosum',
-    category: 'Produce',
-    flavor: 'Sweet-tart, floral, bursting juice with rich anthocyanins',
-    substitute: 'Blackberries, raspberries, or sliced strawberries',
-    storage: 'Keep dry in breathable container in fridge; wash only immediately before eating.',
-    commonUses: 'Pancake folding, breakfast parfaits, fruit compotes, rustic galettes.',
-    caloriesPer100g: 57,
-    proteinPer100g: 0.7,
-    carbsPer100g: 14.5,
-    fatPer100g: 0.3,
-    fiberPer100g: 2.4,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: false,
+    isVegetarian: false,
+    allergens: [],
   },
   {
     id: 'ing-potatoes',
     name: 'Yukon Gold Potatoes',
-    aliases: 'Yellow butter potatoes · Solanum tuberosum',
+    aliases: 'Yellow potatoes · Solanum tuberosum · Aloo',
     category: 'Produce',
-    flavor: 'Naturally buttery, creamy interior that crisps golden upon roasting',
-    substitute: 'Red creamer potatoes, fingerlings, or sweet potatoes',
-    storage: 'Cool, well-ventilated dark pantry (7-10°C). Keep away from onions to prevent sprouting.',
-    commonUses: 'Crispy roasted wedges, silky mash, potato leek soup.',
+    flavor: 'Naturally buttery, creamy, medium-starch golden flesh',
+    substitute: 'Russet potatoes, sweet potatoes, or mashed cauliflower',
+    storage: 'Cool, dark pantry with ventilation; keep away from onions.',
+    commonUses: 'Pan roasting with rosemary, silky mash, comforting stews.',
     caloriesPer100g: 77,
     proteinPer100g: 2.0,
     carbsPer100g: 17.5,
     fatPer100g: 0.1,
     fiberPer100g: 2.2,
+    glycemicIndex: 'High',
+    isDiabeticFriendly: false,
+    isPcosFriendly: false,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+  },
+  {
+    id: 'ing-chickpea-pasta',
+    name: 'Chickpea Pasta',
+    aliases: 'Banza pasta · High-protein pulse pasta',
+    category: 'Grains & Pasta',
+    flavor: 'Earthy, hearty pulse starch with high satiety and double protein',
+    substitute: 'Red lentil pasta or whole grain pasta',
+    storage: 'Airtight container in dry pantry.',
+    commonUses: 'Diabetic-friendly pasta bakes, post-workout dinners.',
+    caloriesPer100g: 340,
+    proteinPer100g: 23.0,
+    carbsPer100g: 58.0,
+    fatPer100g: 6.0,
+    fiberPer100g: 11.0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+  },
+  {
+    id: 'ing-zucchini',
+    name: 'Zucchini',
+    aliases: 'Courgette · Green summer squash',
+    category: 'Produce',
+    flavor: 'Delicate, mildly sweet, refreshing tender water-rich vegetable',
+    substitute: 'Yellow crookneck squash or thinly sliced eggplant',
+    storage: 'Crisper drawer in loose paper bag up to 1 week.',
+    commonUses: 'Sautéed skillet sides, grilled planks, vegetable noodles.',
+    caloriesPer100g: 17,
+    proteinPer100g: 1.2,
+    carbsPer100g: 3.1,
+    fatPer100g: 0.3,
+    fiberPer100g: 1.0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
+  },
+  {
+    id: 'ing-greek-yogurt',
+    name: 'Greek Yogurt (0% or 2%)',
+    aliases: 'Strained yogurt · Labneh base',
+    category: 'Dairy & Eggs',
+    flavor: 'Tangy, thick, velvety protein-packed cultured dairy',
+    substitute: 'Whipped silken tofu with lemon or coconut yogurt',
+    storage: 'Refrigerate at 2-4°C; consume within 7 days of opening.',
+    commonUses: 'Parfaits, protein marinades, tzatziki, healthy dressings.',
+    caloriesPer100g: 73,
+    proteinPer100g: 10.0,
+    carbsPer100g: 3.9,
+    fatPer100g: 2.0,
+    fiberPer100g: 0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: false,
+    isVegetarian: true,
+    allergens: ['Dairy'],
   },
   {
     id: 'ing-salmon',
     name: 'Wild Salmon Fillet',
-    aliases: 'Sockeye · King salmon · Atlantic salmon',
+    aliases: 'Sockeye · Coho · Pacific salmon',
     category: 'Proteins',
-    flavor: 'Rich, buttery, savory omega-3 rich fish with delicate flake',
-    substitute: 'Rainbow trout, arctic char, or pan-seared firm tofu steaks',
-    storage: 'Keep ice-cold in refrigerator and consume within 2 days; or vacuum freeze.',
-    commonUses: 'Pan-searing with crispy skin, grain bowls, slow-baking with herbs and lemon.',
-    caloriesPer100g: 208,
-    proteinPer100g: 20.4,
+    flavor: 'Deeply savory, rich in marine umami and heart-healthy astaxanthin',
+    substitute: 'Arctic char, steelhead trout, or marinated tempeh',
+    storage: 'Over crushed ice in fridge; prepare within 24-36 hours.',
+    commonUses: 'Pan-seared bowls, cedar-plank roasting, grain bowls.',
+    caloriesPer100g: 182,
+    proteinPer100g: 25.0,
     carbsPer100g: 0,
-    fatPer100g: 13.4,
+    fatPer100g: 8.0,
     fiberPer100g: 0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: false,
+    isVegetarian: false,
+    allergens: ['Fish'],
   },
   {
     id: 'ing-quinoa',
     name: 'Tri-Color Quinoa',
     aliases: 'Incan golden grain · Chenopodium quinoa',
     category: 'Grains & Pasta',
-    flavor: 'Nutty, subtle crunch with clean earthy mineral undertone',
-    substitute: 'Brown basmati rice, farro, or cauliflower rice for lower carbs',
-    storage: 'Airtight container in cool dry pantry up to 2 years.',
-    commonUses: 'Wholesome grain bowls, chilled salads, high-protein meal preps.',
+    flavor: 'Nutty, earthy with playful caviar-like popped texture',
+    substitute: 'Millet, brown rice, or farro',
+    storage: 'Sealed pantry jar; keep cool.',
+    commonUses: 'Warm salad bases, pilafs, high-protein bowl foundations.',
     caloriesPer100g: 120,
     proteinPer100g: 4.4,
     carbsPer100g: 21.3,
     fatPer100g: 1.9,
     fiberPer100g: 2.8,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
   {
     id: 'ing-red-lentils',
     name: 'Split Red Lentils',
     aliases: 'Masoor dal · Petite crimson lentils',
     category: 'Legumes',
-    flavor: 'Mild, earthy, breaks down into naturally creamy, luscious texture',
+    flavor: 'Mild, sweet, earthy; breaks down rapidly into velvety stews',
     substitute: 'Yellow split peas or brown lentils',
-    storage: 'Cool dry pantry in tightly sealed mason jars.',
-    commonUses: 'Indian dahl, velvety soups, stews, purées.',
+    storage: 'Cool dark cupboard in sealed glass container.',
+    commonUses: 'Indian dahl, velvety soups, quick protein purées.',
     caloriesPer100g: 116,
     proteinPer100g: 9.0,
     carbsPer100g: 20.0,
     fatPer100g: 0.4,
-    fiberPer100g: 7.9,
+    fiberPer100g: 3.9,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
   {
     id: 'ing-coconut-milk',
-    name: 'Coconut Milk',
-    aliases: 'Unsweetened coconut milk · Coconut cream',
+    name: 'Coconut Milk (Full-Fat)',
+    aliases: 'Culinary coconut cream · Pure coconut extract',
     category: 'Dairy & Eggs',
-    flavor: 'Rich, silky, fragrant tropical creaminess',
-    substitute: 'Cashew cream or oat cream',
-    storage: 'Cool cupboard; once can is opened, store in sealed glass jar in fridge for 4 days.',
-    commonUses: 'Curry bases, creamy dahl, tropical marinades, chia puddings.',
+    flavor: 'Opulent, silky tropical creaminess packed with medium-chain triglycerides',
+    substitute: 'Cashew cream or heavy dairy cream',
+    storage: 'Pantry canned; transfer unused portions to glass container in fridge for 4 days.',
+    commonUses: 'Dahl, Thai curries, dairy-free puddings, creamy soups.',
     caloriesPer100g: 197,
     proteinPer100g: 2.0,
     carbsPer100g: 2.8,
-    fatPer100g: 21.0,
+    fatPer100g: 21.3,
     fiberPer100g: 0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
   {
     id: 'ing-ginger',
     name: 'Fresh Ginger Root',
-    aliases: 'Zingiber officinale · Fresh ginger',
+    aliases: 'Zingiber officinale · Adrak',
     category: 'Produce',
-    flavor: 'Sharp, peppery warmth, citrusy pungent aromatics',
-    substitute: 'Ground dried ginger or fresh galangal',
-    storage: 'Unpeeled in crisper drawer for 3 weeks; or freeze whole knob indefinitely.',
-    commonUses: 'Aromatic curry foundations, tea infusions, dressings, stir-fries.',
+    flavor: 'Spicy, zesty, clean, warming medicinal aroma',
+    substitute: 'Ground dried ginger (1/4 ratio) or galangal',
+    storage: 'Refrigerate wrapped unpeeled in paper towel; freeze indefinitely and grate frozen.',
+    commonUses: 'Curry pastes, herbal broths, dressings, tea infusions.',
     caloriesPer100g: 80,
     proteinPer100g: 1.8,
     carbsPer100g: 17.8,
-    fatPer100g: 0.8,
+    fatPer100g: 0.7,
     fiberPer100g: 2.0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
   {
     id: 'ing-sourdough',
     name: 'Artisan Sourdough Bread',
-    aliases: 'Wild yeast levain · Country loaf',
+    aliases: 'Naturally leavened wild yeast bread',
     category: 'Grains & Pasta',
-    flavor: 'Tangy lactic acidity, deep blistered crust, airy chew',
-    substitute: 'Seeded multigrain loaf or gluten-free artisan loaf',
-    storage: 'Cut-side down on wooden board for 2 days; or slice and store frozen.',
-    commonUses: 'Avocado toast, bruschetta, dipping into simmering stews and soups.',
-    caloriesPer100g: 230,
-    proteinPer100g: 8.0,
-    carbsPer100g: 45.0,
-    fatPer100g: 1.5,
-    fiberPer100g: 3.0,
+    flavor: 'Tangy, complex wild fermentation with blistered crunchy crust and open crumb',
+    substitute: 'Gluten-free seeded artisan bread',
+    storage: 'Cut-side down on wooden board for 2 days; slice and freeze airtight.',
+    commonUses: 'Avocado toasts, croutons, bruschetta, panzanella.',
+    caloriesPer100g: 247,
+    proteinPer100g: 9.0,
+    carbsPer100g: 49.0,
+    fatPer100g: 1.2,
+    fiberPer100g: 2.5,
+    glycemicIndex: 'Medium',
+    isDiabeticFriendly: true,
+    isPcosFriendly: false,
+    isGlutenFree: false,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Gluten'],
   },
   {
     id: 'ing-avocado',
     name: 'Ripe Hass Avocado',
-    aliases: 'Persea americana · Alligator pear',
+    aliases: 'Alligator pear · Persea americana',
     category: 'Produce',
-    flavor: 'Buttery, rich, mild nutty monounsaturated fat',
-    substitute: 'Whipped ricotta, hummus, or edamame mash',
-    storage: 'Room temperature until yielding to gentle pressure, then refrigerate up to 5 days.',
-    commonUses: 'Toast topping, salad bowls, guacamole, creamy dressings.',
+    flavor: 'Silky, buttery, clean grassy richness packed with oleic monounsaturated fatty acids',
+    substitute: 'Edamame dip or whipped ricotta',
+    storage: 'Room temp until soft to touch; refrigerate ripe fruit up to 4 days.',
+    commonUses: 'Toasts, salads, grain bowls, dairy-free smoothies.',
     caloriesPer100g: 160,
     proteinPer100g: 2.0,
     carbsPer100g: 8.5,
     fatPer100g: 14.7,
     fiberPer100g: 6.7,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
   {
     id: 'ing-eggs',
     name: 'Pasture-Raised Eggs',
-    aliases: 'Farm fresh eggs · Free range eggs',
+    aliases: 'Fresh chicken eggs · Whole eggs',
     category: 'Dairy & Eggs',
-    flavor: 'Vibrant golden yolk with rich, velvety custard-like richness',
-    substitute: 'Silken tofu scrambles or poached tofu rounds',
-    storage: 'Refrigerate at 2-4°C in carton.',
-    commonUses: 'Poaching, frittatas, folding into batters, ramen toppings.',
+    flavor: 'Rich, custard-like yolk with clean albumen structure',
+    substitute: 'Flax eggs, aquafaba, or silken tofu in baking',
+    storage: 'Refrigerate carton at 2-4°C.',
+    commonUses: 'Poaching, custards, cake structure, emulsifying hollandaise.',
     caloriesPer100g: 143,
     proteinPer100g: 12.6,
     carbsPer100g: 0.7,
     fatPer100g: 9.5,
     fiberPer100g: 0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: false,
+    isVegetarian: true,
+    allergens: ['Eggs'],
+    varieties: [
+      { id: 'var-eggs-whole', ingredientId: 'ing-eggs', name: 'Whole Fresh Eggs', defaultUnit: 'whole', culinaryRole: 'Standard whole egg combining yolk fats with albumen proteins' },
+      { id: 'var-eggs-whites', ingredientId: 'ing-eggs', name: 'Egg Whites (Albumen)', defaultUnit: 'whole', culinaryRole: 'Pure protein for meringues, macarons, and fat-free structure' },
+      { id: 'var-eggs-yolks', ingredientId: 'ing-eggs', name: 'Rich Egg Yolks', defaultUnit: 'whole', culinaryRole: 'Lecithin-rich emulsifier for custards, crème brûlée, and mayonnaise' },
+    ],
   },
   {
     id: 'ing-shiitake',
     name: 'Fresh Shiitake Mushrooms',
     aliases: 'Lentinula edodes · Black forest mushroom',
     category: 'Produce',
-    flavor: 'Intense woodsy savoriness, concentrated natural glutamates and umami',
-    substitute: 'Cremini mushrooms or rehydrated dried porcini',
-    storage: 'Store in breathable brown paper bag in crisper drawer.',
-    commonUses: 'Ramen broth infusion, stir-fries, risottos, sautéed side dishes.',
+    flavor: 'Deeply smoky, earthy, concentrated fungal guanylate umami',
+    substitute: 'Cremini mushrooms, porcini, or portobello caps',
+    storage: 'Refrigerate in breathable paper bag; avoid airtight plastic.',
+    commonUses: 'Ramen broths, stir fries, mushroom ragu, braises.',
     caloriesPer100g: 34,
     proteinPer100g: 2.2,
     carbsPer100g: 6.8,
     fatPer100g: 0.5,
     fiberPer100g: 2.5,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
   {
     id: 'ing-miso',
@@ -528,6 +1203,13 @@ export const masterIngredients: IngredientMaster[] = [
     carbsPer100g: 26.0,
     fatPer100g: 6.0,
     fiberPer100g: 5.0,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Soy'],
   },
   {
     id: 'ing-soba',
@@ -543,6 +1225,13 @@ export const masterIngredients: IngredientMaster[] = [
     carbsPer100g: 21.4,
     fatPer100g: 0.1,
     fiberPer100g: 1.4,
+    glycemicIndex: 'Medium',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: false,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: ['Gluten'],
   },
   {
     id: 'ing-berries',
@@ -558,10 +1247,256 @@ export const masterIngredients: IngredientMaster[] = [
     carbsPer100g: 14.5,
     fatPer100g: 0.3,
     fiberPer100g: 2.4,
+    glycemicIndex: 'Low',
+    isDiabeticFriendly: true,
+    isPcosFriendly: true,
+    isGlutenFree: true,
+    isVegan: true,
+    isVegetarian: true,
+    allergens: [],
   },
 ];
 
 // -------------------------------------------------------------
+// RELATIONAL INFERENCE & SEMANTIC INTELLIGENCE HELPERS
+// -------------------------------------------------------------
+
+export function findMasterIngredient(
+  item: { ingredientId?: string; name: string; varietyId?: string },
+  masterList: IngredientMaster[] = masterIngredients
+): IngredientMaster | undefined {
+  if (item.ingredientId) {
+    const byId = masterList.find(m => m.id === item.ingredientId);
+    if (byId) return byId;
+  }
+  if (item.varietyId) {
+    const byVar = masterList.find(m => m.varieties?.some(v => v.id === item.varietyId));
+    if (byVar) return byVar;
+  }
+  const cleanName = (item.name || '').toLowerCase().trim();
+  if (!cleanName) return undefined;
+
+  // 1. Exact canonical name
+  const byName = masterList.find(m => m.name.toLowerCase() === cleanName);
+  if (byName) return byName;
+
+  // 2. Exact variety match
+  const byVarName = masterList.find(m =>
+    m.varieties?.some(v => v.name.toLowerCase() === cleanName)
+  );
+  if (byVarName) return byVarName;
+
+  // 3. Substring in variety name
+  const byVarSub = masterList.find(m =>
+    m.varieties?.some(v => v.name.toLowerCase().includes(cleanName) || cleanName.includes(v.name.toLowerCase()))
+  );
+  if (byVarSub) return byVarSub;
+
+  // 4. Substring in canonical name or aliases
+  return masterList.find(m =>
+    cleanName.includes(m.name.toLowerCase()) ||
+    m.name.toLowerCase().includes(cleanName) ||
+    m.aliases.toLowerCase().includes(cleanName)
+  );
+}
+
+export function findMasterIngredientAndVariety(
+  item: { ingredientId?: string; name: string; varietyId?: string },
+  masterList: IngredientMaster[] = masterIngredients
+): { master?: IngredientMaster; variety?: IngredientVariety } {
+  const master = findMasterIngredient(item, masterList);
+  if (!master) return {};
+
+  const cleanName = (item.name || '').toLowerCase().trim();
+  let variety: IngredientVariety | undefined;
+  if (item.varietyId && master.varieties) {
+    variety = master.varieties.find((v) => v.id === item.varietyId);
+  }
+  if (!variety && master.varieties) {
+    variety = master.varieties.find(
+      (v) =>
+        v.name.toLowerCase() === cleanName ||
+        cleanName.includes(v.name.toLowerCase()) ||
+        v.name.toLowerCase().includes(cleanName)
+    );
+  }
+  return { master, variety };
+}
+
+export function inferRecipeAllergens(
+  ingredients: RecipeIngredient[],
+  masterList: IngredientMaster[] = masterIngredients
+): AllergenType[] {
+  const allergenSet = new Set<AllergenType>();
+  for (const ing of ingredients) {
+    const { master, variety } = findMasterIngredientAndVariety(ing, masterList);
+    const allergens = variety?.allergens !== undefined ? variety.allergens : master?.allergens;
+    if (allergens) {
+      allergens.forEach((a) => allergenSet.add(a));
+    }
+  }
+  return Array.from(allergenSet);
+}
+
+export function inferRecipeDietaryTags(
+  ingredients: RecipeIngredient[],
+  masterList: IngredientMaster[] = masterIngredients
+): {
+  isDiabeticFriendly: boolean;
+  isGlutenFree: boolean;
+  isVegan: boolean;
+  isVegetarian: boolean;
+  detectedAllergens: AllergenType[];
+  inferredTags: string[];
+} {
+  const allergens = inferRecipeAllergens(ingredients, masterList);
+  if (!ingredients || ingredients.length === 0) {
+    return {
+      isDiabeticFriendly: true,
+      isGlutenFree: true,
+      isVegan: true,
+      isVegetarian: true,
+      detectedAllergens: [],
+      inferredTags: [],
+    };
+  }
+
+  let allVegan = true;
+  let allVegetarian = true;
+  let allGlutenFree = !allergens.includes('Gluten');
+  let diabeticFriendly = true;
+
+  for (const ing of ingredients) {
+    const { master, variety } = findMasterIngredientAndVariety(ing, masterList);
+    if (master) {
+      const isVegan = variety?.isVegan !== undefined ? variety.isVegan : master.isVegan;
+      const isVegetarian =
+        variety?.isVegetarian !== undefined ? variety.isVegetarian : master.isVegetarian;
+      const isGlutenFree =
+        variety?.isGlutenFree !== undefined ? variety.isGlutenFree : master.isGlutenFree;
+      const isDiabetic =
+        variety?.isDiabeticFriendly !== undefined
+          ? variety.isDiabeticFriendly
+          : master.isDiabeticFriendly;
+
+      if (isVegan === false) allVegan = false;
+      if (isVegetarian === false) allVegetarian = false;
+      if (isGlutenFree === false) allGlutenFree = false;
+      if (isDiabetic === false || (variety?.isDiabeticFriendly !== true && master.glycemicIndex === 'High')) {
+        diabeticFriendly = false;
+      }
+    } else {
+      const lower = ing.name.toLowerCase();
+      if (
+        lower.includes('chicken') ||
+        lower.includes('meat') ||
+        lower.includes('beef') ||
+        lower.includes('fish') ||
+        lower.includes('salmon')
+      ) {
+        allVegan = false;
+        allVegetarian = false;
+      }
+      if (
+        lower.includes('cheese') ||
+        lower.includes('milk') ||
+        lower.includes('butter') ||
+        lower.includes('egg') ||
+        lower.includes('honey')
+      ) {
+        allVegan = false;
+      }
+      if (
+        lower.includes('flour') ||
+        lower.includes('wheat') ||
+        lower.includes('bread') ||
+        lower.includes('pasta')
+      ) {
+        allGlutenFree = false;
+      }
+      if (lower.includes('sugar') || lower.includes('syrup') || lower.includes('caramel')) {
+        diabeticFriendly = false;
+      }
+    }
+  }
+
+  const tags: string[] = [];
+  if (allVegan) tags.push('Vegan');
+  else if (allVegetarian) tags.push('Vegetarian');
+  if (allGlutenFree) tags.push('Gluten-free');
+  if (diabeticFriendly) tags.push('Diabetic-friendly');
+
+  return {
+    isDiabeticFriendly: diabeticFriendly,
+    isGlutenFree: allGlutenFree,
+    isVegan: allVegan,
+    isVegetarian: allVegetarian,
+    detectedAllergens: allergens,
+    inferredTags: tags,
+  };
+}
+
+export function estimateRecipeNutrition(
+  ingredients: RecipeIngredient[],
+  servings: number = 2,
+  masterList: IngredientMaster[] = masterIngredients
+): {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+} {
+  let totalCal = 0;
+  let totalProt = 0;
+  let totalCarb = 0;
+  let totalFat = 0;
+  let totalFib = 0;
+
+  for (const ing of ingredients) {
+    const master = findMasterIngredient(ing, masterList);
+    let factorInGrams = 1;
+    const u = (ing.unit || '').toLowerCase().trim();
+    if (u === 'g' || u === 'ml') factorInGrams = 1;
+    else if (u === 'kg' || u === 'l') factorInGrams = 1000;
+    else if (u === 'tbsp') factorInGrams = 15;
+    else if (u === 'tsp') factorInGrams = 5;
+    else if (u === 'cup') factorInGrams = 200;
+    else if (u === 'whole') factorInGrams = 60;
+    else if (u === 'clove') factorInGrams = 3;
+    else if (u === 'pinch') factorInGrams = 1;
+    else if (u === 'slice') factorInGrams = 35;
+    else if (u === 'oz') factorInGrams = 28.35;
+    else if (u === 'lb') factorInGrams = 453.6;
+
+    const grams = (Number(ing.quantity) || 0) * factorInGrams;
+    const multiplier = grams / 100;
+
+    if (master) {
+      totalCal += master.caloriesPer100g * multiplier;
+      totalProt += master.proteinPer100g * multiplier;
+      totalCarb += master.carbsPer100g * multiplier;
+      totalFat += master.fatPer100g * multiplier;
+      totalFib += master.fiberPer100g * multiplier;
+    } else {
+      totalCal += 120 * multiplier;
+      totalProt += 4 * multiplier;
+      totalCarb += 15 * multiplier;
+      totalFat += 3 * multiplier;
+      totalFib += 2 * multiplier;
+    }
+  }
+
+  const s = Math.max(1, servings);
+  return {
+    calories: Math.round(totalCal / s),
+    protein: Math.round((totalProt / s) * 10) / 10,
+    carbs: Math.round((totalCarb / s) * 10) / 10,
+    fat: Math.round((totalFat / s) * 10) / 10,
+    fiber: Math.round((totalFib / s) * 10) / 10,
+  };
+}
+
 // CORE RECIPE REPOSITORY (Structured Relational Entries)
 // -------------------------------------------------------------
 

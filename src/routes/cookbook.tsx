@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
-import { Plus, BookOpen, Heart, FileText, Trash2, ArrowUpRight, FolderPlus } from 'lucide-react';
+import { Plus, BookOpen, Heart, FileText, Trash2, ArrowUpRight, FolderPlus, Check, Utensils } from 'lucide-react';
 import { useVault } from '@/components/vault-provider';
 import { RecipeCard, PageHeading, EmptyState } from '@/components/recipe-card';
 import { Button } from '@/components/ui/button';
@@ -136,66 +136,84 @@ function Cookbook() {
               return (
                 <div
                   key={c.id}
-                  className={`collection-item rounded-2xl border transition-all cursor-pointer p-5 flex items-start gap-4 ${
-                    isSelected
-                      ? 'border-clay bg-card shadow-md ring-1 ring-clay'
-                      : 'border-border bg-card hover:border-clay/50'
-                  }`}
+                  className={`collection-item group ${isSelected ? 'is-selected' : ''}`}
                   onClick={() => setSelectedCollectionId(isSelected ? '' : c.id)}
                 >
-                  <span className={`collection-symbol collection-${index % 2} rounded-xl`}>
-                    <BookOpen size={22} />
-                  </span>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                      <span className={`collection-symbol collection-${index % 3}`}>
+                        <BookOpen size={20} />
+                      </span>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <strong className="text-base font-serif font-semibold text-foreground block truncate group-hover:text-primary transition-colors">
+                          {c.name}
+                        </strong>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                          {c.description || 'Curated recipes for this shelf.'}
+                        </p>
+                      </div>
+                    </div>
 
-                  <div className="flex-1">
-                    <strong className="text-base font-serif block">{c.name}</strong>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                      {c.description}
-                    </p>
-                    <span className="text-[11px] font-semibold text-primary mt-2 inline-block">
-                      {c.ids.length} {c.ids.length === 1 ? 'recipe' : 'recipes'}
-                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 shrink-0 rounded-lg transition-colors -mr-1 -mt-1"
+                      title="Delete collection"
+                      onClick={e => {
+                        e.stopPropagation();
+                        const deletedCol = { ...c };
+                        deleteCollection(c.id);
+                        if (selectedCollectionId === c.id) setSelectedCollectionId('');
+                        toast.info(`Deleted collection "${c.name}"`, {
+                          action: {
+                            label: 'Undo',
+                            onClick: () => {
+                              createCollection(deletedCol.name, deletedCol.description);
+                            },
+                          },
+                        });
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive h-8 w-8"
-                    title="Delete collection"
-                    onClick={e => {
-                      e.stopPropagation();
-                      const deletedCol = { ...c };
-                      deleteCollection(c.id);
-                      if (selectedCollectionId === c.id) setSelectedCollectionId('');
-                      toast.info(`Deleted collection "${c.name}"`, {
-                        action: {
-                          label: 'Undo',
-                          onClick: () => {
-                            createCollection(deletedCol.name, deletedCol.description);
-                          },
-                        },
-                      });
-                    }}
-                  >
-                    <Trash2 size={14} />
-                  </Button>
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50 text-xs">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-secondary text-secondary-foreground border border-border/60">
+                      <Utensils size={11} className="text-primary" />
+                      <span className="tabular">{c.ids.length}</span> {c.ids.length === 1 ? 'recipe' : 'recipes'}
+                    </span>
+
+                    {isSelected ? (
+                      <span className="text-[11px] font-semibold text-primary flex items-center gap-1">
+                        <Check size={12} strokeWidth={2.5} /> Active Shelf
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground/60 group-hover:text-muted-foreground transition-colors">
+                        Click to filter recipes
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
 
           {activeCollection && (
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-border">
-              <span className="text-xs text-muted-foreground">
-                Showing recipes inside: <strong>{activeCollection.name}</strong>
+            <div className="flex items-center justify-between p-3.5 mb-6 rounded-xl bg-secondary/60 border border-border">
+              <span className="text-xs text-muted-foreground flex items-center gap-2">
+                <BookOpen size={14} className="text-primary" />
+                <span>
+                  Showing recipes inside shelf: <strong className="text-foreground">{activeCollection.name}</strong>
+                </span>
               </span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs h-7"
+                className="text-xs h-7 rounded-full text-primary hover:text-primary hover:bg-primary/10"
                 onClick={() => setSelectedCollectionId('')}
               >
-                Clear collection filter
+                Clear shelf filter
               </Button>
             </div>
           )}

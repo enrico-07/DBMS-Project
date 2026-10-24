@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Plus,
   Trash2,
@@ -10,10 +10,17 @@ import {
   ArrowLeft,
   GitCommit,
   Wand2,
+  AlertTriangle,
+  HeartPulse,
+  Flame,
+  Wheat,
+  ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +31,16 @@ import {
 import { PageHeading } from '@/components/recipe-card';
 import { useVault } from '@/components/vault-provider';
 import { pageMeta } from '@/lib/metadata';
-import { type RecipeIngredient, type RecipeStep, parseRawRecipeText } from '@/lib/recipes';
+import {
+  type RecipeIngredient,
+  type RecipeStep,
+  type IngredientMaster,
+  parseRawRecipeText,
+  inferRecipeDietaryTags,
+  estimateRecipeNutrition,
+  masterIngredients,
+} from '@/lib/recipes';
+import { SemanticIngredientPicker } from '@/components/semantic-ingredient-picker';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/create')({
@@ -66,6 +82,32 @@ function CreateRecipe() {
   const [steps, setSteps] = useState<RecipeStep[]>([
     { stepNumber: 1, instruction: '', durationMinutes: 5, tip: '' },
   ]);
+
+  // Master ingredients state (with dynamic runtime additions)
+  const [availableMasterList, setAvailableMasterList] = useState<IngredientMaster[]>(masterIngredients);
+
+  const handleAddNewCustomIngredient = (newMaster: IngredientMaster) => {
+    setAvailableMasterList((prev) => [newMaster, ...prev]);
+    toast.success(`Registered "${newMaster.name}" into master semantic ingredient ontology!`);
+  };
+
+  // Real-time Relational & Nutritional Intelligence Engine
+  const intelligence = useMemo(() => {
+    const valid = ingredients.filter(
+      (i) => (i.name || '').trim().length > 0 && Number(i.quantity) > 0
+    );
+    const tagsAndAllergens = inferRecipeDietaryTags(valid, availableMasterList);
+    const nutrition = estimateRecipeNutrition(
+      valid,
+      Number(servings) || 2,
+      availableMasterList
+    );
+    return {
+      ...tagsAndAllergens,
+      nutrition,
+      validCount: valid.length,
+    };
+  }, [ingredients, servings, availableMasterList]);
 
   // Version Control Commit Message (for edits)
   const [changeSummary, setChangeSummary] = useState('');
@@ -123,7 +165,7 @@ function CreateRecipe() {
       toast.error('Please enter a recipe title.');
       return;
     }
-    const validIngredients = ingredients.filter(i => i.name.trim().length > 0 && i.quantity > 0);
+    const validIngredients = ingredients.filter(i => (i.name || '').trim().length > 0 && i.quantity > 0);
     if (validIngredients.length === 0) {
       toast.error('Add at least one valid ingredient with quantity.');
       return;
@@ -137,11 +179,20 @@ function CreateRecipe() {
     const id = edit ?? `rec-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || crypto.randomUUID().slice(0, 8)}`;
     const totalTime = Number(prepTime) + Number(cookTime);
 
-    // Approximate baseline calories/macros if new
-    const calories = original?.calories || Math.round(validIngredients.length * 95);
-    const protein = original?.protein || Math.round(validIngredients.length * 4.5);
-    const carbs = original?.carbs || Math.round(validIngredients.length * 11);
-    const fat = original?.fat || Math.round(validIngredients.length * 3.2);
+    // Precise nutritional calculation from semantic ontology
+    const calculatedNutrition = intelligence.nutrition;
+    const calories = original?.calories && edit ? original.calories : calculatedNutrition.calories;
+    const protein = original?.protein && edit ? original.protein : calculatedNutrition.protein;
+    const carbs = original?.carbs && edit ? original.carbs : calculatedNutrition.carbs;
+    const fat = original?.fat && edit ? original.fat : calculatedNutrition.fat;
+    const fiber = calculatedNutrition.fiber || original?.fiber || 4;
+
+    const harmonizedTags = Array.from(new Set([
+      cuisine,
+      category,
+      diet,
+      ...intelligence.inferredTags,
+    ])).filter(Boolean);
 
     addRecipe(
       {
@@ -163,7 +214,7 @@ function CreateRecipe() {
         protein,
         carbs,
         fat,
-        fiber: original?.fiber || 4,
+        fiber,
         source: source.trim() || `${currentUser.name}’s Kitchen`,
         visibility,
         status,
@@ -172,7 +223,7 @@ function CreateRecipe() {
         updatedAt: new Date().toISOString(),
         ingredients: validIngredients,
         steps: validSteps.map((s, idx) => ({ ...s, stepNumber: idx + 1 })),
-        tags: [cuisine, category, diet],
+        tags: harmonizedTags,
       },
       edit ? changeSummary.trim() || undefined : undefined
     );
@@ -369,13 +420,99 @@ function CreateRecipe() {
               </div>
             </div>
 
+            {/* Live Recipe Formulation & Intelligence Card */}
+            <div className="bg-card border border-primary/20 p-5 rounded-2xl shadow-sm space-y-3 bg-gradient-to-br from-card via-card to-primary/5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold tracking-tight">Live Culinary Intelligence</h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      Real-time relational analysis from semantic ingredient entities
+                    </p>
+                  </div>
+                </div>
+
+                {/* Live Macro Snapshot */}
+                <div className="flex items-center gap-2.5 text-xs bg-background/80 border border-border px-3 py-1 rounded-full font-mono">
+                  <span className="flex items-center gap-1 font-semibold text-foreground">
+                    <Flame size={13} className="text-amber-500" />
+                    {intelligence.nutrition.calories} kcal
+                  </span>
+                  <span className="text-muted-foreground/50">•</span>
+                  <span className="text-muted-foreground">P: <strong className="text-foreground">{intelligence.nutrition.protein}g</strong></span>
+                  <span className="text-muted-foreground">C: <strong className="text-foreground">{intelligence.nutrition.carbs}g</strong></span>
+                  <span className="text-muted-foreground">F: <strong className="text-foreground">{intelligence.nutrition.fat}g</strong></span>
+                  <span className="text-[10px] text-muted-foreground">/ serving</span>
+                </div>
+              </div>
+
+              {/* Detected Allergens & Health Badges */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/60">
+                {/* Allergens */}
+                {intelligence.detectedAllergens.length > 0 ? (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <AlertTriangle size={12} /> Allergens:
+                    </span>
+                    {intelligence.detectedAllergens.map(alg => (
+                      <Badge key={alg} variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300 text-[10px] px-2 py-0">
+                        {alg === 'Dairy' ? '🥛 Dairy' : alg === 'Gluten' ? '🌾 Gluten' : alg === 'Peanuts' ? '🥜 Peanuts' : alg === 'Tree Nuts' ? '🌰 Tree Nuts' : alg === 'Eggs' ? '🥚 Eggs' : alg === 'Soy' ? '🌱 Soy' : alg === 'Fish' ? '🐟 Fish' : alg}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] px-2 py-0">
+                    <ShieldCheck size={11} className="mr-1 inline" /> Common Allergen-Free
+                  </Badge>
+                )}
+
+                {/* Health Traits */}
+                {intelligence.isDiabeticFriendly && (
+                  <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] px-2 py-0">
+                    <HeartPulse size={11} className="mr-1 inline" /> Diabetic-Friendly
+                  </Badge>
+                )}
+
+                {intelligence.isGlutenFree && (
+                  <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300 text-[10px] px-2 py-0">
+                    <Wheat size={11} className="mr-1 inline" /> 100% Gluten-Free
+                  </Badge>
+                )}
+
+                {intelligence.isVegan && (
+                  <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-300 text-[10px] px-2 py-0">
+                    🌿 100% Vegan
+                  </Badge>
+                )}
+
+                {/* One-click apply suggestion */}
+                {intelligence.inferredTags.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (intelligence.isVegan && diet !== 'Vegan') setDiet('Vegan');
+                      else if (intelligence.isVegetarian && diet !== 'Vegetarian' && diet !== 'Vegan') setDiet('Vegetarian');
+                      else if (intelligence.isGlutenFree && diet !== 'Gluten-free') setDiet('Gluten-free');
+                      toast.success('Aligned dietary tag with ingredient formulation!');
+                    }}
+                    className="ml-auto text-[10px] text-primary hover:underline font-medium"
+                  >
+                    Auto-align diet tag
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Ingredients Table */}
             <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-serif">Ingredients</h2>
                   <p className="text-xs text-muted-foreground">
-                    Scaled automatically according to serving multiplier.
+                    Select semantic entities with varieties, exact weights, and preparation notes.
                   </p>
                 </div>
                 <Button
@@ -384,70 +521,105 @@ function CreateRecipe() {
                   size="sm"
                   className="rounded-full gap-1"
                   onClick={() =>
-                    setIngredients(prev => [...prev, { name: '', quantity: 1, unit: 'g', preparationState: '' }])
+                    setIngredients(prev => [
+                      ...prev,
+                      { name: '', quantity: 100, unit: 'g', preparationState: '' },
+                    ])
                   }
                 >
                   <Plus size={14} /> Add Ingredient
                 </Button>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {ingredients.map((ing, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <Input
-                      placeholder="Ingredient name (e.g. Rigatoni)"
-                      value={ing.name}
-                      onChange={e =>
-                        setIngredients(p => p.map((item, n) => (n === idx ? { ...item, name: e.target.value } : item)))
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-xl border border-border bg-card/60 flex flex-col md:flex-row md:items-start gap-3 hover:border-primary/30 transition-all shadow-sm"
+                  >
+                    {/* Semantic Combobox & Variety Selector */}
+                    <SemanticIngredientPicker
+                      value={ing}
+                      availableIngredients={availableMasterList}
+                      onAddNewCustomIngredient={handleAddNewCustomIngredient}
+                      onChange={(updated) =>
+                        setIngredients((p) => p.map((item, n) => (n === idx ? updated : item)))
                       }
-                      className="flex-[2] text-xs"
-                      required
                     />
-                    <Input
-                      type="number"
-                      step="any"
-                      min={0.01}
-                      placeholder="Qty"
-                      value={ing.quantity}
-                      onChange={e =>
-                        setIngredients(p =>
-                          p.map((item, n) => (n === idx ? { ...item, quantity: Number(e.target.value) } : item))
-                        )
-                      }
-                      className="w-20 text-xs"
-                      required
-                    />
-                    <select
-                      className="w-24 text-xs p-2.5 rounded-lg border border-border bg-background"
-                      value={ing.unit}
-                      onChange={e =>
-                        setIngredients(p => p.map((item, n) => (n === idx ? { ...item, unit: e.target.value } : item)))
-                      }
-                    >
-                      {['g', 'kg', 'ml', 'cup', 'tbsp', 'tsp', 'whole', 'clove', 'pinch'].map(u => (
-                        <option key={u} value={u}>{u}</option>
-                      ))}
-                    </select>
-                    <Input
-                      placeholder="Prep notes (e.g. toasted)"
-                      value={ing.preparationState || ''}
-                      onChange={e =>
-                        setIngredients(p =>
-                          p.map((item, n) => (n === idx ? { ...item, preparationState: e.target.value } : item))
-                        )
-                      }
-                      className="flex-1 text-xs hidden md:block"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={ingredients.length <= 1}
-                      onClick={() => setIngredients(p => p.filter((_, n) => n !== idx))}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
+
+                    {/* Numeric Quantity */}
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground md:hidden mb-0.5">Quantity</span>
+                        <Input
+                          type="number"
+                          step="any"
+                          min={0.01}
+                          placeholder="Qty"
+                          value={ing.quantity}
+                          onChange={(e) =>
+                            setIngredients((p) =>
+                              p.map((item, n) =>
+                                n === idx ? { ...item, quantity: Number(e.target.value) } : item
+                              )
+                            )
+                          }
+                          className="w-20 text-xs h-9"
+                          required
+                        />
+                      </div>
+
+                      {/* Standard Unit */}
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground md:hidden mb-0.5">Unit</span>
+                        <select
+                          className="w-24 text-xs h-9 px-2 rounded-lg border border-border bg-background"
+                          value={ing.unit}
+                          onChange={(e) =>
+                            setIngredients((p) =>
+                              p.map((item, n) => (n === idx ? { ...item, unit: e.target.value } : item))
+                            )
+                          }
+                        >
+                          {['g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'whole', 'clove', 'pinch', 'slice', 'oz', 'lb'].map(
+                            (u) => (
+                              <option key={u} value={u}>
+                                {u}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
+
+                      {/* Preparation Notes */}
+                      <div className="flex-1 flex flex-col min-w-[120px]">
+                        <span className="text-[10px] text-muted-foreground md:hidden mb-0.5">Prep Notes</span>
+                        <Input
+                          placeholder="Prep (e.g. melted, sifted)"
+                          value={ing.preparationState || ''}
+                          onChange={(e) =>
+                            setIngredients((p) =>
+                              p.map((item, n) =>
+                                n === idx ? { ...item, preparationState: e.target.value } : item
+                              )
+                            )
+                          }
+                          className="text-xs h-9"
+                        />
+                      </div>
+
+                      {/* Remove Button */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={ingredients.length <= 1}
+                        onClick={() => setIngredients((p) => p.filter((_, n) => n !== idx))}
+                        className="text-muted-foreground hover:text-destructive h-9 w-9 shrink-0 mt-auto md:mt-0"
+                      >
+                        <Trash2 size={15} />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
