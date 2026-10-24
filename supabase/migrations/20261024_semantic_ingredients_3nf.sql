@@ -12,6 +12,25 @@ ALTER TABLE IF EXISTS public.ingredients
   ADD COLUMN IF NOT EXISTS is_vegetarian BOOLEAN DEFAULT TRUE,
   ADD COLUMN IF NOT EXISTS allergens TEXT[] DEFAULT '{}'::TEXT[];
 
+-- 1b. Update category check constraint to support 'Nuts & Seeds' and flexible culinary categories
+ALTER TABLE IF EXISTS public.ingredients 
+  DROP CONSTRAINT IF EXISTS ingredients_category_check;
+
+ALTER TABLE IF EXISTS public.ingredients
+  ADD CONSTRAINT ingredients_category_check 
+  CHECK (category IN (
+    'Baking', 
+    'Dairy & Eggs', 
+    'Produce', 
+    'Pantry & Spices', 
+    'Nuts & Seeds', 
+    'Grains & Pasta', 
+    'Legumes', 
+    'Proteins', 
+    'Condiments',
+    'Other'
+  ));
+
 -- 2. Create the 3NF Subdivision / Variety table
 CREATE TABLE IF NOT EXISTS public.ingredient_varieties (
   variety_id VARCHAR(100) PRIMARY KEY,
