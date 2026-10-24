@@ -428,7 +428,15 @@ function Index() {
             </div>
             <div className="mt-5">
               <Button asChild className="rounded-full px-6">
-                <Link to="/recipe/$id" params={{ id: 'lemon-ricotta-pasta' }}>
+                <Link
+                  to="/recipe/$id"
+                  params={{
+                    id:
+                      items.find(
+                        (r) => r.id === 'lemon-herb-pasta' || r.id === 'lemon-ricotta-pasta'
+                      )?.id || items[0]?.id || 'lemon-herb-pasta',
+                  }}
+                >
                   Let’s make it <ArrowUpRight size={16} />
                 </Link>
               </Button>

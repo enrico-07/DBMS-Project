@@ -78,7 +78,12 @@ function RecipeDetail() {
     currentUser,
   } = useVault();
 
-  const recipe = items.find(r => r.id === id);
+  const recipe = items.find(
+    (r) =>
+      r.id === id ||
+      (id === 'lemon-ricotta-pasta' && r.id === 'lemon-herb-pasta') ||
+      (id === 'lemon-herb-pasta' && r.id === 'lemon-ricotta-pasta')
+  );
   const navigate = useNavigate();
 
   // Local interaction states

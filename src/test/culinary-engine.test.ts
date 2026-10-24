@@ -35,7 +35,7 @@ describe('RecipeVault Culinary & Relational Intelligence Engine', () => {
   });
 
   it('accurately computes pantry ingredient overlap', () => {
-    const lemonPasta = recipes.find(r => r.id === 'lemon-ricotta-pasta')!;
+    const lemonPasta = recipes.find(r => r.id === 'lemon-herb-pasta' || r.id === 'lemon-ricotta-pasta')!;
     expect(lemonPasta).toBeDefined();
 
     // With exact match for key ingredients
@@ -49,7 +49,7 @@ describe('RecipeVault Culinary & Relational Intelligence Engine', () => {
 
   it('calculates transparent relational recommendation scores for personas', () => {
     const eric = demoUsers.find(u => u.id === 'user-eric')!; // Italian & high protein enthusiast
-    const lemonPasta = recipes.find(r => r.id === 'lemon-ricotta-pasta')!; // Italian dinner, 25 min
+    const lemonPasta = recipes.find(r => r.id === 'lemon-herb-pasta' || r.id === 'lemon-ricotta-pasta')!; // Italian dinner, 25 min
 
     const { score, reasons } = calculateRecommendationScore(lemonPasta, eric);
 
@@ -136,7 +136,7 @@ describe('RecipeVault Culinary & Relational Intelligence Engine', () => {
   });
 
   it('accurately calculates recipe cost economics and savings vs takeout', () => {
-    const lemonPasta = recipes.find(r => r.id === 'lemon-ricotta-pasta')!;
+    const lemonPasta = recipes.find(r => r.id === 'lemon-herb-pasta' || r.id === 'lemon-ricotta-pasta')!;
     const cost = calculateRecipeCost(lemonPasta);
 
     expect(cost.totalCost).toBeGreaterThan(0);

@@ -143,20 +143,20 @@ const VaultContext = createContext<VaultContextType | null>(null);
 
 const STORAGE_KEYS = {
   THEME: "rv_theme_mode",
-  RECIPES: "rv_recipes_v3",
-  SAVED: "rv_saved_v3",
-  COLLECTIONS: "rv_collections_v3",
-  PLAN: "rv_plan_v3",
-  VERSIONS: "rv_versions_v3",
-  REVIEWS: "rv_reviews_v3",
-  PANTRY: "rv_pantry_v3",
-  PANTRY_DATES: "rv_pantry_dates_v3",
-  CURRENT_USER_ID: "rv_current_user_v3",
-  ALL_USERS: "rv_all_users_v3",
-  IS_AUTHENTICATED: "rv_is_authenticated_v3",
-  LAST_VISITED_ROUTE: "rv_last_visited_route_v3",
-  NOTIFICATIONS: "rv_notifications_v3",
-  ONBOARDING_DISMISSED: "rv_onboarding_dismissed_v3",
+  RECIPES: "rv_recipes_v4",
+  SAVED: "rv_saved_v4",
+  COLLECTIONS: "rv_collections_v4",
+  PLAN: "rv_plan_v4",
+  VERSIONS: "rv_versions_v4",
+  REVIEWS: "rv_reviews_v4",
+  PANTRY: "rv_pantry_v4",
+  PANTRY_DATES: "rv_pantry_dates_v4",
+  CURRENT_USER_ID: "rv_current_user_v4",
+  ALL_USERS: "rv_all_users_v4",
+  IS_AUTHENTICATED: "rv_is_authenticated_v4",
+  LAST_VISITED_ROUTE: "rv_last_visited_route_v4",
+  NOTIFICATIONS: "rv_notifications_v4",
+  ONBOARDING_DISMISSED: "rv_onboarding_dismissed_v4",
 };
 
 // --- TYPE-SAFE MAPPING HELPERS FOR SUPABASE ---
@@ -255,7 +255,12 @@ function selectRecipeValue<T extends string>(
 }
 
 function mapDbRecipeToAppRecipe(dbRecipe: DbRecipeRow): Recipe {
-  const canonical = initialRecipes.find(r => r.id === dbRecipe.recipe_id);
+  const canonical = initialRecipes.find(
+    (r) =>
+      r.id === dbRecipe.recipe_id ||
+      (dbRecipe.recipe_id === "lemon-herb-pasta" && r.id === "lemon-ricotta-pasta") ||
+      (dbRecipe.recipe_id === "lemon-ricotta-pasta" && r.id === "lemon-herb-pasta")
+  );
   const resolvedImage =
     dbRecipe.image_url && dbRecipe.image_url.trim().length > 0
       ? dbRecipe.image_url
@@ -509,7 +514,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       reportStorageError(error);
     }
-    return ["lemon-ricotta-pasta", "roasted-tomato-soup"];
+    return ["lemon-herb-pasta"];
   });
 
   // Collections
@@ -525,17 +530,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         id: "weeknight",
         name: "Weeknight favorites",
         description: "Quick, comforting meals ready in under 35 minutes.",
-        ids: ["lemon-ricotta-pasta", "roasted-tomato-soup", "chickpea-harvest-bowl"],
+        ids: ["lemon-herb-pasta", "chickpea-harvest-bowl"],
         createdBy: "user-eric",
         createdAt: "2026-08-15T12:00:00Z",
-      },
-      {
-        id: "slow-mornings",
-        name: "Slow mornings & brunch",
-        description: "Pancake stacks and comforting breakfasts for relaxed Sundays.",
-        ids: ["blueberry-pancakes"],
-        createdBy: "user-eric",
-        createdAt: "2026-08-20T10:00:00Z",
       },
       {
         id: "high-protein-prep",
@@ -557,10 +554,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       reportStorageError(error);
     }
     return [
-      { id: "p1", day: 0, meal: "Dinner", recipeId: "lemon-ricotta-pasta" },
+      { id: "p1", day: 0, meal: "Dinner", recipeId: "lemon-herb-pasta" },
       { id: "p2", day: 2, meal: "Lunch", recipeId: "chickpea-harvest-bowl" },
       { id: "p3", day: 4, meal: "Dinner", recipeId: "rosemary-roast-chicken" },
-      { id: "p4", day: 6, meal: "Breakfast", recipeId: "blueberry-pancakes" },
     ];
   });
 
@@ -692,10 +688,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
         if (!recipeErr && dbRecipes && dbRecipes.length > 0) {
           const mapped = (dbRecipes as DbRecipeRow[]).map(mapDbRecipeToAppRecipe);
-          setItems(prev => {
-            const customLocalRecipes = prev.filter(r => !mapped.some(m => m.id === r.id));
-            return [...mapped, ...customLocalRecipes];
-          });
+          setItems(mapped);
+          try {
+            localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(mapped));
+          } catch (storageErr) {
+            reportStorageError(storageErr);
+          }
         }
 
         if (currentUser?.id) {
@@ -1741,23 +1739,15 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEYS.ALL_USERS);
 
     setItems(initialRecipes);
-    setSaved(["lemon-ricotta-pasta", "roasted-tomato-soup"]);
+    setSaved(["lemon-herb-pasta"]);
     setCollections([
       {
         id: "weeknight",
         name: "Weeknight favorites",
         description: "Quick, comforting meals ready in under 35 minutes.",
-        ids: ["lemon-ricotta-pasta", "roasted-tomato-soup", "chickpea-harvest-bowl"],
+        ids: ["lemon-herb-pasta", "chickpea-harvest-bowl"],
         createdBy: "user-eric",
         createdAt: "2026-08-15T12:00:00Z",
-      },
-      {
-        id: "slow-mornings",
-        name: "Slow mornings & brunch",
-        description: "Pancake stacks and comforting breakfasts for relaxed Sundays.",
-        ids: ["blueberry-pancakes"],
-        createdBy: "user-eric",
-        createdAt: "2026-08-20T10:00:00Z",
       },
       {
         id: "high-protein-prep",
@@ -1769,10 +1759,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       },
     ]);
     setPlan([
-      { id: "p1", day: 0, meal: "Dinner", recipeId: "lemon-ricotta-pasta" },
+      { id: "p1", day: 0, meal: "Dinner", recipeId: "lemon-herb-pasta" },
       { id: "p2", day: 2, meal: "Lunch", recipeId: "chickpea-harvest-bowl" },
       { id: "p3", day: 4, meal: "Dinner", recipeId: "rosemary-roast-chicken" },
-      { id: "p4", day: 6, meal: "Breakfast", recipeId: "blueberry-pancakes" },
     ]);
     setVersions(initialRecipeVersions);
     setReviews(initialReviews);
