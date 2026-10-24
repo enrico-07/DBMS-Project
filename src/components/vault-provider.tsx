@@ -317,28 +317,40 @@ function mapDbRecipeToAppRecipe(dbRecipe: DbRecipeRow): Recipe {
   };
 }
 
-function mapAppRecipeToDbRow(recipe: Recipe) {
+function mapAppRecipeToDbRow(recipe: Recipe, fallbackUserId: string = "user-eric") {
+  const validCategories = ["Breakfast", "Lunch", "Dinner", "Desserts", "Baking", "Snacks"];
+  const validCuisines = ["Italian", "Mediterranean", "American", "Indian", "Japanese", "Mexican", "Other"];
+  const validDifficulties = ["Easy", "Medium", "Advanced"];
+  const validVisibilities = ["Public", "Private", "Unlisted"];
+  const validStatuses = ["Published", "Draft"];
+
+  const safeCategory = validCategories.includes(recipe.category) ? recipe.category : "Dinner";
+  const safeCuisine = validCuisines.includes(recipe.cuisine) ? recipe.cuisine : "Italian";
+  const safeDifficulty = validDifficulties.includes(recipe.difficulty) ? recipe.difficulty : "Easy";
+  const safeVisibility = validVisibilities.includes(recipe.visibility) ? recipe.visibility : "Public";
+  const safeStatus = validStatuses.includes(recipe.status) ? recipe.status : "Published";
+
   return {
     recipe_id: recipe.id,
-    title: recipe.title,
-    description: recipe.description,
-    image_url: recipe.image,
-    servings: recipe.servings,
-    prep_time: recipe.prepTime,
-    cook_time: recipe.cookTime,
-    difficulty: recipe.difficulty,
-    diet_tag: recipe.diet,
-    calories: recipe.calories,
-    protein: recipe.protein,
-    carbs: recipe.carbs,
-    fat: recipe.fat,
-    fiber: recipe.fiber,
-    source_attribution: recipe.source,
-    visibility: recipe.visibility,
-    status: recipe.status,
-    user_id: recipe.createdBy,
-    cuisine_id: recipe.cuisine,
-    category_id: recipe.category,
+    title: recipe.title?.trim() || "Untitled Recipe",
+    description: recipe.description?.trim() || "A delicious homemade recipe.",
+    image_url: recipe.image?.trim() || null,
+    servings: Number(recipe.servings) > 0 ? Number(recipe.servings) : 4,
+    prep_time: Number(recipe.prepTime) >= 0 ? Number(recipe.prepTime) : 10,
+    cook_time: Number(recipe.cookTime) >= 0 ? Number(recipe.cookTime) : 15,
+    difficulty: safeDifficulty,
+    diet_tag: recipe.diet || "Balanced",
+    calories: Number(recipe.calories) >= 0 ? Number(recipe.calories) : 0,
+    protein: Number(recipe.protein) >= 0 ? Number(recipe.protein) : 0,
+    carbs: Number(recipe.carbs) >= 0 ? Number(recipe.carbs) : 0,
+    fat: Number(recipe.fat) >= 0 ? Number(recipe.fat) : 0,
+    fiber: Number(recipe.fiber) >= 0 ? Number(recipe.fiber) : 0,
+    source_attribution: recipe.source?.trim() || "RecipeVault Kitchen",
+    visibility: safeVisibility,
+    status: safeStatus,
+    user_id: recipe.createdBy || fallbackUserId,
+    cuisine_id: safeCuisine,
+    category_id: safeCategory,
     updated_at: new Date().toISOString(),
   };
 }
@@ -1084,6 +1096,26 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.warn("Storage save error", e);
     }
+
+    (async () => {
+      try {
+        await supabase.from("users").upsert({
+          user_id: newUser.id,
+          username: newUser.email.split("@")[0],
+          email: newUser.email,
+          password_hash: "$2a$12$demo_hash",
+          full_name: newUser.name,
+          avatar: newUser.avatar,
+          role: newUser.role,
+          bio: newUser.bio,
+          cooking_skill: newUser.cookingSkill,
+          target_cook_time: newUser.targetCookTime,
+        }, { onConflict: "user_id" });
+      } catch (err) {
+        console.warn("Google user sync warning:", err);
+      }
+    })();
+
     toast.success(`Google Account connected! Welcome, ${newUser.name}.`);
     return newUser;
   };
@@ -1132,6 +1164,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   };
 
   const addRecipe = (recipe: Recipe, changeSummary?: string) => {
+    const isExisting = items.some((x) => x.id === recipe.id);
     setItems((prev) => {
       const exists = prev.some((x) => x.id === recipe.id);
       if (exists) {
@@ -1169,68 +1202,179 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     });
 
     (async () => {
-      const dbRow = mapAppRecipeToDbRow(recipe);
+      // 1. Proactively ensure user entity exists in public.users to prevent FK violations
+      const activeUserId = recipe.createdBy || currentUser?.id || "user-eric";
+      try {
+        await supabase.from("users").upsert(
+          {
+            user_id: activeUserId,
+            username: currentUser.email?.split("@")[0] || currentUser.name.toLowerCase().replace(/\s+/g, "_"),
+            email: currentUser.email || `${activeUserId}@recipevault.local`,
+            password_hash: "$2a$12$demo_hash",
+            full_name: currentUser.name,
+            avatar: currentUser.avatar || "U",
+            role: currentUser.role || "Home Cook",
+            bio: currentUser.bio || "",
+            cooking_skill: currentUser.cookingSkill || "Beginner",
+            target_cook_time: currentUser.targetCookTime || 30,
+          },
+          { onConflict: "user_id" },
+        );
+      } catch (userSyncErr) {
+        console.warn("User sync warning:", userSyncErr);
+      }
+
+      // 2. Upsert main recipe record
+      const dbRow = mapAppRecipeToDbRow(recipe, activeUserId);
       const { error } = await supabase.from("recipes").upsert(dbRow);
 
       if (error) {
         console.error("Supabase Recipe Upsert Error:", error);
-        toast.error("Could not sync recipe changes to cloud database.");
-      } else {
-        if (recipe.steps && recipe.steps.length > 0) {
+        toast.error(`Could not sync recipe to cloud: ${error.message || "Constraint failure"}`);
+        return;
+      }
+
+      // 3. Sync recipe steps
+      if (recipe.steps && recipe.steps.length > 0) {
+        const validSteps = recipe.steps
+          .filter((s) => (s.instruction || "").trim().length > 0)
+          .map((s, idx) => ({
+            recipe_id: recipe.id,
+            step_number: idx + 1,
+            instruction: s.instruction.trim(),
+            duration_minutes: Number(s.durationMinutes) > 0 ? Number(s.durationMinutes) : 0,
+            culinary_tip: s.tip ? s.tip.trim() : null,
+          }));
+
+        if (validSteps.length > 0) {
           await supabase.from("recipe_steps").delete().eq("recipe_id", recipe.id);
-          await supabase.from("recipe_steps").insert(
-            recipe.steps.map((s) => ({
+          const { error: stepsErr } = await supabase.from("recipe_steps").insert(validSteps);
+          if (stepsErr) {
+            console.warn("Recipe steps cloud sync note:", stepsErr.message);
+          }
+        }
+      }
+
+      // 4. Sync recipe ingredients (Ensuring Master Ingredients exist first for 3NF relational integrity)
+      if (recipe.ingredients && recipe.ingredients.length > 0) {
+        const validIngredients = recipe.ingredients.filter(
+          (i) => (i.name || "").trim().length > 0 && Number(i.quantity) > 0,
+        );
+
+        if (validIngredients.length > 0) {
+          // Ensure each ingredient entity exists in public.ingredients table
+          for (const ing of validIngredients) {
+            const matchedMaster = findMasterIngredient(ing);
+            const resolvedId =
+              ing.ingredientId ||
+              matchedMaster?.id ||
+              `ing-${ing.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}`;
+
+            if (matchedMaster) {
+              await supabase.from("ingredients").upsert(
+                {
+                  ingredient_id: matchedMaster.id,
+                  canonical_name: matchedMaster.name,
+                  category: matchedMaster.category || "Pantry & Spices",
+                  flavor_profile: matchedMaster.flavorProfile || null,
+                  substitute_summary: matchedMaster.substitutes?.join(", ") || null,
+                  storage_guidelines: matchedMaster.storage || null,
+                  common_uses: matchedMaster.commonUses || null,
+                  calories_per_100g: matchedMaster.nutritionPer100g?.calories || 0,
+                  protein_per_100g: matchedMaster.nutritionPer100g?.protein || 0,
+                  carbs_per_100g: matchedMaster.nutritionPer100g?.carbs || 0,
+                  fat_per_100g: matchedMaster.nutritionPer100g?.fat || 0,
+                  fiber_per_100g: matchedMaster.nutritionPer100g?.fiber || 0,
+                  glycemic_index: matchedMaster.glycemicIndex || "Low",
+                  is_diabetic_friendly: matchedMaster.isDiabeticFriendly ?? true,
+                  is_pcos_friendly: matchedMaster.isPcosFriendly ?? true,
+                  is_gluten_free: matchedMaster.isGlutenFree ?? true,
+                  is_vegan: matchedMaster.isVegan ?? true,
+                  is_vegetarian: matchedMaster.isVegetarian ?? true,
+                  allergens: matchedMaster.allergens || [],
+                },
+                { onConflict: "ingredient_id" },
+              );
+            } else {
+              // Novel/parsed ingredient created on the fly
+              await supabase.from("ingredients").upsert(
+                {
+                  ingredient_id: resolvedId,
+                  canonical_name: ing.name.trim(),
+                  category: "Pantry & Spices",
+                  flavor_profile: "Pantry staple",
+                  glycemic_index: "Low",
+                  is_diabetic_friendly: true,
+                  is_pcos_friendly: true,
+                  is_gluten_free: true,
+                  is_vegan: true,
+                  is_vegetarian: true,
+                  allergens: [],
+                },
+                { onConflict: "ingredient_id" },
+              );
+            }
+          }
+
+          // Now safely insert into recipe_ingredients
+          const ingredientRows = validIngredients.map((i) => {
+            const matchedMaster = findMasterIngredient(i);
+            const resolvedId =
+              i.ingredientId ||
+              matchedMaster?.id ||
+              `ing-${i.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}`;
+            return {
               recipe_id: recipe.id,
-              step_number: s.stepNumber,
-              instruction: s.instruction,
-              duration_minutes: s.durationMinutes || 0,
-              culinary_tip: s.tip || null,
+              ingredient_id: resolvedId,
+              variety_id: i.varietyId || null,
+              quantity: Number(i.quantity) > 0 ? Number(i.quantity) : 1,
+              unit: (i.unit || "g").slice(0, 30),
+              preparation_state: i.preparationState || null,
+              is_optional: Boolean(i.isOptional),
+            };
+          });
+
+          await supabase.from("recipe_ingredients").delete().eq("recipe_id", recipe.id);
+          const { error: ingSyncErr } = await supabase
+            .from("recipe_ingredients")
+            .insert(ingredientRows);
+          if (ingSyncErr) {
+            console.warn("Recipe ingredients cloud sync note:", ingSyncErr.message);
+          }
+        }
+      }
+
+      // 5. Sync recipe tags
+      if (recipe.tags && recipe.tags.length > 0) {
+        const uniqueTags = Array.from(
+          new Set(recipe.tags.map((t) => t.trim()).filter(Boolean)),
+        );
+        if (uniqueTags.length > 0) {
+          await supabase.from("recipe_tags").delete().eq("recipe_id", recipe.id);
+          await supabase.from("recipe_tags").insert(
+            uniqueTags.map((tag) => ({
+              recipe_id: recipe.id,
+              tag_name: tag,
             })),
           );
         }
-
-        if (recipe.ingredients && recipe.ingredients.length > 0) {
-          await supabase.from("recipe_ingredients").delete().eq("recipe_id", recipe.id);
-          const ingredientRows = recipe.ingredients
-            .filter((i) => (i.name || "").trim().length > 0)
-            .map((i) => {
-              const matchedMaster = findMasterIngredient(i);
-              const resolvedId =
-                i.ingredientId ||
-                matchedMaster?.id ||
-                `ing-${i.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-              return {
-                recipe_id: recipe.id,
-                ingredient_id: resolvedId,
-                quantity: i.quantity || 1,
-                unit: i.unit || "g",
-                preparation_state: i.preparationState || null,
-                is_optional: Boolean(i.isOptional),
-              };
-            });
-
-          if (ingredientRows.length > 0) {
-            const { error: ingSyncErr } = await supabase
-              .from("recipe_ingredients")
-              .insert(ingredientRows);
-            if (ingSyncErr) {
-              console.warn("Recipe ingredients cloud sync note:", ingSyncErr.message);
-            }
-          }
-        }
-
-        if (changeSummary) {
-          await supabase.from("recipe_versions").insert({
-            version_id: `ver-${recipe.id}-${Date.now()}`,
-            recipe_id: recipe.id,
-            version_number: Date.now(),
-            change_summary: changeSummary,
-            author_id: currentUser.id,
-            author_name: currentUser.name,
-            snapshot_data: recipe,
-          });
-        }
       }
+
+      // 6. Record version history ledger
+      const versionSummary =
+        changeSummary || (isExisting ? "Recipe revisions updated." : "Initial recipe publication.");
+      await supabase.from("recipe_versions").upsert(
+        {
+          version_id: `ver-${recipe.id}-${Date.now()}`,
+          recipe_id: recipe.id,
+          version_number: Date.now(),
+          change_summary: versionSummary,
+          author_id: activeUserId,
+          author_name: currentUser.name,
+          snapshot_data: recipe,
+        },
+        { onConflict: "version_id" },
+      );
     })();
   };
 
