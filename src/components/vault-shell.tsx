@@ -1,5 +1,5 @@
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import {
   BookOpen,
   Compass,
@@ -16,6 +16,9 @@ import {
   Sunset,
   Moon,
   Search,
+  ShoppingBag,
+  PanelLeftClose,
+  PanelLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVault } from '@/components/vault-provider';
@@ -29,17 +32,37 @@ const navigation = [
   { to: '/' as const, label: 'Discover', icon: Compass },
   { to: '/cookbook' as const, label: 'My cookbook', icon: BookOpen },
   { to: '/planner' as const, label: 'Meal planner', icon: CalendarDays },
-  { to: '/ingredients' as const, label: 'Ingredient library', icon: Sprout },
+  { to: '/ingredients' as const, label: 'Pantry', icon: ShoppingBag },
   { to: '/nutrition' as const, label: 'Nutrition & wellbeing', icon: HeartPulse },
   { to: '/settings' as const, label: 'Settings', icon: Settings2 },
 ];
 
 export function VaultShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const router = useRouter();
   const path = useRouterState({ select: s => s.location.pathname });
-  const { currentUser, theme, logoutUser, isAuthenticated } = useVault();
+  const { currentUser, theme, setTheme, logoutUser, isAuthenticated } = useVault();
+
+  const showCollapsed = desktopCollapsed && !open;
+
+  // Close mobile sidebar on Escape key & lock scroll when drawer open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [open]);
 
   const handleLogout = () => {
     setOpen(false);
@@ -61,27 +84,20 @@ export function VaultShell({ children }: { children: ReactNode }) {
       <BackToTop />
 
       {/* Mobile Sticky Header */}
-      <header className="mobile-header">
-        <Link to="/" className="brand">
-          <RecipeVaultLogo size={32} />
-          RecipeVault<span className="text-clay">.</span>
+      <header className="mobile-header flex items-center justify-between px-3.5 py-2.5">
+        <Link to="/" className="brand flex items-center gap-2 min-w-0" onClick={() => setOpen(false)}>
+          <RecipeVaultLogo size={28} className="shrink-0" />
+          <span className="truncate text-lg sm:text-xl font-serif font-bold tracking-tight">
+            RecipeVault<span className="text-clay">.</span>
+          </span>
         </Link>
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-foreground"
-            aria-label="Search recipes and commands"
-            onClick={() => setCommandOpen(true)}
-          >
-            <Search size={17} />
-          </Button>
+        <div className="flex items-center gap-1.5 shrink-0">
           <NotificationCenter />
-          <ThemeSlider compact />
           <Button
             variant="ghost"
             size="icon"
-            aria-label={open ? 'Close menu' : 'Open menu'}
+            className="h-9 w-9 text-foreground rounded-full hover:bg-muted"
+            aria-label={open ? 'Close navigation drawer' : 'Open navigation drawer'}
             onClick={() => setOpen(!open)}
           >
             {open ? <X size={20} /> : <Menu size={20} />}
@@ -90,11 +106,67 @@ export function VaultShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* Main Persistent Shelf Sidebar */}
-      <aside className={`sidebar ${open ? 'sidebar-open' : ''}`}>
-        <Link to="/" className="brand" onClick={() => setOpen(false)}>
-          <RecipeVaultLogo size={32} />
-          RecipeVault<span className="text-clay">.</span>
-        </Link>
+      <aside className={`sidebar ${open ? 'sidebar-open' : ''} ${showCollapsed ? 'sidebar-collapsed' : ''}`}>
+        {/* Sidebar Header with Brand and Close/Collapse Controls */}
+        {showCollapsed ? (
+          <div className="flex flex-col items-center gap-2 w-full mb-3 shrink-0">
+            <Link
+              to="/"
+              className="flex items-center justify-center p-1 rounded-xl hover:bg-card/80 transition-colors"
+              title="RecipeVault - Discover recipes"
+            >
+              <RecipeVaultLogo size={32} className="shrink-0" />
+            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-card cursor-pointer shrink-0 hidden md:flex items-center justify-center"
+              onClick={() => setDesktopCollapsed(false)}
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <PanelLeft size={16} />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2 w-full mb-1 shrink-0">
+            <Link
+              to="/"
+              className="brand flex items-center gap-2.5 min-w-0"
+              onClick={() => setOpen(false)}
+              title="RecipeVault - Discover recipes"
+            >
+              <RecipeVaultLogo size={32} className="shrink-0" />
+              <span className="truncate">
+                RecipeVault<span className="text-clay">.</span>
+              </span>
+            </Link>
+
+            {/* Close button for Mobile Slide-Out Drawer */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer shrink-0 md:hidden"
+              onClick={() => setOpen(false)}
+              aria-label="Close sidebar"
+              title="Close sidebar"
+            >
+              <X size={18} />
+            </Button>
+
+            {/* Collapse Toggle on Desktop */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer shrink-0 hidden md:flex"
+              onClick={() => setDesktopCollapsed(true)}
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose size={17} />
+            </Button>
+          </div>
+        )}
         <p className="sidebar-caption">A LITTLE SPACE FOR GOOD FOOD</p>
 
         {/* Navigation Items */}
@@ -107,9 +179,9 @@ export function VaultShell({ children }: { children: ReactNode }) {
               asChild
               className={`nav-item ${path === to ? 'nav-active' : ''}`}
             >
-              <Link to={to} onClick={() => setOpen(false)}>
-                <Icon size={17} />
-                {label}
+              <Link to={to} onClick={() => setOpen(false)} title={label}>
+                <Icon size={17} className="shrink-0" />
+                <span className="nav-item-text">{label}</span>
                 {path === to && <span className="active-dot" />}
               </Link>
             </Button>
@@ -118,51 +190,92 @@ export function VaultShell({ children }: { children: ReactNode }) {
 
         {/* Add Recipe Action */}
         <Button asChild className="sidebar-add">
-          <Link to="/create" onClick={() => setOpen(false)}>
-            <Plus size={16} />
-            Add a recipe
+          <Link to="/create" onClick={() => setOpen(false)} title="Add a recipe">
+            <Plus size={16} className="shrink-0" />
+            <span className="sidebar-add-text">Add a recipe</span>
           </Link>
         </Button>
 
+        {/* Atmosphere Control in Sidebar (Only for Mobile Slide-Out Drawer) */}
+        <div className="md:hidden mt-4 pt-3.5 border-t border-border/60">
+          <span className="nav-label block mb-2 px-1 text-[10px] tracking-widest text-muted-foreground/80 font-bold uppercase">
+            ATMOSPHERE
+          </span>
+          <ThemeSlider className="w-full" iconOnly />
+        </div>
+
         {/* Sidebar Bottom Profile & Controls */}
-        <div className="mt-auto pt-4 border-t border-border/60">
-          {isAuthenticated ? (
-            <div className="flex items-center justify-between gap-2.5">
-              <Link
-                to="/profile"
-                className="flex items-center gap-2.5 flex-1 min-w-0 p-1.5 -ml-1 rounded-xl hover:bg-card/80 transition-colors text-foreground group"
-                onClick={() => setOpen(false)}
-                title={`Signed in as ${currentUser.name} (${currentUser.role})`}
-              >
-                <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold text-xs shrink-0 shadow-2xs">
-                  {currentUser.avatar}
-                </span>
-                <div className="flex-1 min-w-0 leading-tight">
-                  <span className="block text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                    {currentUser.name}
+        <div className="mt-auto pt-3 border-t border-border/60 w-full">
+          {showCollapsed ? (
+            isAuthenticated ? (
+              <div className="flex flex-col items-center gap-2 w-full py-1">
+                <Link
+                  to="/profile"
+                  className="flex items-center justify-center p-1 rounded-xl hover:bg-card/80 transition-colors group"
+                  title={`Signed in as ${currentUser.name} (${currentUser.role})`}
+                >
+                  <span className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold text-xs shadow-2xs ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all">
+                    {currentUser.avatar}
                   </span>
-                  <span className="block text-[11px] text-muted-foreground truncate mt-0.5">
-                    {currentUser.role}
-                  </span>
-                </div>
-              </Link>
-              <button
-                type="button"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 cursor-pointer"
-                onClick={handleLogout}
-                title="Sign out of kitchen"
-                aria-label="Sign out"
-              >
-                <LogOut size={15} />
-              </button>
-            </div>
+                </Link>
+                <button
+                  type="button"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                  onClick={handleLogout}
+                  title="Sign out of kitchen"
+                  aria-label="Sign out"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center py-1">
+                <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Link to="/login" title="Sign in to kitchen">
+                    <LogIn size={15} />
+                  </Link>
+                </Button>
+              </div>
+            )
           ) : (
-            <Button asChild className="w-full bg-primary text-primary-foreground font-semibold rounded-xl h-9.5">
-              <Link to="/login" onClick={() => setOpen(false)}>
-                <LogIn size={15} className="mr-2" />
-                Sign in to kitchen
-              </Link>
-            </Button>
+            isAuthenticated ? (
+              <div className="flex items-center justify-between gap-2.5 sidebar-bottom-row">
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2.5 flex-1 min-w-0 p-1.5 -ml-1 rounded-xl hover:bg-card/80 transition-colors text-foreground group"
+                  onClick={() => setOpen(false)}
+                  title={`Signed in as ${currentUser.name} (${currentUser.role})`}
+                >
+                  <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold text-xs shrink-0 shadow-2xs">
+                    {currentUser.avatar}
+                  </span>
+                  <div className="sidebar-profile-info flex-1 min-w-0 leading-tight">
+                    <span className="block text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                      {currentUser.name}
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground truncate mt-0.5">
+                      {currentUser.role}
+                    </span>
+                  </div>
+                </Link>
+                <button
+                  type="button"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 cursor-pointer"
+                  onClick={handleLogout}
+                  title="Sign out of kitchen"
+                  aria-label="Sign out"
+                >
+                  <LogOut size={15} />
+                </button>
+              </div>
+            ) : (
+              <Button asChild className="w-full bg-primary text-primary-foreground font-semibold rounded-xl h-9.5">
+                <Link to="/login" onClick={() => setOpen(false)}>
+                  <LogIn size={15} className="mr-2" />
+                  <span className="nav-item-text">Sign in to kitchen</span>
+                </Link>
+              </Button>
+            )
           )}
         </div>
       </aside>
@@ -171,10 +284,22 @@ export function VaultShell({ children }: { children: ReactNode }) {
       {open && <div className="mobile-scrim" onClick={() => setOpen(false)} />}
 
       {/* Main Content Area */}
-      <main className="main-content">
+      <main className={`main-content ${showCollapsed ? 'sidebar-collapsed' : ''}`}>
         {/* Clean, Breathable Top Navigation Bar */}
         <header className="vault-topbar">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            {showCollapsed && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground shrink-0 hidden md:flex cursor-pointer"
+                onClick={() => setDesktopCollapsed(false)}
+                title="Expand sidebar"
+                aria-label="Expand sidebar"
+              >
+                <PanelLeft size={18} />
+              </Button>
+            )}
             <div className="topbar-welcome flex items-center gap-2 flex-nowrap whitespace-nowrap">
               {theme === 'morning' ? (
                 <Sun size={16} className="text-primary shrink-0 animate-in fade-in zoom-in-75 duration-300" />
@@ -233,53 +358,64 @@ export function VaultShell({ children }: { children: ReactNode }) {
           </span>
           <span>Crafted with love for home cooks and food lovers</span>
         </footer>
-
-        {/* Mobile Bottom Dock for Fast 1-Tap Navigation */}
-        <nav className="mobile-bottom-dock md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 border-t border-border/80 backdrop-blur-md px-3 py-2 flex items-center justify-around">
-          <Link
-            to="/"
-            className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-colors ${
-              path === '/' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Compass size={18} />
-            <span>Discover</span>
-          </Link>
-          <Link
-            to="/cookbook"
-            className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-colors ${
-              path === '/cookbook' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <BookOpen size={18} />
-            <span>Cookbook</span>
-          </Link>
-          <Link
-            to="/create"
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground shadow-md -mt-4 hover:scale-105 active:scale-95 transition-all"
-            title="Add recipe"
-          >
-            <Plus size={20} />
-          </Link>
-          <Link
-            to="/planner"
-            className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-colors ${
-              path === '/planner' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <CalendarDays size={18} />
-            <span>Planner</span>
-          </Link>
-          <button
-            type="button"
-            onClick={() => setCommandOpen(true)}
-            className="flex flex-col items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Search size={18} />
-            <span>Search</span>
-          </button>
-        </nav>
       </main>
+
+      {/* Mobile App Bottom Tab Bar (Fixed Dock outside transformed containers) */}
+      <nav
+        className="mobile-bottom-dock md:hidden fixed bottom-0 inset-x-0 z-50 bg-card/95 border-t border-border/80 backdrop-blur-md px-2 py-1.5 grid grid-cols-5 items-center justify-items-center w-full shadow-lg"
+        style={{ paddingBottom: 'max(0.6rem, env(safe-area-inset-bottom, 0px))' }}
+        aria-label="Mobile Bottom Navigation"
+      >
+        <Link
+          to="/"
+          className={`flex flex-col items-center justify-center w-full py-1 text-[11px] font-medium transition-colors ${
+            path === '/' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Compass size={20} className={path === '/' ? 'stroke-[2.4]' : ''} />
+          <span className="mt-0.5 tracking-tight">Discover</span>
+        </Link>
+
+        <Link
+          to="/cookbook"
+          className={`flex flex-col items-center justify-center w-full py-1 text-[11px] font-medium transition-colors ${
+            path === '/cookbook' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <BookOpen size={20} className={path === '/cookbook' ? 'stroke-[2.4]' : ''} />
+          <span className="mt-0.5 tracking-tight">Cookbook</span>
+        </Link>
+
+        {/* Elevated Floating Primary Add Button */}
+        <Link
+          to="/create"
+          className="flex items-center justify-center w-11 h-11 rounded-full bg-primary text-primary-foreground shadow-md -mt-5 hover:scale-105 active:scale-95 transition-all border-2 border-background"
+          title="Add a new family recipe"
+          aria-label="Add a new recipe"
+        >
+          <Plus size={22} className="stroke-[2.5]" />
+        </Link>
+
+        <Link
+          to="/planner"
+          className={`flex flex-col items-center justify-center w-full py-1 text-[11px] font-medium transition-colors ${
+            path === '/planner' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <CalendarDays size={20} className={path === '/planner' ? 'stroke-[2.4]' : ''} />
+          <span className="mt-0.5 tracking-tight">Planner</span>
+        </Link>
+
+        <Link
+          to="/ingredients"
+          className={`flex flex-col items-center justify-center w-full py-1 text-[11px] font-medium transition-colors ${
+            path === '/ingredients' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <ShoppingBag size={20} className={path === '/ingredients' ? 'stroke-[2.4]' : ''} />
+          <span className="mt-0.5 tracking-tight">Pantry</span>
+        </Link>
+      </nav>
     </div>
   );
 }

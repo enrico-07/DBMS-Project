@@ -18,9 +18,23 @@ import {
   X,
   ShieldCheck,
   AlertTriangle,
+  ArrowUpDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useVault } from '@/components/vault-provider';
 import { RecipeCard, EmptyState } from '@/components/recipe-card';
 import { RecipeGridSkeleton } from '@/components/ui/skeleton-loaders';
@@ -180,8 +194,20 @@ function Index() {
 
   return (
     <div className="discover-page">
-      {/* Main Discover Heading */}
-      <header className="discover-heading">
+      {/* Mobile Warm App Greeting (<768px) */}
+      <div className="md:hidden pt-1 pb-3">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-clay tracking-wide uppercase mb-1">
+          <span className="w-2 h-2 rounded-full bg-clay" />
+          <span>Kitchen of {currentUser.name.split(' ')[0]}</span>
+          <span className="text-muted-foreground font-normal">· {currentUser.cookingSkill}</span>
+        </div>
+        <h1 className="text-2xl font-serif font-bold text-foreground tracking-tight leading-tight">
+          What are we cooking today?
+        </h1>
+      </div>
+
+      {/* Main Discover Heading (Desktop >= 768px) */}
+      <header className="discover-heading hidden md:flex">
         <div>
           <span className="eyebrow mb-1">
             CURATED FOR {currentUser.cookingSkill.toUpperCase()}
@@ -222,47 +248,54 @@ function Index() {
         </Button>
       </div>
 
-      {/* Collapsible Filter Panel */}
+      {/* Desktop Collapsible Filter Panel (hidden on mobile) */}
       {filtersOpen && (
-        <div className="bg-card border border-border p-5 rounded-2xl my-4 grid grid-cols-1 md:grid-cols-4 gap-4 shadow-sm animate-in fade-in">
+        <div className="hidden md:grid bg-card border border-border p-5 rounded-2xl my-4 grid-cols-4 gap-4 shadow-sm animate-in fade-in">
           <div>
             <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Dietary Profile</label>
-            <select
-              className="w-full text-xs p-2.5 rounded-lg border border-border bg-background"
-              value={diet}
-              onChange={e => setDiet(e.target.value)}
-            >
-              {['All diets', 'Vegetarian', 'Vegan', 'High protein', 'Gluten-free', 'Balanced'].map(x => (
-                <option key={x}>{x}</option>
-              ))}
-            </select>
+            <Select value={diet} onValueChange={setDiet}>
+              <SelectTrigger className="w-full text-xs h-9 rounded-xl border-border bg-background">
+                <SelectValue placeholder="Dietary Profile" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1">
+                {['All diets', 'Vegetarian', 'Vegan', 'High protein', 'Gluten-free', 'Balanced'].map(x => (
+                  <SelectItem key={x} value={x} className="rounded-lg text-xs font-medium py-2 px-2.5 cursor-pointer">
+                    {x}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Cuisine Origin</label>
-            <select
-              className="w-full text-xs p-2.5 rounded-lg border border-border bg-background"
-              value={cuisineFilter}
-              onChange={e => setCuisineFilter(e.target.value)}
-            >
-              {['All cuisines', 'Italian', 'Mediterranean', 'American', 'Indian', 'Japanese'].map(x => (
-                <option key={x}>{x}</option>
-              ))}
-            </select>
+            <Select value={cuisineFilter} onValueChange={setCuisineFilter}>
+              <SelectTrigger className="w-full text-xs h-9 rounded-xl border-border bg-background">
+                <SelectValue placeholder="Cuisine Origin" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1">
+                {['All cuisines', 'Italian', 'Mediterranean', 'American', 'Indian', 'Japanese'].map(x => (
+                  <SelectItem key={x} value={x} className="rounded-lg text-xs font-medium py-2 px-2.5 cursor-pointer">
+                    {x}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Max Cooking Time</label>
-            <select
-              className="w-full text-xs p-2.5 rounded-lg border border-border bg-background"
-              value={time}
-              onChange={e => setTime(e.target.value)}
-            >
-              <option value="Any time">Any time</option>
-              <option value="25">Under 25 minutes</option>
-              <option value="35">Under 35 minutes</option>
-              <option value="60">Under 60 minutes</option>
-            </select>
+            <Select value={time} onValueChange={setTime}>
+              <SelectTrigger className="w-full text-xs h-9 rounded-xl border-border bg-background">
+                <SelectValue placeholder="Max Cooking Time" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1">
+                <SelectItem value="Any time" className="rounded-lg text-xs font-medium py-2 px-2.5 cursor-pointer">Any time</SelectItem>
+                <SelectItem value="25" className="rounded-lg text-xs font-medium py-2 px-2.5 cursor-pointer">Under 25 minutes</SelectItem>
+                <SelectItem value="35" className="rounded-lg text-xs font-medium py-2 px-2.5 cursor-pointer">Under 35 minutes</SelectItem>
+                <SelectItem value="60" className="rounded-lg text-xs font-medium py-2 px-2.5 cursor-pointer">Under 60 minutes</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-end gap-2">
@@ -291,17 +324,145 @@ function Index() {
         </div>
       )}
 
+      {/* Mobile Filter Modal Sheet (<768px) */}
+      <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <DialogContent className="md:hidden max-h-[85vh] overflow-y-auto rounded-3xl p-5">
+          <DialogTitle className="text-lg font-serif font-bold text-foreground flex items-center justify-between">
+            <span>Filter Recipes</span>
+            {activeFiltersCount > 0 && (
+              <span className="text-xs font-normal text-clay font-sans">
+                {activeFiltersCount} active
+              </span>
+            )}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Fine-tune recipes by dietary choice, cuisine style, or prep time.
+          </DialogDescription>
+
+          <div className="space-y-4 my-2">
+            {/* Dietary Profile */}
+            <div>
+              <span className="text-xs font-semibold text-foreground block mb-2">Dietary Preference</span>
+              <div className="flex flex-wrap gap-1.5">
+                {['All diets', 'Vegetarian', 'Vegan', 'High protein', 'Gluten-free', 'Balanced'].map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDiet(d)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
+                      diet === d
+                        ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-xs'
+                        : 'bg-card text-foreground border-border hover:bg-muted'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Cuisine */}
+            <div>
+              <span className="text-xs font-semibold text-foreground block mb-2">Cuisine Origin</span>
+              <div className="flex flex-wrap gap-1.5">
+                {['All cuisines', 'Italian', 'Mediterranean', 'American', 'Indian', 'Japanese'].map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCuisineFilter(c)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
+                      cuisineFilter === c
+                        ? 'bg-clay text-white border-clay font-semibold shadow-xs'
+                        : 'bg-card text-foreground border-border hover:bg-muted'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Cooking Time */}
+            <div>
+              <span className="text-xs font-semibold text-foreground block mb-2">Max Cooking Time</span>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Any time', val: 'Any time' },
+                  { label: '< 25 minutes', val: '25' },
+                  { label: '< 35 minutes', val: '35' },
+                  { label: '< 60 minutes', val: '60' },
+                ].map(t => (
+                  <button
+                    key={t.val}
+                    type="button"
+                    onClick={() => setTime(t.val)}
+                    className={`text-xs p-2 rounded-xl border text-center transition-all ${
+                      time === t.val
+                        ? 'bg-secondary border-primary font-semibold text-primary'
+                        : 'bg-card text-foreground border-border hover:bg-muted'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pantry Only Toggle */}
+            <div className="pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setPantryMatchOnly(!pantryMatchOnly)}
+                className={`w-full text-xs font-medium py-2.5 px-3 rounded-xl border flex items-center justify-between transition-colors ${
+                  pantryMatchOnly
+                    ? 'bg-sage/15 border-sage text-sage font-bold'
+                    : 'bg-card border-border text-foreground'
+                }`}
+              >
+                <span>Only show recipes matching my pantry</span>
+                {pantryMatchOnly && <Check size={14} className="text-sage" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-3 border-t border-border">
+            <Button
+              variant="outline"
+              className="text-xs flex-1 rounded-full h-10"
+              onClick={() => {
+                setDiet('All diets');
+                setTime('Any time');
+                setCuisineFilter('All cuisines');
+                setQuery('');
+                setCategory('All recipes');
+                setPantryMatchOnly(false);
+              }}
+            >
+              Reset All
+            </Button>
+            <Button
+              className="text-xs flex-1 rounded-full h-10 bg-primary text-primary-foreground font-semibold"
+              onClick={() => setFiltersOpen(false)}
+            >
+              Apply Filters
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* "Cook With What You Have" Pantry Overlap Shelf */}
       <section className="pantry-strip">
         <div className="pantry-strip-header">
-          <h3>
-            <ShoppingBag size={18} className="text-clay" />
-            Cook with What You Have
-            <span className="text-xs font-normal text-muted-foreground ml-2">
-              (Select what’s in your kitchen to see match percentages)
-            </span>
-          </h3>
-          <span className="text-xs font-semibold text-sage">
+          <div>
+            <h3 className="flex items-center gap-2 text-base font-serif font-semibold">
+              <ShoppingBag size={18} className="text-clay shrink-0" />
+              <span>Cook with What You Have</span>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Select what’s in your kitchen to see match percentages
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-sage shrink-0 mt-1 sm:mt-0">
             {pantry.length} items stocked
           </span>
         </div>
@@ -356,8 +517,8 @@ function Index() {
       </section>
 
       {/* Category Pills & Health Profile Toggle */}
-      <div className="category-tabs flex items-center justify-between gap-2 overflow-x-auto">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between gap-3 my-3 sm:my-3.5">
+        <div className="category-tabs flex items-center gap-2 sm:gap-2.5 overflow-x-auto py-0.5 no-scrollbar scroll-smooth flex-1 min-w-0">
           {categories.map(({ name, icon: Icon }) => (
             <Button
               key={name}
@@ -365,28 +526,45 @@ function Index() {
               onClick={() => setCategory(name)}
               className={category === name ? 'category-active' : ''}
             >
-              <Icon size={14} className="mr-1.5" />
-              {name}
+              <Icon size={14} className="mr-1.5 shrink-0" />
+              <span>{name}</span>
             </Button>
           ))}
+
+          {/* On Mobile: Render Health Profile inline at the end of the scrollable row so it doesn't wrap */}
+          {(currentUser.healthConditions?.length ?? 0) > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setHealthMatchOnly(!healthMatchOnly)}
+              className={`sm:!hidden mobile-health-tab rounded-full text-[13px] h-[38px] px-3.5 shrink-0 gap-1.5 border transition-all shadow-2xs font-medium cursor-pointer ${
+                healthMatchOnly
+                  ? 'bg-sage text-white border-sage shadow-sm font-semibold'
+                  : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+              title="Filter recipes customized for your metabolic health conditions"
+            >
+              <ShieldCheck size={14} className={healthMatchOnly ? 'text-white' : 'text-sage'} />
+              <span>My Health Profile</span>
+              {healthMatchOnly && <Check size={13} />}
+            </Button>
+          )}
         </div>
 
-        {/* My Health Profile Direct Filter */}
+        {/* On Laptop/Desktop: Kept neatly docked on the right in perfect horizontal alignment with matching 38px height */}
         {(currentUser.healthConditions?.length ?? 0) > 0 && (
           <Button
             variant="outline"
-            size="sm"
             onClick={() => setHealthMatchOnly(!healthMatchOnly)}
-            className={`rounded-full text-xs h-8 px-3 shrink-0 gap-1.5 border transition-all ${
+            className={`hidden sm:inline-flex rounded-full text-[13px] h-[38px] px-4 shrink-0 gap-2 border transition-all shadow-2xs font-medium cursor-pointer ${
               healthMatchOnly
-                ? 'bg-sage text-white border-sage shadow-sm'
-                : 'border-sage/40 text-sage hover:bg-sage/10'
+                ? 'bg-sage text-white border-sage shadow-sm font-semibold'
+                : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary'
             }`}
             title="Filter recipes customized for your metabolic health conditions"
           >
-            <ShieldCheck size={13} />
+            <ShieldCheck size={14} className={healthMatchOnly ? 'text-white' : 'text-sage'} />
             <span>My Health Profile</span>
-            {healthMatchOnly && <Check size={12} />}
+            {healthMatchOnly && <Check size={13} />}
           </Button>
         )}
       </div>
@@ -562,20 +740,32 @@ function Index() {
             </h2>
           </div>
 
-          <label className="sort-label">
-            <span>Sort by:</span>
-            <select
-              aria-label="Sort recipes"
-              value={sort}
-              onChange={e => setSort(e.target.value)}
-              className="font-medium cursor-pointer"
-            >
-              <option value="Recommended">Recommended (Relational Match)</option>
-              <option value="Pantry match">Highest Pantry Overlap</option>
-              <option value="Quickest first">Quickest first</option>
-              <option value="Highest rated">Highest rated</option>
-            </select>
-          </label>
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            <span className="text-xs font-medium text-muted-foreground hidden sm:inline whitespace-nowrap">Sort:</span>
+            <Select value={sort} onValueChange={setSort}>
+              <SelectTrigger
+                aria-label="Sort recipes"
+                className="h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-full border-border bg-card text-[11px] sm:text-xs font-semibold text-foreground shadow-2xs hover:border-primary/60 focus:ring-1 focus:ring-primary gap-1.5 w-auto"
+              >
+                <ArrowUpDown size={12} className="text-primary shrink-0" />
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent align="end" className="rounded-2xl border-border bg-popover text-popover-foreground shadow-xl p-1.5 min-w-[220px]">
+                <SelectItem value="Recommended">
+                  Recommended (Relational Match)
+                </SelectItem>
+                <SelectItem value="Pantry match">
+                  Highest Pantry Overlap
+                </SelectItem>
+                <SelectItem value="Quickest first">
+                  Quickest first
+                </SelectItem>
+                <SelectItem value="Highest rated">
+                  Highest rated
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Recipe Cards Grid */}
@@ -615,20 +805,20 @@ function Index() {
       </section>
 
       {/* Bottom Editorial Banner */}
-      <section className="bg-card border border-border rounded-3xl p-8 mt-12 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+      <section className="bg-card border border-border rounded-2xl sm:rounded-3xl p-5 sm:p-8 mt-8 sm:mt-12 flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6 shadow-sm">
         <div>
           <span className="eyebrow">
             <Heart size={14} /> YOUR CULINARY LEGACY
           </span>
-          <h2 className="text-2xl mt-1 mb-2 font-serif">Some recipes deserve to be kept forever.</h2>
-          <p className="text-sm text-muted-foreground max-width-xl">
+          <h2 className="text-xl sm:text-2xl mt-1 mb-2 font-serif font-bold">Some recipes deserve to be kept forever.</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground max-width-xl">
             Grandmother’s handwritten card, that weeknight experiment, or your signature Sunday roast.
             Give them a permanent, searchable home in RecipeVault.
           </p>
         </div>
-        <Button variant="outline" asChild className="rounded-full px-6 shrink-0">
+        <Button variant="outline" asChild className="rounded-full px-5 sm:px-6 h-9 sm:h-10 text-xs sm:text-sm shrink-0 w-full sm:w-auto">
           <Link to="/create">
-            Add a family recipe <ArrowRight size={16} className="ml-2" />
+            Add a family recipe <ArrowRight size={15} className="ml-2" />
           </Link>
         </Button>
       </section>

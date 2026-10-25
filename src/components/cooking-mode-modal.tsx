@@ -290,18 +290,20 @@ export function CookingModeModal({
           </div>
 
           {/* Bottom Step Navigation Bar */}
-          <div className="mt-8 pt-4 border-t border-border flex items-center justify-between gap-4">
+          <div className="mt-8 pt-4 border-t border-border flex items-center justify-between gap-2 sm:gap-4">
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full gap-1.5 text-xs"
+              className="rounded-full gap-1 text-xs h-9 px-3"
               disabled={currentStep === 0}
               onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
             >
-              <ChevronLeft size={14} /> Previous Step
+              <ChevronLeft size={14} />
+              <span className="hidden sm:inline">Previous Step</span>
+              <span className="sm:hidden">Prev</span>
             </Button>
 
-            <div className="flex items-center gap-1.5">
+            <div className="hidden sm:flex items-center gap-1.5">
               {steps.map((_, idx) => (
                 <button
                   key={idx}
@@ -319,24 +321,31 @@ export function CookingModeModal({
               ))}
             </div>
 
+            <span className="sm:hidden text-xs font-semibold text-muted-foreground tabular">
+              {currentStep + 1} / {steps.length}
+            </span>
+
             {currentStep < steps.length - 1 ? (
               <Button
                 size="sm"
-                className="rounded-full bg-clay text-white hover:bg-clay/90 gap-1.5 text-xs font-semibold shadow-sm"
+                className="rounded-full bg-clay text-white hover:bg-clay/90 gap-1 text-xs font-semibold shadow-sm h-9 px-3.5"
                 onClick={() => {
                   toggleStepDone(currentStep);
                   setCurrentStep((s) => s + 1);
                 }}
               >
-                Next Step <ChevronRight size={14} />
+                <span>Next</span>
+                <span className="hidden sm:inline">Step</span>
+                <ChevronRight size={14} />
               </Button>
             ) : (
               <Button
                 size="sm"
-                className="rounded-full bg-sage text-white hover:bg-sage/90 gap-1.5 text-xs font-semibold shadow-sm"
+                className="rounded-full bg-sage text-white hover:bg-sage/90 gap-1 text-xs font-semibold shadow-sm h-9 px-3.5"
                 onClick={handleFinishCooking}
               >
-                <CheckCircle2 size={14} /> Finish Cooking
+                <CheckCircle2 size={14} />
+                <span>Finish</span>
               </Button>
             )}
           </div>

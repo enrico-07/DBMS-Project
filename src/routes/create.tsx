@@ -15,12 +15,22 @@ import {
   Flame,
   Wheat,
   ShieldCheck,
-  Sparkles,
+  Activity,
+  Globe,
+  Lock,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -73,6 +83,7 @@ function CreateRecipe() {
   const [visibility, setVisibility] = useState<'Public' | 'Private' | 'Unlisted'>('Public');
   const [source, setSource] = useState('My Kitchen');
   const [image, setImage] = useState('');
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Structured Ingredients & Steps
@@ -273,12 +284,12 @@ function CreateRecipe() {
         title={edit ? `Refining "${original?.title || 'Recipe'}"` : 'Every great recipe has a story.'}
         description="Capture precise ingredient quantities, cooking durations, and version revisions for your digital shelf."
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 justify-end">
             {!edit && (
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-full gap-1.5 text-xs text-primary border-primary/40 hover:bg-primary/10 shrink-0"
+                className="rounded-full gap-1.5 text-xs text-primary border-primary/40 hover:bg-primary/10 shrink-0 shadow-2xs"
                 onClick={() => setSmartImportOpen(true)}
               >
                 <Wand2 size={14} /> Smart Paste / Import
@@ -302,10 +313,8 @@ function CreateRecipe() {
           handleSubmit('Published');
         }}
       >
-        <div className="editor-layout">
-          {/* Main Left: Basics, Ingredients & Steps */}
-          <section className="space-y-8">
-            {/* Version Commit Note (Only on edit) */}
+        <div className="editor-layout flex flex-col gap-8 w-full">
+          {/* Version Commit Note (Only on edit) */}
             {edit && (
               <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl">
                 <label className="text-xs font-bold text-primary uppercase flex items-center gap-1.5 mb-2">
@@ -381,65 +390,75 @@ function CreateRecipe() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Difficulty</label>
-                  <select
-                    className="w-full text-xs p-2.5 rounded-lg border border-border bg-background"
-                    value={difficulty}
-                    onChange={e => setDifficulty(e.target.value as any)}
-                  >
-                    <option value="Easy">Easy</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Advanced">Advanced</option>
-                  </select>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Difficulty</label>
+                  <Select value={difficulty} onValueChange={(val: any) => setDifficulty(val)}>
+                    <SelectTrigger className="w-full text-xs h-9 rounded-xl border-border bg-background">
+                      <SelectValue placeholder="Difficulty" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1">
+                      <SelectItem value="Easy" className="rounded-lg text-xs py-2 px-2.5 cursor-pointer">Easy</SelectItem>
+                      <SelectItem value="Medium" className="rounded-lg text-xs py-2 px-2.5 cursor-pointer">Medium</SelectItem>
+                      <SelectItem value="Advanced" className="rounded-lg text-xs py-2 px-2.5 cursor-pointer">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Category</label>
-                  <select
-                    className="w-full text-xs p-2.5 rounded-lg border border-border bg-background"
-                    value={category}
-                    onChange={e => setCategory(e.target.value as any)}
-                  >
-                    {['Breakfast', 'Lunch', 'Dinner', 'Desserts', 'Baking', 'Snacks'].map(x => (
-                      <option key={x} value={x}>{x}</option>
-                    ))}
-                  </select>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Category</label>
+                  <Select value={category} onValueChange={(val: any) => setCategory(val)}>
+                    <SelectTrigger className="w-full text-xs h-9 rounded-xl border-border bg-background">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1">
+                      {['Breakfast', 'Lunch', 'Dinner', 'Desserts', 'Baking', 'Snacks'].map(x => (
+                        <SelectItem key={x} value={x} className="rounded-lg text-xs py-2 px-2.5 cursor-pointer">
+                          {x}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Cuisine</label>
-                  <select
-                    className="w-full text-xs p-2.5 rounded-lg border border-border bg-background"
-                    value={cuisine}
-                    onChange={e => setCuisine(e.target.value as any)}
-                  >
-                    {['Italian', 'Mediterranean', 'American', 'Indian', 'Japanese', 'Mexican', 'Other'].map(x => (
-                      <option key={x} value={x}>{x}</option>
-                    ))}
-                  </select>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Cuisine</label>
+                  <Select value={cuisine} onValueChange={(val: any) => setCuisine(val)}>
+                    <SelectTrigger className="w-full text-xs h-9 rounded-xl border-border bg-background">
+                      <SelectValue placeholder="Cuisine" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1">
+                      {['Italian', 'Mediterranean', 'American', 'Indian', 'Japanese', 'Mexican', 'Other'].map(x => (
+                        <SelectItem key={x} value={x} className="rounded-lg text-xs py-2 px-2.5 cursor-pointer">
+                          {x}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Dietary Tag</label>
-                  <select
-                    className="w-full text-xs p-2.5 rounded-lg border border-border bg-background"
-                    value={diet}
-                    onChange={e => setDiet(e.target.value as any)}
-                  >
-                    {['Vegetarian', 'Vegan', 'High protein', 'Gluten-free', 'Balanced'].map(x => (
-                      <option key={x} value={x}>{x}</option>
-                    ))}
-                  </select>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Dietary Tag</label>
+                  <Select value={diet} onValueChange={(val: any) => setDiet(val)}>
+                    <SelectTrigger className="w-full text-xs h-9 rounded-xl border-border bg-background">
+                      <SelectValue placeholder="Dietary Tag" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1">
+                      {['Vegetarian', 'Vegan', 'High protein', 'Gluten-free', 'Balanced'].map(x => (
+                        <SelectItem key={x} value={x} className="rounded-lg text-xs py-2 px-2.5 cursor-pointer">
+                          {x}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
 
             {/* Live Recipe Formulation & Intelligence Card */}
-            <div className="bg-card border border-primary/20 p-5 rounded-2xl shadow-sm space-y-3 bg-gradient-to-br from-card via-card to-primary/5">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                    <Sparkles size={16} />
+            <div className="bg-card border border-primary/20 p-6 rounded-2xl shadow-sm space-y-4 bg-gradient-to-br from-card via-card to-primary/5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                    <Activity size={18} />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold tracking-tight">Live Culinary Intelligence</h3>
@@ -450,7 +469,7 @@ function CreateRecipe() {
                 </div>
 
                 {/* Live Macro Snapshot */}
-                <div className="flex items-center gap-2.5 text-xs bg-background/80 border border-border px-3 py-1 rounded-full font-mono">
+                <div className="flex items-center gap-2.5 text-xs bg-background/80 border border-border px-3.5 py-1.5 rounded-full font-mono shadow-2xs">
                   <span className="flex items-center gap-1 font-semibold text-foreground">
                     <Flame size={13} className="text-amber-500" />
                     {intelligence.nutrition.calories} kcal
@@ -464,40 +483,40 @@ function CreateRecipe() {
               </div>
 
               {/* Detected Allergens & Health Badges */}
-              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/60">
+              <div className="flex flex-wrap items-center gap-2.5 pt-4 mt-3 border-t border-border/60">
                 {/* Allergens */}
                 {intelligence.detectedAllergens.length > 0 ? (
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <AlertTriangle size={12} /> Allergens:
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <AlertTriangle size={13} /> Allergens:
                     </span>
                     {intelligence.detectedAllergens.map(alg => (
-                      <Badge key={alg} variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300 text-[10px] px-2 py-0">
+                      <Badge key={alg} variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs px-3 py-1 rounded-full font-medium shadow-2xs">
                         {alg === 'Dairy' ? '🥛 Dairy' : alg === 'Gluten' ? '🌾 Gluten' : alg === 'Peanuts' ? '🥜 Peanuts' : alg === 'Tree Nuts' ? '🌰 Tree Nuts' : alg === 'Eggs' ? '🥚 Eggs' : alg === 'Soy' ? '🌱 Soy' : alg === 'Fish' ? '🐟 Fish' : alg}
                       </Badge>
                     ))}
                   </div>
                 ) : (
-                  <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] px-2 py-0">
-                    <ShieldCheck size={11} className="mr-1 inline" /> Common Allergen-Free
+                  <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs px-3 py-1 rounded-full font-medium shadow-2xs">
+                    <ShieldCheck size={13} className="mr-1 inline" /> Common Allergen-Free
                   </Badge>
                 )}
 
                 {/* Health Traits */}
                 {intelligence.isDiabeticFriendly && (
-                  <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] px-2 py-0">
-                    <HeartPulse size={11} className="mr-1 inline" /> Diabetic-Friendly
+                  <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs px-3 py-1 rounded-full font-medium shadow-2xs">
+                    <HeartPulse size={13} className="mr-1 inline" /> Diabetic-Friendly
                   </Badge>
                 )}
 
                 {intelligence.isGlutenFree && (
-                  <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300 text-[10px] px-2 py-0">
-                    <Wheat size={11} className="mr-1 inline" /> 100% Gluten-Free
+                  <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs px-3 py-1 rounded-full font-medium shadow-2xs">
+                    <Wheat size={13} className="mr-1 inline" /> 100% Gluten-Free
                   </Badge>
                 )}
 
                 {intelligence.isVegan && (
-                  <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-300 text-[10px] px-2 py-0">
+                  <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-300 text-xs px-3 py-1 rounded-full font-medium shadow-2xs">
                     🌿 100% Vegan
                   </Badge>
                 )}
@@ -512,7 +531,7 @@ function CreateRecipe() {
                       else if (intelligence.isGlutenFree && diet !== 'Gluten-free') setDiet('Gluten-free');
                       toast.success('Aligned dietary tag with ingredient formulation!');
                     }}
-                    className="ml-auto text-[10px] text-primary hover:underline font-medium"
+                    className="ml-auto text-xs text-primary hover:underline font-medium cursor-pointer"
                   >
                     Auto-align diet tag
                   </button>
@@ -586,23 +605,27 @@ function CreateRecipe() {
                       {/* Standard Unit */}
                       <div className="flex flex-col">
                         <span className="text-[10px] text-muted-foreground md:hidden mb-0.5">Unit</span>
-                        <select
-                          className="w-24 text-xs h-9 px-2 rounded-lg border border-border bg-background"
+                        <Select
                           value={ing.unit}
-                          onChange={(e) =>
+                          onValueChange={(val) =>
                             setIngredients((p) =>
-                              p.map((item, n) => (n === idx ? { ...item, unit: e.target.value } : item))
+                              p.map((item, n) => (n === idx ? { ...item, unit: val } : item))
                             )
                           }
                         >
-                          {['g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'whole', 'clove', 'pinch', 'slice', 'oz', 'lb'].map(
-                            (u) => (
-                              <option key={u} value={u}>
-                                {u}
-                              </option>
-                            )
-                          )}
-                        </select>
+                          <SelectTrigger className="w-24 text-xs h-9 rounded-xl border-border bg-background font-mono">
+                            <SelectValue placeholder="Unit" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1 max-h-52">
+                            {['g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'whole', 'clove', 'pinch', 'slice', 'oz', 'lb'].map(
+                              (u) => (
+                                <SelectItem key={u} value={u} className="rounded-lg text-xs py-1.5 px-2 cursor-pointer font-mono">
+                                  {u}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Preparation Notes */}
@@ -663,42 +686,54 @@ function CreateRecipe() {
 
               <div className="space-y-4">
                 {steps.map((st, idx) => (
-                  <div key={idx} className="bg-background border border-border p-4 rounded-xl flex gap-3">
-                    <span className="step-number w-8 h-8 text-xs">{idx + 1}</span>
-                    <div className="flex-1 space-y-2">
+                  <div key={idx} className="bg-background border border-border p-4 sm:p-5 rounded-2xl flex gap-3 sm:gap-4 shadow-2xs hover:border-primary/30 transition-all">
+                    <span className="step-number w-8 h-8 text-xs shrink-0 font-semibold">{idx + 1}</span>
+                    <div className="flex-1 space-y-2.5">
                       <Textarea
-                        placeholder={`Describe step ${idx + 1}…`}
+                        placeholder={`Describe step ${idx + 1} in clear cooking instructions…`}
                         value={st.instruction}
                         onChange={e =>
                           setSteps(p => p.map((item, n) => (n === idx ? { ...item, instruction: e.target.value } : item)))
                         }
                         rows={2}
-                        className="text-xs"
+                        className="text-xs rounded-xl min-h-[68px] leading-relaxed"
                         required
                       />
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Input
-                          placeholder="Optional chef’s tip…"
+                          placeholder="Optional chef’s tip (e.g. keep heat on medium-low)…"
                           value={st.tip || ''}
                           onChange={e =>
                             setSteps(p => p.map((item, n) => (n === idx ? { ...item, tip: e.target.value } : item)))
                           }
-                          className="text-xs flex-1"
+                          className="text-xs h-9 rounded-xl flex-1 bg-card"
                         />
-                        <div className="flex items-center gap-1">
-                          <Clock size={13} className="text-muted-foreground" />
-                          <Input
-                            type="number"
-                            min={0}
-                            placeholder="Mins"
-                            value={st.durationMinutes || ''}
-                            onChange={e =>
+                        <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                          <Select
+                            value={String(st.durationMinutes ?? 5)}
+                            onValueChange={(val) =>
                               setSteps(p =>
-                                p.map((item, n) => (n === idx ? { ...item, durationMinutes: Number(e.target.value) } : item))
+                                p.map((item, n) => (n === idx ? { ...item, durationMinutes: Number(val) } : item))
                               )
                             }
-                            className="w-16 text-xs"
-                          />
+                          >
+                            <SelectTrigger className="w-28 text-xs h-9 rounded-xl border-border bg-card gap-1.5 shadow-2xs shrink-0 font-medium cursor-pointer">
+                              <Clock size={13} className="text-muted-foreground shrink-0" />
+                              <SelectValue placeholder="5 min" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1 max-h-56">
+                              {[1, 2, 3, 4, 5, 7, 8, 10, 12, 15, 20, 25, 30, 40, 45, 60, 90, 120].map(mins => (
+                                <SelectItem key={mins} value={String(mins)} className="rounded-lg text-xs py-1.5 px-2.5 cursor-pointer font-medium">
+                                  {mins} min
+                                </SelectItem>
+                              ))}
+                              {st.durationMinutes && ![1, 2, 3, 4, 5, 7, 8, 10, 12, 15, 20, 25, 30, 40, 45, 60, 90, 120].includes(st.durationMinutes) && (
+                                <SelectItem value={String(st.durationMinutes)} className="rounded-lg text-xs py-1.5 px-2.5 cursor-pointer font-medium">
+                                  {st.durationMinutes} min
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>
@@ -708,7 +743,7 @@ function CreateRecipe() {
                       size="icon"
                       disabled={steps.length <= 1}
                       onClick={() => setSteps(p => p.filter((_, n) => n !== idx))}
-                      className="text-muted-foreground hover:text-destructive"
+                      className="text-muted-foreground hover:text-destructive h-9 w-9 rounded-xl shrink-0"
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -716,71 +751,205 @@ function CreateRecipe() {
                 ))}
               </div>
             </div>
-          </section>
 
-          {/* Right Sidebar: Imagery & Publishing Settings */}
-          <section className="space-y-6">
-            <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-4">
-              <h2 className="text-xl font-serif">Recipe Imagery</h2>
-              <label className="upload-zone">
-                {image ? (
-                  <img src={image} alt="Preview" className="rounded-xl w-full h-full object-cover" />
-                ) : (
-                  <div className="text-center p-6">
-                    <ImagePlus size={36} className="text-muted-foreground mx-auto mb-2" />
-                    <span className="text-xs font-semibold block">Select a Photo</span>
-                    <small className="text-[10px] text-muted-foreground">JPG, PNG, or WebP</small>
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      if (typeof reader.result === 'string') setImage(reader.result);
-                    };
-                    reader.readAsDataURL(file);
-                  }}
-                />
-              </label>
-
+            {/* Recipe Imagery & Publishing Settings */}
+            <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-6 w-full">
               <div>
-                <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                  Source Attribution
-                </label>
-                <Input
-                  placeholder="e.g. Nonna’s handwritten notes, 1984"
-                  value={source}
-                  onChange={e => setSource(e.target.value)}
-                />
+                <h2 className="text-xl font-serif">Recipe Imagery</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  High-resolution photo for the dish card and cookbook shelf.
+                </p>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                  Privacy & Visibility
-                </label>
-                <select
-                  className="w-full text-xs p-2.5 rounded-lg border border-border bg-background"
-                  value={visibility}
-                  onChange={e => setVisibility(e.target.value as any)}
-                >
-                  <option value="Public">Public (Discoverable by everyone)</option>
-                  <option value="Private">Private (Only you)</option>
-                  <option value="Unlisted">Unlisted (Direct link only)</option>
-                </select>
+              {image ? (
+                <div className="space-y-3">
+                  <div className="relative rounded-2xl overflow-hidden border border-border aspect-[16/10] bg-muted/30 shadow-xs group">
+                    <img src={image} alt="Recipe Preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2.5 p-4">
+                      <label className="cursor-pointer">
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-white text-zinc-900 shadow-md hover:bg-white/90 transition-all cursor-pointer">
+                          <ImagePlus size={14} /> Change Photo
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              if (typeof reader.result === 'string') setImage(reader.result);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="rounded-full gap-1.5 text-xs shadow-md h-9 px-3.5"
+                        onClick={() => setImage('')}
+                      >
+                        <Trash2 size={14} /> Remove
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
+                      <Check size={14} className="text-emerald-500" /> Photo attached
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer text-xs text-primary hover:underline font-semibold inline-flex items-center gap-1">
+                        <ImagePlus size={13} />
+                        <span>Change</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              if (typeof reader.result === 'string') setImage(reader.result);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </label>
+                      <span className="text-muted-foreground/30">•</span>
+                      <button
+                        type="button"
+                        onClick={() => setImage('')}
+                        className="text-xs text-destructive hover:underline font-semibold inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 size={13} />
+                        <span>Remove</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="upload-zone p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary/60 transition-all group border-2 border-dashed rounded-2xl bg-muted/10">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-2xs">
+                      <ImagePlus size={22} />
+                    </div>
+                    <span className="text-sm font-semibold text-foreground mb-1">
+                      Upload Recipe Photo
+                    </span>
+                    <p className="text-xs text-muted-foreground max-w-xs mb-3.5">
+                      JPG, PNG, or WebP up to 10MB
+                    </p>
+                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-primary text-primary-foreground shadow-sm group-hover:bg-primary/90 transition-all">
+                      <ImagePlus size={14} /> Browse Image File
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          if (typeof reader.result === 'string') setImage(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+
+                  {/* Or Image Link paste input */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <div className="relative flex-1">
+                      <LinkIcon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Or paste image URL (https://...)"
+                        value={imageUrlInput}
+                        onChange={(e) => setImageUrlInput(e.target.value)}
+                        className="text-xs h-9 pl-8 rounded-xl bg-background"
+                      />
+                    </div>
+                    {imageUrlInput && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          if (imageUrlInput.trim()) {
+                            setImage(imageUrlInput.trim());
+                            setImageUrlInput('');
+                            toast.success('Image link attached!');
+                          }
+                        }}
+                        className="rounded-full text-xs h-9 px-4 shrink-0 shadow-2xs"
+                      >
+                        Attach
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Metadata with generous breathing room (fixes Image 4 cramped spacing) */}
+              <div className="pt-6 border-t border-border/60 space-y-5">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                    Source Attribution
+                  </label>
+                  <Input
+                    placeholder="e.g. Nonna’s handwritten notes, 1984"
+                    value={source}
+                    onChange={e => setSource(e.target.value)}
+                    className="text-xs h-9 rounded-xl bg-background"
+                  />
+                  <span className="text-[10px] text-muted-foreground mt-1 block">
+                    Credit original author, family heirloom, or cookbook origin.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">
+                    Privacy & Visibility
+                  </label>
+                  <Select value={visibility} onValueChange={(val: any) => setVisibility(val)}>
+                    <SelectTrigger className="w-full text-xs h-9 rounded-xl border-border bg-background">
+                      <SelectValue placeholder="Privacy & Visibility" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-border bg-popover text-popover-foreground shadow-xl p-1">
+                      <SelectItem value="Public" className="rounded-lg text-xs py-2 px-2.5 cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <Globe size={13} className="text-primary" />
+                          <span>Public (Discoverable by everyone)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Private" className="rounded-lg text-xs py-2 px-2.5 cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <Lock size={13} className="text-muted-foreground" />
+                          <span>Private (Only you in your cookbook)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Unlisted" className="rounded-lg text-xs py-2 px-2.5 cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <LinkIcon size={13} className="text-muted-foreground" />
+                          <span>Unlisted (Direct link only)</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
             {/* Publishing Footer Actions */}
-            <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-3">
+            <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-3 w-full">
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full rounded-full bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90 disabled:opacity-50"
+                className="w-full rounded-full bg-primary text-primary-foreground gap-2 shadow-md hover:bg-primary/90 disabled:opacity-50 h-11 text-sm font-semibold"
               >
                 <Check size={16} />
                 {isSubmitting ? 'Saving to Vault...' : edit ? 'Commit Revisions' : 'Publish to Vault'}
@@ -790,15 +959,14 @@ function CreateRecipe() {
                 type="button"
                 variant="outline"
                 disabled={isSubmitting}
-                className="w-full rounded-full gap-2 disabled:opacity-50"
+                className="w-full rounded-full gap-2 disabled:opacity-50 h-10 text-xs"
                 onClick={() => handleSubmit('Draft')}
               >
                 <Save size={15} /> Save as Draft
               </Button>
             </div>
-          </section>
-        </div>
-      </form>
+          </div>
+        </form>
 
       {/* Smart Unstructured Text Recipe Importer Modal */}
       <Dialog open={smartImportOpen} onOpenChange={setSmartImportOpen}>

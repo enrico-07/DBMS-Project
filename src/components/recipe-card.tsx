@@ -97,25 +97,25 @@ export function RecipeCard({
 
           {/* Tactile Bookmark Save Button with Tuck Animation */}
           <Button
-            variant="secondary"
+            variant="ghost"
             size="icon"
             className={`save-button ${isSaved ? 'is-saved' : ''} ${isAnimating ? 'tuck-animation' : ''}`}
             aria-label={`${isSaved ? 'Unsave' : 'Save'} ${recipe.title}`}
             title={isSaved ? 'Remove from saved recipes' : 'Save to cookbook'}
             onClick={handleSave}
           >
-            <Bookmark size={16} fill={isSaved ? 'currentColor' : 'none'} />
+            <Bookmark size={16} fill={isSaved ? 'currentColor' : 'none'} className="shrink-0" />
           </Button>
         </div>
 
       <div className="recipe-card-body">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <div className="recipe-category">
+          <div className="recipe-category truncate text-[11px] sm:text-xs">
             {recipe.cuisine} <span>·</span> {recipe.category}
           </div>
           {primaryHealthBadge && (
             <span
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+              className={`hidden sm:inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
                 userMatches.length > 0
                   ? 'bg-sage/15 text-sage border-sage/30'
                   : 'bg-secondary text-muted-foreground border-border'
@@ -127,29 +127,29 @@ export function RecipeCard({
           )}
         </div>
 
-        <Link to="/recipe/$id" params={{ id: recipe.id }} className="recipe-title">
+        <Link to="/recipe/$id" params={{ id: recipe.id }} className="recipe-title line-clamp-2">
           {recipe.title}
         </Link>
 
-        <p className="text-xs text-muted-foreground line-clamp-2 my-2 leading-relaxed">
+        <p className="hidden sm:block text-xs text-muted-foreground line-clamp-2 my-2 leading-relaxed">
           {recipe.description}
         </p>
 
-        <div className="recipe-meta">
-          <span className="flex items-center gap-1">
-            <Clock size={13} className="text-muted-foreground" />
-            <span className="tabular">{recipe.time} min</span>
-            <span className="meta-dot">·</span>
-            <span>{recipe.difficulty}</span>
+        <div className="recipe-meta mt-auto pt-2 border-t border-border/40 sm:border-0 sm:pt-0">
+          <span className="flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
+            <Clock size={12} className="text-muted-foreground shrink-0" />
+            <span className="tabular">{recipe.time}m</span>
+            <span className="hidden sm:inline meta-dot">·</span>
+            <span className="hidden sm:inline">{recipe.difficulty}</span>
           </span>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground tabular flex items-center gap-0.5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="hidden sm:flex text-xs text-muted-foreground tabular items-center gap-0.5">
               <Flame size={12} className="text-clay" />
               {recipe.calories} kcal
             </span>
-            <span className="rating tabular">
-              <Star size={13} fill="currentColor" />
+            <span className="rating tabular text-[11px] sm:text-xs flex items-center gap-0.5 font-semibold">
+              <Star size={12} fill="currentColor" className="text-amber-500" />
               {recipe.rating}
             </span>
           </div>
@@ -179,12 +179,12 @@ export function PageHeading({
 }) {
   return (
     <header className="page-heading">
-      <div>
+      <div className="page-heading-content">
         <span className="eyebrow">{eyebrow}</span>
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
-      {action}
+      {action && <div className="page-heading-action">{action}</div>}
     </header>
   );
 }

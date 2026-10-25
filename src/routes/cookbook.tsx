@@ -66,16 +66,16 @@ function Cookbook() {
         title="Recipes worth keeping."
         description="A quiet corner for your bookmarked favorites, curated menus, and works in progress."
         action={
-          <Button asChild className="rounded-full bg-primary text-primary-foreground gap-2 shadow-sm h-9 px-4 text-xs font-semibold hover:bg-primary/90 shrink-0">
+          <Button asChild className="rounded-full bg-primary text-primary-foreground gap-2 shadow-sm h-10 sm:h-11 px-5 sm:px-6 text-sm font-semibold hover:bg-primary/90 w-full sm:w-auto cursor-pointer">
             <Link to="/create">
-              <Plus size={15} /> Add a recipe
+              <Plus size={16} /> Add a recipe
             </Link>
           </Button>
         }
       />
 
       {/* Tabs */}
-      <div className="content-tabs">
+      <div className="content-tabs no-scrollbar scroll-smooth py-1 px-0.5 mb-5 sm:mb-6">
         <Button
           variant="ghost"
           className={`rounded-full gap-2 ${tab === 'saved' ? 'selected' : ''}`}
@@ -139,16 +139,16 @@ function Cookbook() {
                   className={`collection-item group ${isSelected ? 'is-selected' : ''}`}
                   onClick={() => setSelectedCollectionId(isSelected ? '' : c.id)}
                 >
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2.5 mb-2.5 min-w-0">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
                       <span className={`collection-symbol collection-${index % 3}`}>
-                        <BookOpen size={20} />
+                        <BookOpen size={18} />
                       </span>
                       <div className="flex-1 min-w-0 pt-0.5">
                         <strong className="text-base font-serif font-semibold text-foreground block truncate group-hover:text-primary transition-colors">
                           {c.name}
                         </strong>
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
                           {c.description || 'Curated recipes for this shelf.'}
                         </p>
                       </div>
@@ -157,7 +157,7 @@ function Cookbook() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 shrink-0 rounded-lg transition-colors -mr-1 -mt-1"
+                      className="text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 shrink-0 rounded-lg transition-colors -mr-1 -mt-0.5"
                       title="Delete collection"
                       onClick={e => {
                         e.stopPropagation();
@@ -178,19 +178,19 @@ function Cookbook() {
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-border/50 text-xs">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-secondary text-secondary-foreground border border-border/60">
+                  <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-border/50 text-xs min-w-0">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-secondary text-secondary-foreground border border-border/60 shrink-0">
                       <Utensils size={11} className="text-primary" />
                       <span className="tabular">{c.ids.length}</span> {c.ids.length === 1 ? 'recipe' : 'recipes'}
                     </span>
 
                     {isSelected ? (
-                      <span className="text-[11px] font-semibold text-primary flex items-center gap-1">
+                      <span className="text-[11px] font-semibold text-primary flex items-center gap-1 shrink-0">
                         <Check size={12} strokeWidth={2.5} /> Active Shelf
                       </span>
                     ) : (
-                      <span className="text-[11px] text-muted-foreground/60 group-hover:text-muted-foreground transition-colors">
-                        Click to filter recipes
+                      <span className="text-[11px] text-muted-foreground/60 group-hover:text-muted-foreground transition-colors truncate min-w-0 text-right">
+                        Click to filter
                       </span>
                     )}
                   </div>

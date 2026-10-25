@@ -345,28 +345,31 @@ function RecipeDetail() {
 
       {/* Top Action Bar */}
       <div className="detail-actions">
-        <Button asChild variant="ghost" className="rounded-full gap-2">
+        <Button asChild variant="ghost" className="rounded-full gap-2 text-xs sm:text-sm">
           <Link to="/">
-            <ArrowLeft size={16} /> Back to Discover
+            <ArrowLeft size={16} />
+            <span className="hidden sm:inline">Back to Discover</span>
+            <span className="sm:hidden">Back</span>
           </Link>
         </Button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {recipeVersions.length > 0 && (
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full gap-1.5 text-xs"
+              className="rounded-full gap-1 text-xs px-2.5 sm:px-3"
               onClick={() => setHistoryOpen(true)}
             >
               <History size={14} />
-              Revisions ({recipeVersions.length})
+              <span className="hidden sm:inline">Revisions ({recipeVersions.length})</span>
+              <span className="sm:hidden">({recipeVersions.length})</span>
             </Button>
           )}
 
-          <Button asChild variant="ghost" size="icon" title="Edit recipe" className="rounded-full">
+          <Button asChild variant="ghost" size="icon" title="Edit recipe" className="rounded-full w-8 h-8 sm:w-9 sm:h-9">
             <Link to="/create" search={{ edit: id }}>
-              <Pencil size={16} />
+              <Pencil size={15} />
             </Link>
           </Button>
 
@@ -375,24 +378,26 @@ function RecipeDetail() {
             size="icon"
             title="Delete recipe"
             aria-label="Delete recipe"
-            className="rounded-full text-destructive hover:bg-destructive/10"
+            className="rounded-full w-8 h-8 sm:w-9 sm:h-9 text-destructive hover:bg-destructive/10"
             onClick={() => setDeleteOpen(true)}
           >
-            <Trash2 size={16} />
+            <Trash2 size={15} />
           </Button>
 
           <Button
             variant="outline"
-            className="rounded-full gap-1.5 text-xs"
+            className="rounded-full gap-1.5 text-xs h-8 sm:h-9 px-2.5 sm:px-3.5"
             onClick={() => window.print()}
             title="Print printable recipe card"
           >
-            <Printer size={15} /> Print
+            <Printer size={15} />
+            <span className="hidden sm:inline">Print</span>
           </Button>
 
           <Button
             variant="outline"
-            className="rounded-full gap-1.5 text-xs"
+            className="rounded-full gap-1.5 text-xs h-8 sm:h-9 px-2.5 sm:px-3.5"
+            title="Copy formatted recipe"
             onClick={async () => {
               try {
                 const text = `${recipe.title}\n${recipe.description}\n\nIngredients (${servings} servings):\n${recipe.ingredients
@@ -405,7 +410,8 @@ function RecipeDetail() {
               }
             }}
           >
-            <Share2 size={15} /> Copy Recipe
+            <Share2 size={15} />
+            <span className="hidden sm:inline">Copy Recipe</span>
           </Button>
         </div>
       </div>
@@ -463,43 +469,51 @@ function RecipeDetail() {
         }}
       />
 
-      {/* Action Toolbar */}
+      {/* Action Toolbar with Mobile Autolayout */}
       <div className="detail-toolbar">
-        <span className="text-xs text-muted-foreground">
-          Origin: <strong className="text-foreground">{recipe.source}</strong> · Created by{' '}
-          <strong className="text-foreground">{recipe.createdBy === currentUser.id ? 'You' : recipe.createdBy}</strong>
-        </span>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border">
+            <span>Origin:</span> <strong className="text-foreground">{recipe.source}</strong>
+          </span>
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-card border border-border">
+            <span>By:</span>{' '}
+            <strong className="text-foreground">{recipe.createdBy === currentUser.id ? 'You' : recipe.createdBy}</strong>
+          </span>
+        </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+          {/* Primary Action Button (Start Cooking Mode): large, prominent, thumb-friendly */}
           <Button
-            variant="outline"
-            className={`rounded-full gap-2 ${isSaved ? 'is-saved' : ''}`}
-            onClick={() => {
-              toggleSave(id);
-              toast.success(isSaved ? 'Removed from cookbook' : 'Tucked into your cookbook!');
-            }}
-          >
-            <Bookmark size={16} fill={isSaved ? 'currentColor' : 'none'} />
-            {isSaved ? 'Saved in Cookbook' : 'Save Recipe'}
-          </Button>
-
-          <Button
-            variant="outline"
-            className="rounded-full gap-1.5"
-            onClick={() => setCollectionOpen(true)}
-          >
-            Add to Collection
-          </Button>
-
-          <Button
-            className="rounded-full gap-2 bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
+            className="order-1 sm:order-3 w-full sm:w-auto h-11 sm:h-10 rounded-full gap-2 bg-primary text-primary-foreground shadow-md hover:bg-primary/90 font-semibold text-sm cursor-pointer"
             onClick={() => {
               setCookingMode(true);
               setActiveStepIndex(0);
             }}
           >
-            <ChefHat size={16} /> Start Cooking Mode
+            <ChefHat size={18} /> Start Cooking Mode
           </Button>
+
+          <div className="order-2 grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              className={`rounded-full gap-1.5 text-xs h-10 px-3.5 w-full sm:w-auto cursor-pointer ${isSaved ? 'is-saved' : ''}`}
+              onClick={() => {
+                toggleSave(id);
+                toast.success(isSaved ? 'Removed from cookbook' : 'Tucked into your cookbook!');
+              }}
+            >
+              <Bookmark size={15} fill={isSaved ? 'currentColor' : 'none'} />
+              <span>{isSaved ? 'Saved' : 'Save Recipe'}</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="rounded-full gap-1.5 text-xs h-10 px-3.5 w-full sm:w-auto cursor-pointer"
+              onClick={() => setCollectionOpen(true)}
+            >
+              <span>Add to Shelf</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -578,8 +592,8 @@ function RecipeDetail() {
               const displayName = swap ? swap.substituteName : i.name;
 
               return (
-                <li key={i.name} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2 border-b border-border/50">
-                  <label className="flex items-start gap-2.5 cursor-pointer flex-1">
+                <li key={i.name} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2.5 min-h-[44px] border-b border-border/50">
+                  <label className="flex items-center gap-3 cursor-pointer flex-1 py-1">
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -588,7 +602,7 @@ function RecipeDetail() {
                           prev.includes(i.name) ? prev.filter(x => x !== i.name) : [...prev, i.name]
                         )
                       }
-                      className="mt-1"
+                      className="w-4.5 h-4.5 accent-primary cursor-pointer rounded shrink-0"
                     />
                     <div className={isChecked ? 'line-through text-muted-foreground' : ''}>
                       <span className="text-sm">
@@ -1173,7 +1187,7 @@ function RecipeDetail() {
           <div className="mt-4 pt-3 border-t border-border flex justify-end">
             <Button asChild variant="outline" size="sm" className="rounded-full">
               <Link to="/ingredients" onClick={() => setSelectedIngredient(null)}>
-                Browse Master Ingredient Library
+                Browse Pantry
               </Link>
             </Button>
           </div>

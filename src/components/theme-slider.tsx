@@ -32,9 +32,11 @@ const THEME_OPTIONS: ThemeOption[] = [
 export function ThemeSlider({
   className = "",
   compact = false,
+  iconOnly = false,
 }: {
   className?: string;
   compact?: boolean;
+  iconOnly?: boolean;
 }) {
   const { theme, setTheme } = useVault();
   const activeIndex = THEME_OPTIONS.findIndex((o) => o.id === theme);
@@ -58,7 +60,7 @@ export function ThemeSlider({
     <div
       role="radiogroup"
       aria-label="Color scheme mode"
-      className={`theme-slider-track ${compact ? "compact" : ""} ${className}`}
+      className={`theme-slider-track ${compact ? "compact" : ""} ${iconOnly ? "icon-only" : ""} ${className}`}
     >
       {/* Animated Sliding Pill Thumb */}
       <div
@@ -86,8 +88,8 @@ export function ThemeSlider({
             onClick={() => setTheme(opt.id)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
           >
-            <Icon size={13} className={`theme-slider-icon ${isActive ? "active-icon" : ""}`} />
-            {!compact && <span className="theme-slider-text">{opt.label}</span>}
+            <Icon size={compact ? 13 : iconOnly ? 16 : 14} className={`theme-slider-icon ${isActive ? "active-icon" : ""}`} />
+            {!compact && !iconOnly && <span className="theme-slider-text hidden sm:inline">{opt.label}</span>}
           </button>
         );
       })}

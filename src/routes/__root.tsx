@@ -123,7 +123,7 @@ function RootShell({ children }: { children: ReactNode }) {
               document.documentElement.setAttribute('data-theme',t);
               if(t==='night'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}
 
-              var storedAuth = localStorage.getItem('rv_is_authenticated_v3');
+              var storedAuth = localStorage.getItem('rv_is_authenticated_v4') || localStorage.getItem('rv_is_authenticated_v3');
               var isAuth = storedAuth === 'true';
               var path = window.location.pathname;
 

@@ -275,41 +275,41 @@ function Profile() {
       </div>
 
       {/* Section Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-border mb-6 pb-2 overflow-x-auto">
+      <div className="flex items-center gap-3 border-b border-border mb-7 pb-3.5 pt-1 overflow-x-auto no-scrollbar scroll-smooth">
         <button
           type="button"
           onClick={() => setActiveTab('profile')}
-          className={`px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+          className={`h-10 px-5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-2 shrink-0 border whitespace-nowrap shadow-2xs cursor-pointer active:scale-[0.98] ${
             activeTab === 'profile'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-card'
+              ? 'bg-primary text-primary-foreground border-primary shadow-sm font-semibold'
+              : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary'
           }`}
         >
-          <User size={14} /> Personal Details & Identity
+          <User size={15} /> Personal Details & Identity
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('security')}
-          className={`px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+          className={`h-10 px-5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-2 shrink-0 border whitespace-nowrap shadow-2xs cursor-pointer active:scale-[0.98] ${
             activeTab === 'security'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-card'
+              ? 'bg-primary text-primary-foreground border-primary shadow-sm font-semibold'
+              : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary'
           }`}
         >
-          <Shield size={14} /> Security & Account Credentials
+          <Shield size={15} /> Security & Account Credentials
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('preferences')}
-          className={`px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+          className={`h-10 px-5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-2 shrink-0 border whitespace-nowrap shadow-2xs cursor-pointer active:scale-[0.98] ${
             activeTab === 'preferences'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-card'
+              ? 'bg-primary text-primary-foreground border-primary shadow-sm font-semibold'
+              : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary'
           }`}
         >
-          <Sliders size={14} /> Culinary Tastes & Exclusions
+          <Sliders size={15} /> Culinary Tastes & Exclusions
         </button>
       </div>
 

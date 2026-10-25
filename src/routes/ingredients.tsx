@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Search, Sprout, ArrowUpRight, Check, ShoppingBag } from "lucide-react";
+import { Search, Sprout, ArrowUpRight, Check, ShoppingBag, Flame } from "lucide-react";
 import { masterIngredients, type IngredientMaster, getIngredientShelfLifeDays } from "@/lib/recipes";
 import { EmptyState, PageHeading } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,8 @@ export const Route = createFileRoute("/ingredients")({
   component: Ingredients,
   head: () =>
     pageMeta(
-      "Ingredient Intelligence Library",
-      "Explore semantic culinary profiles, regional aliases, tested substitutes, and storage science.",
+      "Pantry",
+      "Explore your pantry, semantic culinary profiles, regional aliases, tested substitutes, and storage science.",
     ),
 });
 
@@ -52,30 +52,34 @@ function Ingredients() {
   return (
     <div className="standard-page">
       <PageHeading
-        eyebrow="SEMANTIC KNOWLEDGE & CULINARY ONTOLOGY"
-        title="Get to know your ingredients."
-        description="Every ingredient carries stories, botanical origins, chemical pairings, and reliable substitutes. Treat them as first-class culinary objects."
+        eyebrow="PANTRY & CULINARY ONTOLOGY"
+        title="Your Pantry."
+        description="Every ingredient carries stories, botanical origins, chemical pairings, and reliable substitutes. Stock your home pantry and explore culinary ingredients."
       />
 
       {/* Search & Category Filter Row */}
-      <div className="flex flex-col md:flex-row gap-3 my-6">
+      <div className="flex flex-col md:flex-row gap-3 my-5 sm:my-6">
         <div className="search-input flex-1">
           <Search size={18} />
           <Input
-            aria-label="Search ingredient library"
-            placeholder="Search by ingredient, regional alias (e.g. ceci, garbanzo), or flavor note…"
+            aria-label="Search pantry"
+            placeholder="Search pantry by ingredient, regional alias (e.g. ceci, garbanzo), or flavor note…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
 
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {/* Categories Strip - Hidden Scrollbar with Full Touch Scroll Functionality */}
+        <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto py-1 px-0.5 no-scrollbar scroll-smooth">
           {categories.slice(0, 5).map((cat) => (
             <Button
               key={cat}
               variant={selectedCategory === cat ? "default" : "outline"}
-              size="sm"
-              className="rounded-full text-xs whitespace-nowrap"
+              className={`rounded-full h-9 px-4 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all shadow-2xs active:scale-[0.98] ${
+                selectedCategory === cat
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
+                  : "bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
               onClick={() => setSelectedCategory(cat)}
             >
               {cat}
@@ -85,8 +89,8 @@ function Ingredients() {
       </div>
 
       {/* Ingredient Catalog Grid */}
-      <div className="ingredient-library">
-        {filteredIngredients.map((ing, index) => {
+      <div className="space-y-3.5 sm:space-y-4">
+        {filteredIngredients.map((ing) => {
           const inPantry = pantry.includes(ing.name);
           const recipesUsing = items.filter((r) =>
             r.ingredients.some(
@@ -97,42 +101,51 @@ function Ingredients() {
           );
 
           return (
-            <article key={ing.id} className="knowledge-item flex flex-col justify-between">
+            <article
+              key={ing.id}
+              className="border border-border/80 bg-card rounded-2xl p-4 sm:p-5 shadow-2xs hover:border-primary/40 transition-all flex flex-col justify-between gap-3"
+            >
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between gap-2 mb-2">
                   <span className="eyebrow">{ing.category}</span>
                   <button
                     type="button"
-                    className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all ${
+                    className={`text-xs px-3 py-1 rounded-full border flex items-center gap-1.5 font-medium transition-all shadow-2xs active:scale-95 ${
                       inPantry
-                        ? "bg-secondary border-sage text-primary font-medium"
-                        : "bg-card border-border text-muted-foreground hover:border-clay"
+                        ? "bg-secondary border-sage text-primary font-semibold"
+                        : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
                     }`}
                     onClick={() => togglePantryItem(ing.name)}
                     title="Toggle in your home pantry"
                   >
-                    {inPantry ? <Check size={12} /> : <ShoppingBag size={12} />}
-                    {inPantry ? "In My Pantry" : "+ Add to Pantry"}
+                    {inPantry ? (
+                      <Check size={12} className="text-emerald-600 shrink-0" />
+                    ) : (
+                      <ShoppingBag size={12} className="text-muted-foreground shrink-0" />
+                    )}
+                    <span>{inPantry ? "In Pantry ✓" : "+ Add to Pantry"}</span>
                   </button>
                 </div>
 
-                <h2 className="text-2xl font-serif">{ing.name}</h2>
-                <p className="aliases text-xs text-muted-foreground font-medium mb-3 italic">
-                  {ing.aliases}
+                <h2 className="text-xl sm:text-2xl font-serif font-bold text-foreground tracking-tight">
+                  {ing.name}
+                </h2>
+                <p className="aliases text-xs text-muted-foreground font-medium mb-2 italic">
+                  Aliases: {ing.aliases}
                 </p>
 
-                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-4">
+                <p className="text-xs sm:text-[13px] text-muted-foreground line-clamp-2 leading-relaxed mb-1">
                   {ing.flavor}
                 </p>
               </div>
 
-              <div className="pt-3 border-t border-border flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground" suppressHydrationWarning>
+              <div className="pt-3 border-t border-border/70 flex items-center justify-between text-xs">
+                <span className="text-[11px] text-muted-foreground font-medium" suppressHydrationWarning>
                   In {recipesUsing.length} {recipesUsing.length === 1 ? "recipe" : "recipes"}
                 </span>
                 <Button
                   variant="link"
-                  className="text-xs p-0 gap-1 text-primary hover:underline"
+                  className="text-xs p-0 h-auto gap-1 text-primary hover:underline font-semibold"
                   onClick={() => setActiveIngredient(ing)}
                 >
                   Explore culinary profile <ArrowUpRight size={14} />
@@ -157,7 +170,7 @@ function Ingredients() {
                 setSelectedCategory("All categories");
               }}
             >
-              Reset Ingredient Search
+              Reset Pantry Search
             </Button>
           }
         />
@@ -165,20 +178,20 @@ function Ingredients() {
 
       {/* DETAILED INGREDIENT MODAL */}
       <Dialog open={Boolean(activeIngredient)} onOpenChange={() => setActiveIngredient(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto overflow-x-hidden">
           {activeIngredient && (
-            <div className="space-y-4">
-              <div>
+            <div className="space-y-4 pr-1 sm:pr-0">
+              <div className="pr-10 sm:pr-8">
                 <span className="eyebrow">{activeIngredient.category}</span>
-                <DialogTitle className="text-3xl font-serif mt-1">
+                <DialogTitle className="text-2xl sm:text-3xl font-serif font-bold text-foreground mt-0.5">
                   {activeIngredient.name}
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground italic">
+                <DialogDescription className="text-xs text-muted-foreground italic mt-0.5">
                   Aliases: {activeIngredient.aliases}
                 </DialogDescription>
               </div>
 
-              <div className="space-y-3 text-xs">
+              <div className="space-y-3.5 text-xs">
                 <div>
                   <strong className="text-foreground block font-semibold mb-1">
                     Culinary Character & Flavor:
@@ -186,11 +199,11 @@ function Ingredients() {
                   <p className="text-muted-foreground leading-relaxed">{activeIngredient.flavor}</p>
                 </div>
 
-                <div className="bg-secondary p-3.5 rounded-2xl border border-border">
+                <div className="bg-primary/5 p-3 sm:p-3.5 rounded-xl border border-primary/20">
                   <strong className="text-primary block font-semibold mb-1">
                     Reliable Substitute:
                   </strong>
-                  <p className="text-espresso leading-relaxed">{activeIngredient.substitute}</p>
+                  <p className="text-foreground leading-relaxed">{activeIngredient.substitute}</p>
                 </div>
 
                 <div>
@@ -201,11 +214,11 @@ function Ingredients() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between gap-2 mb-1">
                     <strong className="text-foreground block font-semibold">
                       Storage & Shelf Life:
                     </strong>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-primary border border-border">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-primary border border-border shrink-0">
                       Est. Shelf Life: ~{getIngredientShelfLifeDays(activeIngredient.name)} days
                     </span>
                   </div>
@@ -214,41 +227,55 @@ function Ingredients() {
                   </p>
                 </div>
 
-                {/* Macro Nutrition per 100g */}
-                <div className="bg-card border border-border p-3 rounded-2xl">
-                  <strong className="text-foreground block font-semibold mb-2">
-                    Nutritional Density (per 100g):
-                  </strong>
-                  <div className="grid grid-cols-4 gap-2 text-center">
+                {/* Macro Nutrition per 100g - Clean Properly Spaced Text */}
+                <div className="bg-card border border-border/80 p-3.5 sm:p-4 rounded-2xl shadow-2xs">
+                  <div className="flex items-center justify-between mb-3">
+                    <strong className="text-foreground text-xs font-semibold flex items-center gap-1.5">
+                      <Flame size={14} className="text-clay shrink-0" />
+                      <span>Nutritional Density</span>
+                    </strong>
+                    <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full border border-border/60 tabular-nums">
+                      per 100g
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-center py-1">
                     <div>
-                      <strong className="text-sm font-semibold tabular block">
+                      <span className="text-base sm:text-lg font-bold font-serif text-foreground tabular-nums block leading-tight">
                         {activeIngredient.caloriesPer100g}
-                      </strong>
-                      <span className="text-[10px] text-muted-foreground">kcal</span>
+                      </span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mt-1">
+                        kcal
+                      </span>
                     </div>
                     <div>
-                      <strong className="text-sm font-semibold tabular block">
+                      <span className="text-base sm:text-lg font-bold font-serif text-foreground tabular-nums block leading-tight">
                         {activeIngredient.proteinPer100g}g
-                      </strong>
-                      <span className="text-[10px] text-muted-foreground">Protein</span>
+                      </span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mt-1">
+                        Protein
+                      </span>
                     </div>
                     <div>
-                      <strong className="text-sm font-semibold tabular block">
+                      <span className="text-base sm:text-lg font-bold font-serif text-foreground tabular-nums block leading-tight">
                         {activeIngredient.carbsPer100g}g
-                      </strong>
-                      <span className="text-[10px] text-muted-foreground">Carbs</span>
+                      </span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mt-1">
+                        Carbs
+                      </span>
                     </div>
                     <div>
-                      <strong className="text-sm font-semibold tabular block">
+                      <span className="text-base sm:text-lg font-bold font-serif text-foreground tabular-nums block leading-tight">
                         {activeIngredient.fatPer100g}g
-                      </strong>
-                      <span className="text-[10px] text-muted-foreground">Fat</span>
+                      </span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mt-1">
+                        Fat
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Recipes Featuring this ingredient */}
-                <div className="pt-2">
+                <div className="pt-1">
                   <strong className="text-foreground block font-semibold mb-2">
                     Dishes Featuring this Ingredient:
                   </strong>
@@ -267,17 +294,17 @@ function Ingredients() {
                           asChild
                           variant="outline"
                           size="sm"
-                          className="w-full justify-between rounded-xl text-xs"
+                          className="w-full justify-between rounded-xl text-xs hover:border-primary/50"
                         >
                           <Link
                             to="/recipe/$id"
                             params={{ id: r.id }}
                             onClick={() => setActiveIngredient(null)}
                           >
-                            <span>
+                            <span className="truncate mr-2">
                               {r.title} ({r.cuisine} · {r.time} min)
                             </span>
-                            <ArrowUpRight size={13} />
+                            <ArrowUpRight size={13} className="shrink-0" />
                           </Link>
                         </Button>
                       ))}

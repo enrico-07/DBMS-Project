@@ -159,8 +159,8 @@ export function CommandPalette({
             onSelect={() => runCommand(() => navigate({ to: "/ingredients" }))}
             className="flex items-center gap-2.5 py-2 px-3 rounded-xl cursor-pointer"
           >
-            <Sprout size={15} className="text-sage" />
-            <span className="text-xs">Ingredient Intelligence Library</span>
+            <ShoppingBag size={15} className="text-primary" />
+            <span className="text-xs">Pantry</span>
             <CommandShortcut>G I</CommandShortcut>
           </CommandItem>
 

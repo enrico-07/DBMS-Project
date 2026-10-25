@@ -3,7 +3,6 @@ import {
   Check,
   ChevronsUpDown,
   Search,
-  Sparkles,
   Plus,
   AlertTriangle,
   HeartPulse,
@@ -197,7 +196,7 @@ export function SemanticIngredientPicker({
 
   return (
     <div className="flex-1 flex flex-col gap-1.5 min-w-[280px]">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         {/* Main Search Popover Button */}
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -205,14 +204,19 @@ export function SemanticIngredientPicker({
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="flex-1 justify-between text-left font-normal text-xs h-9 px-3 bg-background hover:bg-accent/40 border-border"
+              className="flex-1 justify-between text-left font-normal text-xs h-9 px-3.5 bg-background hover:bg-accent/40 border-border rounded-xl shadow-2xs"
             >
               <div className="flex items-center gap-2 truncate">
                 <span className="font-medium text-foreground truncate">
                   {value.name ? value.name : 'Select or search ingredient...'}
                 </span>
-                {currentMaster?.category && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">
+                {currentVariety && (
+                  <Badge variant="outline" className="text-[10px] px-2 py-0 font-medium bg-primary/10 text-primary border-primary/30 shrink-0">
+                    {currentVariety.name}
+                  </Badge>
+                )}
+                {currentMaster?.category && !currentVariety && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal shrink-0">
                     {currentMaster.category}
                   </Badge>
                 )}
@@ -222,14 +226,14 @@ export function SemanticIngredientPicker({
           </PopoverTrigger>
 
           <PopoverContent
-            className="w-[380px] p-0 bg-popover border border-border shadow-lg rounded-xl z-50"
+            className="w-[380px] p-0 bg-popover border border-border shadow-xl rounded-2xl z-50 overflow-hidden"
             align="start"
           >
             {/* Search Input Box */}
-            <div className="flex items-center border-b border-border px-3 py-2 bg-muted/20">
+            <div className="flex items-center border-b border-border px-3.5 py-2.5 bg-muted/20">
               <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
               <input
-                className="flex h-7 w-full rounded-md bg-transparent text-xs outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-8 w-full rounded-md bg-transparent text-xs outline-none placeholder:text-muted-foreground text-foreground"
                 placeholder="Type e.g. butter, flour, sugar, chocolate..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -238,15 +242,15 @@ export function SemanticIngredientPicker({
             </div>
 
             {/* Category Filter Chips */}
-            <div className="flex items-center gap-1 p-2 overflow-x-auto border-b border-border bg-card text-[11px] no-scrollbar">
+            <div className="flex items-center gap-2 p-2.5 overflow-x-auto border-b border-border bg-card text-[11px] no-scrollbar scroll-smooth">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   type="button"
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap transition-colors ${
+                  className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors shrink-0 ${
                     selectedCategory === cat
-                      ? 'bg-primary text-primary-foreground font-medium'
+                      ? 'bg-primary text-primary-foreground font-medium shadow-xs'
                       : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                   }`}
                 >
@@ -373,28 +377,11 @@ export function SemanticIngredientPicker({
             </div>
           </PopoverContent>
         </Popover>
-
-        {/* Variety Switcher Button (if current ingredient has varieties) */}
-        {currentMaster?.varieties && currentMaster.varieties.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setVarietyModalOpen(true)}
-            className="text-[10px] h-9 px-2 gap-1 rounded-lg shrink-0 border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary"
-            title="Choose specific ingredient subdivision or variety"
-          >
-            <Sparkles size={11} />
-            <span className="max-w-[100px] truncate">
-              {currentVariety ? currentVariety.name : 'Select Variety'}
-            </span>
-          </Button>
-        )}
       </div>
 
       {/* Semantic Metadata Pill Row */}
       {currentMaster && (
-        <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
+        <div className="flex items-center gap-2 flex-wrap text-[11px] pt-1">
           {/* Allergens warning */}
           {currentMaster.allergens && currentMaster.allergens.length > 0 && (
             <span className="inline-flex items-center gap-0.5 text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full font-medium">
