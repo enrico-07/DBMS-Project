@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   Sliders,
   Laptop,
+  X,
 } from 'lucide-react';
 import { PageHeading } from '@/components/recipe-card';
 import { useVault } from '@/components/vault-provider';
@@ -171,13 +172,13 @@ function Profile() {
   };
 
   return (
-    <div className="standard-page profile-page max-w-4xl mx-auto">
+    <div className="standard-page profile-page max-w-4xl mx-auto w-full min-w-0 overflow-x-hidden">
       <PageHeading
         eyebrow="ACCOUNT, SECURITY & PREFERENCES"
         title="Kitchen Profile & Account Settings"
         description="Fine-tune your personal identity, login credentials, culinary tastes, and dietary intelligence rules."
         action={
-          <Button asChild variant="outline" className="rounded-full gap-1.5 text-xs h-9 px-4 shrink-0 shadow-sm">
+          <Button asChild variant="outline" className="rounded-full gap-1.5 text-xs h-8.5 sm:h-9 px-3.5 sm:px-4 w-full sm:w-auto justify-center shadow-sm">
             <Link to="/login">
               <LogIn size={14} /> Switch / Register
             </Link>
@@ -186,157 +187,186 @@ function Profile() {
       />
 
       {/* Active User Persona Banner */}
-      <div className="bg-card border border-border p-6 rounded-3xl shadow-sm my-6 flex flex-col md:flex-row items-center gap-6">
-        <span className="avatar w-16 h-16 text-2xl shrink-0">{currentUser.avatar}</span>
+      <div className="bg-card border border-border p-5 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm my-4 sm:my-6 flex flex-col md:flex-row items-center gap-4 sm:gap-6 w-full min-w-0">
+        <span className="avatar w-16 h-16 sm:w-18 sm:h-18 text-2xl sm:text-3xl shrink-0 shadow-sm ring-2 ring-primary/20">
+          {currentUser.avatar}
+        </span>
 
-        <div className="flex-1 text-center md:text-left">
-          <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1">
-            <h2 className="text-2xl font-serif">{currentUser.name}</h2>
-            <span className="text-xs bg-secondary text-primary px-3 py-1 rounded-full font-medium inline-block w-fit mx-auto md:mx-0">
+        <div className="flex-1 text-center md:text-left min-w-0 w-full">
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-foreground tracking-tight">
+            {currentUser.name}
+          </h2>
+
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2 mt-1.5 mb-2.5">
+            <span className="text-[11px] sm:text-xs bg-secondary text-primary px-3 py-0.5 rounded-full font-medium inline-block border border-border/60">
               {currentUser.role}
             </span>
             {currentUser.loginMethod && (
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 w-fit mx-auto md:mx-0">
-                {currentUser.loginMethod === 'google' ? 'Google Account Connected' : 'Email Verified'}
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                {currentUser.loginMethod === 'google' ? 'Google Connected' : 'Email Verified'}
               </span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground max-w-lg mb-2">{currentUser.bio}</p>
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-[11px] text-muted-foreground">
-            <span>{currentUser.email}</span>
+
+          <p className="text-xs text-muted-foreground max-w-md mx-auto md:mx-0 leading-relaxed mb-2.5">
+            {currentUser.bio}
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 text-[11px] text-muted-foreground">
+            <span className="font-mono text-[10.5px]">{currentUser.email}</span>
             {currentUser.phone && <span>· {currentUser.phone}</span>}
             {currentUser.location && <span>· {currentUser.location}</span>}
           </div>
         </div>
 
         {/* Live Relational Stats */}
-        <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 text-center shrink-0">
-          <div>
+        <div className="grid grid-cols-3 gap-2.5 w-full md:w-auto border-t md:border-t-0 md:border-l border-border/80 pt-4 md:pt-0 md:pl-6 text-center shrink-0">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-secondary/50 md:bg-secondary/30 border border-border/40">
             <strong className="text-xl font-serif text-primary block tabular">{saved.length}</strong>
-            <span className="text-[10px] text-muted-foreground font-semibold uppercase">Saved</span>
+            <span className="text-[9.5px] sm:text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block mt-0.5">
+              Saved
+            </span>
           </div>
-          <div>
+          <div className="p-2 sm:p-2.5 rounded-xl bg-secondary/50 md:bg-secondary/30 border border-border/40">
             <strong className="text-xl font-serif text-primary block tabular">{plan.length}</strong>
-            <span className="text-[10px] text-muted-foreground font-semibold uppercase">Planned</span>
+            <span className="text-[9.5px] sm:text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block mt-0.5">
+              Planned
+            </span>
           </div>
-          <div>
+          <div className="p-2 sm:p-2.5 rounded-xl bg-secondary/50 md:bg-secondary/30 border border-border/40">
             <strong className="text-xl font-serif text-primary block tabular">
               {items.filter(r => r.createdBy === currentUser.id).length}
             </strong>
-            <span className="text-[10px] text-muted-foreground font-semibold uppercase">Created</span>
+            <span className="text-[9.5px] sm:text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block mt-0.5">
+              Created
+            </span>
           </div>
         </div>
       </div>
 
       {/* Quick Switch Demo Personas Section */}
-      <div className="bg-secondary/60 border border-border p-5 rounded-2xl mb-8">
-        <div className="flex items-center justify-between mb-3">
+      <div className="bg-secondary/60 border border-border p-3.5 sm:p-5 rounded-2xl mb-6 sm:mb-8 w-full min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3.5">
           <span className="text-xs font-bold text-primary uppercase tracking-wider">
             Quick-Switch Demo Personas
           </span>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-[10.5px] sm:text-[11px] text-muted-foreground">
             Instantly view distinct personalized shelves
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {allUsers.slice(0, 3).map(u => (
-            <button
-              key={u.id}
-              type="button"
-              className={`p-3 rounded-xl border text-left transition-all ${
-                currentUser.id === u.id
-                  ? 'border-clay bg-card shadow-sm ring-1 ring-clay'
-                  : 'border-border bg-card/60 hover:bg-card'
-              }`}
-              onClick={() => {
-                switchUser(u.id);
-                setName(u.name);
-                setRole(u.role);
-                setBio(u.bio);
-                setPhone(u.phone || '');
-                setLocation(u.location || '');
-                setTargetCookTime(u.targetCookTime || 30);
-                setCookingSkill(u.cookingSkill || 'Home Cook');
-                setTwoFactor(u.twoFactorEnabled ?? false);
-                setSessionTimeout(u.sessionTimeout ?? 60);
-              }}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="avatar w-6 h-6 text-xs">{u.avatar}</span>
-                <strong className="text-xs font-semibold">{u.name}</strong>
-              </div>
-              <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">
-                {u.bio}
-              </p>
-            </button>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+          {allUsers.slice(0, 3).map(u => {
+            const isActive = currentUser.id === u.id;
+            return (
+              <button
+                key={u.id}
+                type="button"
+                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  isActive
+                    ? 'border-clay bg-card shadow-sm ring-1 ring-clay'
+                    : 'border-border bg-card/60 hover:bg-card'
+                }`}
+                onClick={() => {
+                  switchUser(u.id);
+                  setName(u.name);
+                  setRole(u.role);
+                  setBio(u.bio);
+                  setPhone(u.phone || '');
+                  setLocation(u.location || '');
+                  setTargetCookTime(u.targetCookTime || 30);
+                  setCookingSkill(u.cookingSkill || 'Home Cook');
+                  setTwoFactor(u.twoFactorEnabled ?? false);
+                  setSessionTimeout(u.sessionTimeout ?? 60);
+                }}
+              >
+                <span className="avatar w-8 h-8 text-xs shrink-0 rounded-full mt-0.5 shadow-2xs font-bold">
+                  {u.avatar}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1.5 mb-1">
+                    <strong className="text-xs font-semibold text-foreground truncate">{u.name}</strong>
+                    {isActive && (
+                      <span className="text-[9.5px] font-bold text-clay uppercase tracking-wider bg-peach/40 px-2 py-0.5 rounded-full shrink-0 border border-clay/30">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                    {u.bio}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Section Navigation Tabs */}
-      <div className="flex items-center gap-3 border-b border-border mb-7 pb-3.5 pt-1 overflow-x-auto no-scrollbar scroll-smooth">
+      <div className="flex items-center gap-2 border-b border-border mb-5 sm:mb-7 pb-2.5 pt-1 overflow-x-auto no-scrollbar scroll-smooth w-full min-w-0">
         <button
           type="button"
           onClick={() => setActiveTab('profile')}
-          className={`h-10 px-5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-2 shrink-0 border whitespace-nowrap shadow-2xs cursor-pointer active:scale-[0.98] ${
+          className={`h-9 px-3.5 sm:px-4 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 border whitespace-nowrap cursor-pointer active:scale-[0.98] ${
             activeTab === 'profile'
               ? 'bg-primary text-primary-foreground border-primary shadow-sm font-semibold'
               : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary'
           }`}
         >
-          <User size={15} /> Personal Details & Identity
+          <User size={14} className="shrink-0" /> Profile & Identity
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('security')}
-          className={`h-10 px-5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-2 shrink-0 border whitespace-nowrap shadow-2xs cursor-pointer active:scale-[0.98] ${
+          className={`h-9 px-3.5 sm:px-4 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 border whitespace-nowrap cursor-pointer active:scale-[0.98] ${
             activeTab === 'security'
               ? 'bg-primary text-primary-foreground border-primary shadow-sm font-semibold'
               : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary'
           }`}
         >
-          <Shield size={15} /> Security & Account Credentials
+          <Shield size={14} className="shrink-0" /> Security & Auth
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('preferences')}
-          className={`h-10 px-5 rounded-full text-xs sm:text-sm font-medium transition-all flex items-center gap-2 shrink-0 border whitespace-nowrap shadow-2xs cursor-pointer active:scale-[0.98] ${
+          className={`h-9 px-3.5 sm:px-4 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 border whitespace-nowrap cursor-pointer active:scale-[0.98] ${
             activeTab === 'preferences'
               ? 'bg-primary text-primary-foreground border-primary shadow-sm font-semibold'
               : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary'
           }`}
         >
-          <Sliders size={15} /> Culinary Tastes & Exclusions
+          <Sliders size={14} className="shrink-0" /> Culinary Tastes
         </button>
       </div>
 
       {/* TAB 1: Personal Details Form */}
       {activeTab === 'profile' && (
-        <form onSubmit={handleSavePersonal} className="space-y-6">
-          <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div>
-                <h3 className="text-lg font-serif">Personal Information</h3>
-                <p className="text-xs text-muted-foreground">
-                  Update your display name, contact coordinates, and culinary bio.
-                </p>
+        <form onSubmit={handleSavePersonal} className="space-y-4 sm:space-y-6">
+          <div className="bg-card border border-border p-4 sm:p-6 rounded-2xl shadow-sm space-y-4">
+            <div className="border-b border-border pb-3.5">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 border border-primary/20 shadow-2xs">
+                  <User size={17} />
+                </div>
+                <h3 className="text-base sm:text-lg font-serif font-semibold text-foreground leading-snug">
+                  Personal Information
+                </h3>
               </div>
-              <span className="text-[11px] text-muted-foreground">
-                Joined: {currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : 'Active Member'}
-              </span>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Update your display name, contact coordinates, and culinary bio.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-1">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">Chef Display Name</label>
                 <Input
                   value={name}
                   onChange={e => setName(e.target.value)}
                   placeholder="e.g. Maya Lin"
-                  className="text-xs"
+                  className="text-xs h-9"
                   required
                 />
               </div>
@@ -347,7 +377,7 @@ function Profile() {
                   value={role}
                   onChange={e => setRole(e.target.value)}
                   placeholder="e.g. Plant-forward Home Cook"
-                  className="text-xs"
+                  className="text-xs h-9"
                 />
               </div>
 
@@ -357,7 +387,7 @@ function Profile() {
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   placeholder="e.g. +1 (555) 349-2910"
-                  className="text-xs"
+                  className="text-xs h-9"
                 />
               </div>
 
@@ -367,7 +397,7 @@ function Profile() {
                   value={location}
                   onChange={e => setLocation(e.target.value)}
                   placeholder="e.g. Portland, Oregon"
-                  className="text-xs"
+                  className="text-xs h-9"
                 />
               </div>
 
@@ -376,7 +406,7 @@ function Profile() {
                 <select
                   value={cookingSkill}
                   onChange={e => setCookingSkill(e.target.value as any)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="Beginner">Beginner — Learning Kitchen Basics</option>
                   <option value="Home Cook">Home Cook — Confident Weeknight Cook</option>
@@ -392,24 +422,24 @@ function Profile() {
                   max="180"
                   value={targetCookTime}
                   onChange={e => setTargetCookTime(Number(e.target.value))}
-                  className="text-xs"
+                  className="text-xs h-9"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5 pt-2">
+            <div className="space-y-1.5 pt-1">
               <label className="text-xs font-semibold text-foreground">Kitchen Bio & Cooking Story</label>
               <textarea
                 value={bio}
                 onChange={e => setBio(e.target.value)}
                 rows={3}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="Tell other cooks about your favorite flavors and kitchen rituals…"
               />
             </div>
 
-            <div className="flex justify-end pt-3">
-              <Button type="submit" className="rounded-full bg-primary text-primary-foreground gap-1.5 text-xs shadow-xs">
+            <div className="flex justify-end pt-2">
+              <Button type="submit" className="w-full sm:w-auto rounded-full bg-primary text-primary-foreground gap-1.5 text-xs h-9 shadow-xs justify-center">
                 <Save size={14} /> Save Profile Changes
               </Button>
             </div>
@@ -419,22 +449,24 @@ function Profile() {
 
       {/* TAB 2: Security & Credentials */}
       {activeTab === 'security' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Password update form */}
-          <form onSubmit={handleUpdatePassword} className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div>
-                <h3 className="text-lg font-serif flex items-center gap-2">
-                  <KeyRound size={16} className="text-primary" />
+          <form onSubmit={handleUpdatePassword} className="bg-card border border-border p-4 sm:p-6 rounded-2xl shadow-sm space-y-4">
+            <div className="border-b border-border pb-3.5">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 border border-primary/20 shadow-2xs">
+                  <KeyRound size={17} />
+                </div>
+                <h3 className="text-base sm:text-lg font-serif font-semibold text-foreground leading-snug">
                   Password & Authentication
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  Update your security passphrase for local and device authentication.
-                </p>
               </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Update your security passphrase for local and device authentication.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-1">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">Current Passphrase</label>
                 <Input
@@ -442,7 +474,7 @@ function Profile() {
                   placeholder="Enter current password"
                   value={currentPassword}
                   onChange={e => setCurrentPassword(e.target.value)}
-                  className="text-xs"
+                  className="text-xs h-9"
                 />
               </div>
 
@@ -453,7 +485,7 @@ function Profile() {
                   placeholder="Minimum 6 characters"
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
-                  className="text-xs"
+                  className="text-xs h-9"
                 />
               </div>
 
@@ -464,48 +496,57 @@ function Profile() {
                   placeholder="Re-enter new password"
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  className="text-xs max-w-sm"
+                  className="text-xs h-9 max-w-sm"
                 />
               </div>
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button type="submit" className="rounded-full bg-primary text-primary-foreground gap-1.5 text-xs shadow-xs">
+              <Button type="submit" className="w-full sm:w-auto rounded-full bg-primary text-primary-foreground gap-1.5 text-xs h-9 shadow-xs justify-center">
                 <Lock size={14} /> Update Security Passphrase
               </Button>
             </div>
           </form>
 
           {/* Two-Factor Authentication & Session Settings */}
-          <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-5">
-            <h3 className="text-lg font-serif flex items-center gap-2">
-              <ShieldCheck size={16} className="text-sage" />
-              Advanced Security & Session Management
-            </h3>
+          <div className="bg-card border border-border p-4 sm:p-6 rounded-2xl shadow-sm space-y-4 sm:space-y-5">
+            <div>
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <div className="w-8 h-8 rounded-xl bg-sage/15 text-sage flex items-center justify-center shrink-0 border border-sage/20 shadow-2xs">
+                  <ShieldCheck size={17} />
+                </div>
+                <h3 className="text-base sm:text-lg font-serif font-semibold text-foreground leading-snug">
+                  Advanced Security & Session Management
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Protect account access with two-factor verification and idle session limits.
+              </p>
+            </div>
 
-            <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-background">
+            <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-xl border border-border bg-background gap-3">
               <div>
                 <strong className="text-xs font-semibold block text-foreground">Two-Factor Authentication (2FA)</strong>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                   Require one-time verification codes when logging in from unrecognized browsers or mobile devices.
                 </p>
               </div>
-              <Switch checked={twoFactor} onCheckedChange={handleToggle2FA} />
+              <Switch checked={twoFactor} onCheckedChange={handleToggle2FA} className="shrink-0" />
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-border bg-background gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 rounded-xl border border-border bg-background gap-3">
               <div>
                 <strong className="text-xs font-semibold block text-foreground">Inactivity Session Timeout</strong>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                   Automatically log out session if idle to protect shared family or kitchen tablets.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <Button
                   type="button"
                   size="sm"
                   variant={sessionTimeout === 30 ? 'default' : 'outline'}
-                  className="text-xs h-8 rounded-full"
+                  className="text-xs h-8 px-3 rounded-full"
                   onClick={() => handleSessionTimeoutChange(30)}
                 >
                   30m
@@ -514,7 +555,7 @@ function Profile() {
                   type="button"
                   size="sm"
                   variant={sessionTimeout === 60 ? 'default' : 'outline'}
-                  className="text-xs h-8 rounded-full"
+                  className="text-xs h-8 px-3 rounded-full"
                   onClick={() => handleSessionTimeoutChange(60)}
                 >
                   60m
@@ -523,7 +564,7 @@ function Profile() {
                   type="button"
                   size="sm"
                   variant={sessionTimeout === 120 ? 'default' : 'outline'}
-                  className="text-xs h-8 rounded-full"
+                  className="text-xs h-8 px-3 rounded-full"
                   onClick={() => handleSessionTimeoutChange(120)}
                 >
                   2h
@@ -532,17 +573,20 @@ function Profile() {
             </div>
 
             {/* Active Devices Overview */}
-            <div className="p-4 rounded-xl border border-border bg-secondary/30">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Laptop size={14} className="text-muted-foreground" /> Active Session
+            <div className="p-3.5 sm:p-4 rounded-xl border border-border bg-secondary/30">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-xs font-semibold text-foreground inline-flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-background border border-border/60 flex items-center justify-center text-muted-foreground shrink-0">
+                    <Laptop size={13} />
+                  </span>
+                  <span>Active Session</span>
                 </span>
-                <span className="text-[10px] text-sage font-bold uppercase tracking-wider bg-secondary px-2 py-0.5 rounded-full border border-border">
+                <span className="text-[10px] text-sage font-bold uppercase tracking-wider bg-secondary px-2.5 py-0.5 rounded-full border border-border shrink-0">
                   Current Device
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                Connected via Chrome / Desktop · Local browser cache encrypted with AES storage wrapper.
+              <p className="text-[11px] text-muted-foreground leading-relaxed pl-8">
+                Connected via local browser · Local cache encrypted with AES storage wrapper.
               </p>
             </div>
           </div>
@@ -551,36 +595,38 @@ function Profile() {
 
       {/* TAB 3: Preferences Grid */}
       {activeTab === 'preferences' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Kitchen Atmosphere & Visual Environment */}
-          <section className="bg-card border border-border p-6 rounded-2xl shadow-sm">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+          <section className="bg-card border border-border p-4 sm:p-6 rounded-2xl shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-2">
               <div>
-                <h3 className="text-lg font-serif mb-1">
+                <h3 className="text-base sm:text-lg font-serif mb-0.5">
                   Kitchen Atmosphere
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   Toggle between Morning Sunshine (6 AM–12 PM), Afternoon & Evening (12 PM–7 PM), and Peaceful Night (7 PM–6 AM).
                 </p>
               </div>
-              <ThemeSlider />
+              <div className="shrink-0 w-full sm:w-auto flex justify-start sm:justify-end">
+                <ThemeSlider />
+              </div>
             </div>
           </section>
 
           {/* Favorite Cuisines */}
-          <section className="bg-card border border-border p-6 rounded-2xl shadow-sm">
-            <h3 className="text-lg font-serif mb-1">Favorite Cuisines</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+          <section className="bg-card border border-border p-4 sm:p-6 rounded-2xl shadow-sm">
+            <h3 className="text-base sm:text-lg font-serif mb-0.5">Favorite Cuisines</h3>
+            <p className="text-xs text-muted-foreground mb-3 sm:mb-4">
               Recipes matching these traditions are boosted in your recommendations.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
               {cuisines.map(c => {
                 const active = currentUser.favoriteCuisines.includes(c);
                 return (
                   <label
                     key={c}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                    className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl border cursor-pointer transition-all ${
                       active ? 'border-clay bg-peach/40' : 'border-border bg-background'
                     }`}
                   >
@@ -593,19 +639,19 @@ function Profile() {
           </section>
 
           {/* Dietary Patterns */}
-          <section className="bg-card border border-border p-6 rounded-2xl shadow-sm">
-            <h3 className="text-lg font-serif mb-1">Dietary Patterns & Restrictions</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+          <section className="bg-card border border-border p-4 sm:p-6 rounded-2xl shadow-sm">
+            <h3 className="text-base sm:text-lg font-serif mb-0.5">Dietary Patterns & Restrictions</h3>
+            <p className="text-xs text-muted-foreground mb-3 sm:mb-4">
               Filter recipes according to plant-based, gluten-free, or high-protein lifestyle choices.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
               {diets.map(d => {
                 const active = currentUser.dietaryPreferences.includes(d);
                 return (
                   <label
                     key={d}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                    className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl border cursor-pointer transition-all ${
                       active ? 'border-sage bg-secondary' : 'border-border bg-background'
                     }`}
                   >
@@ -618,62 +664,111 @@ function Profile() {
           </section>
 
           {/* Disliked Ingredients / Allergen Exclusions */}
-          <section className="bg-card border border-border p-6 rounded-2xl shadow-sm">
-            <h3 className="text-lg font-serif mb-1">Allergen & Disliked Ingredient Exclusions</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Dishes containing these ingredients will have their recommendation score lowered or flagged.
-            </p>
+          <section className="bg-card border border-border p-4 sm:p-6 rounded-2xl shadow-sm">
+            <div className="mb-3.5">
+              <h3 className="text-base sm:text-lg font-serif font-semibold text-foreground leading-snug">
+                Allergen & Ingredient Exclusions
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                Dishes containing these items will have their recommendation score lowered or flagged with a dietary caution.
+              </p>
+            </div>
 
-            <form onSubmit={addDisliked} className="flex gap-2 max-w-md mb-4">
-              <Input
-                placeholder="e.g. Peanuts, Cilantro, Shellfish…"
-                value={dislikedInput}
-                onChange={e => setDislikedInput(e.target.value)}
-                className="text-xs"
-              />
-              <Button type="submit" size="sm" className="rounded-full bg-primary text-primary-foreground shadow-xs">
-                <Plus size={14} className="mr-1" /> Add
+            <form onSubmit={addDisliked} className="flex gap-2 w-full max-w-md mb-3">
+              <div className="relative flex-1 min-w-0">
+                <Input
+                  placeholder="e.g. Peanuts, Shellfish, Cilantro…"
+                  value={dislikedInput}
+                  onChange={e => setDislikedInput(e.target.value)}
+                  className="text-xs h-10 rounded-xl bg-background pr-3"
+                />
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                className="rounded-xl bg-primary text-primary-foreground shadow-xs h-10 px-4 text-xs font-semibold shrink-0 gap-1.5"
+              >
+                <Plus size={15} /> Add
               </Button>
             </form>
 
-            <div className="flex flex-wrap gap-2">
+            {/* Quick-add common suggestions */}
+            <div className="mb-3.5">
+              <span className="text-[10.5px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">
+                Quick-add common allergens:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {['Peanuts', 'Shellfish', 'Cilantro', 'Dairy', 'Gluten', 'Pork'].map(allergen => {
+                  const isAdded = currentUser.dislikedIngredients.includes(allergen);
+                  return (
+                    <button
+                      key={allergen}
+                      type="button"
+                      disabled={isAdded}
+                      onClick={() => {
+                        if (!isAdded) {
+                          updateUserProfile({
+                            dislikedIngredients: [...currentUser.dislikedIngredients, allergen],
+                          });
+                          toast.success(`Added ${allergen} to exclusions`);
+                        }
+                      }}
+                      className={`text-[11px] px-2.5 py-1 rounded-full border transition-all ${
+                        isAdded
+                          ? 'opacity-40 border-border bg-secondary cursor-not-allowed line-through'
+                          : 'border-border/80 bg-background hover:bg-secondary text-foreground cursor-pointer active:scale-95'
+                      }`}
+                    >
+                      + {allergen}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Active exclusion chips */}
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
               {currentUser.dislikedIngredients.map(item => (
                 <span
                   key={item}
-                  className="bg-destructive/10 text-destructive text-xs px-3 py-1 rounded-full border border-destructive/20 flex items-center gap-1.5"
+                  className="bg-destructive/10 text-destructive text-xs px-3 py-1.5 rounded-full border border-destructive/25 inline-flex items-center gap-1.5 font-medium shadow-2xs"
                 >
-                  {item}
+                  <span>{item}</span>
                   <button
                     type="button"
                     onClick={() => removeDisliked(item)}
-                    className="hover:font-bold ml-1 text-destructive"
+                    className="w-4 h-4 rounded-full inline-flex items-center justify-center hover:bg-destructive/20 text-destructive transition-colors ml-0.5 cursor-pointer"
                     title={`Remove ${item}`}
                   >
-                    ×
+                    <X size={12} />
                   </button>
                 </span>
               ))}
               {currentUser.dislikedIngredients.length === 0 && (
-                <span className="text-xs text-muted-foreground italic">
-                  No active exclusions. You will see all recipes.
+                <span className="text-xs text-muted-foreground italic py-1">
+                  No active exclusions. All ingredients are permitted in recommendations.
                 </span>
               )}
             </div>
           </section>
 
           {/* Clinical Health & Metabolic Intelligence Profiles */}
-          <section className="bg-card border border-border p-6 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <ShieldCheck size={20} className="text-sage" />
-              <div>
-                <h3 className="text-lg font-serif">Clinical Health & Metabolic Conditions</h3>
-                <p className="text-xs text-muted-foreground">
-                  Personalize the culinary recommendation engine for specific medical or metabolic needs.
-                </p>
+          <section className="bg-card border border-border p-4 sm:p-6 rounded-2xl shadow-sm">
+            <div className="mb-3.5">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <div className="w-8 h-8 rounded-xl bg-sage/15 text-sage flex items-center justify-center shrink-0 border border-sage/20 shadow-2xs">
+                  <ShieldCheck size={17} />
+                </div>
+                <h3 className="text-base sm:text-lg font-serif font-semibold text-foreground leading-snug">
+                  Clinical Health & Metabolic Conditions
+                </h3>
               </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Personalize the culinary recommendation engine for specific medical or metabolic needs.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
               {healthConditionsList.map(h => {
                 const active = currentUser.healthConditions.some(
                   c => c.toLowerCase() === h.id.toLowerCase() || c.toLowerCase() === h.label.toLowerCase()
@@ -682,38 +777,46 @@ function Profile() {
                   <div
                     key={h.id}
                     onClick={() => toggleHealth(h.id)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
-                      active ? 'border-sage bg-sage/10 shadow-sm' : 'border-border bg-background hover:border-border/80'
+                    className={`p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                      active ? 'border-sage bg-sage/10 shadow-sm ring-1 ring-sage/30' : 'border-border bg-background hover:border-border/80'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                          <span className="text-xs font-semibold text-foreground">{h.label}</span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-primary border border-border">
-                            {h.badge}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          {h.description}
-                        </p>
+                    <div className="mb-2">
+                      <div className="flex items-start justify-between gap-3 mb-1.5">
+                        <span className="text-xs sm:text-sm font-semibold text-foreground leading-snug">
+                          {h.label}
+                        </span>
+                        <Switch
+                          checked={active}
+                          onCheckedChange={() => toggleHealth(h.id)}
+                          onClick={e => e.stopPropagation()}
+                          className="shrink-0"
+                        />
                       </div>
-                      <Switch
-                        checked={active}
-                        onCheckedChange={() => toggleHealth(h.id)}
-                        onClick={e => e.stopPropagation()}
-                      />
+                      <div className="mb-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-secondary text-primary border border-border inline-block">
+                          {h.badge}
+                        </span>
+                      </div>
+                      <p className="text-[11.5px] text-muted-foreground leading-relaxed">
+                        {h.description}
+                      </p>
                     </div>
-                    <div className="pt-2 border-t border-border/50 text-[10px] text-muted-foreground/80 flex items-center justify-between">
-                      <span>Clinical Protocol Active</span>
-                      <span className="font-semibold text-primary">Tailors Discover & Detail Pages</span>
+                    <div className="pt-2 border-t border-border/50 text-[10.5px] flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-sage' : 'bg-muted-foreground/40'}`}></span>
+                        {active ? 'Protocol Active' : 'Protocol Standby'}
+                      </span>
+                      <span className="font-semibold text-primary shrink-0">
+                        Adaptive Filter
+                      </span>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <p className="text-[11px] text-muted-foreground mt-4 italic">
+            <p className="text-[11px] text-muted-foreground mt-3.5 italic leading-relaxed">
               *RecipeVault clinical note: Health suggestions are generated algorithmically using nutritional data, glycemic analysis, and fiber thresholds. Always consult your healthcare provider or registered dietitian for individualized medical meal planning.
             </p>
           </section>
@@ -721,12 +824,12 @@ function Profile() {
       )}
 
       {/* Database Reset Action */}
-      <div className="mt-10 pt-6 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mt-8 pt-5 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-muted-foreground">
         <span>Relational DBMS Local Store · Referential Integrity Active</span>
         <Button
           variant="ghost"
           size="sm"
-          className="text-xs gap-1 hover:text-clay"
+          className="text-xs gap-1.5 hover:text-clay h-8"
           onClick={resetDatabase}
         >
           <RotateCcw size={13} /> Reset All Data to Demo Seed

@@ -72,7 +72,7 @@ type VaultContextType = {
     avatar?: string;
   }) => UserProfile;
   logoutUser: () => void;
-  resetPassword: (email: string) => boolean;
+  resetPassword: (email: string, newPassword?: string) => boolean;
 
   // Recipes & Version Control
   items: Recipe[];
@@ -1136,9 +1136,24 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     toast.info("You have signed out of your kitchen vault.");
   };
 
-  const resetPassword = (email: string): boolean => {
+  const resetPassword = (email: string, newPassword?: string): boolean => {
     const user = allUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (user) {
+      if (newPassword) {
+        setAllUsers((prev) =>
+          prev.map((u) => (u.id === user.id ? { ...u, password: newPassword } : u))
+        );
+        setCurrentUserId(user.id);
+        setIsAuthenticated(true);
+        try {
+          localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, "true");
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
+        } catch (e) {
+          console.warn("Storage save error", e);
+        }
+        toast.success(`Password successfully updated! Welcome back, ${user.name}.`);
+        return true;
+      }
       toast.success(`Reset link and recovery code sent to ${email}`);
       return true;
     } else {

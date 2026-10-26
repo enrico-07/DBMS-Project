@@ -195,8 +195,8 @@ export function SemanticIngredientPicker({
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-1.5 min-w-[280px]">
-      <div className="flex items-center gap-2">
+    <div className="flex-1 flex flex-col gap-1.5 w-full min-w-0 md:min-w-[260px]">
+      <div className="flex items-center gap-2 w-full">
         {/* Main Search Popover Button */}
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -204,9 +204,9 @@ export function SemanticIngredientPicker({
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="flex-1 justify-between text-left font-normal text-xs h-9 px-3.5 bg-background hover:bg-accent/40 border-border rounded-xl shadow-2xs"
+              className="w-full flex-1 justify-between text-left font-normal text-xs h-9 px-3.5 bg-background hover:bg-accent/40 border-border rounded-xl shadow-2xs min-w-0"
             >
-              <div className="flex items-center gap-2 truncate">
+              <div className="flex items-center gap-2 truncate min-w-0">
                 <span className="font-medium text-foreground truncate">
                   {value.name ? value.name : 'Select or search ingredient...'}
                 </span>
@@ -216,7 +216,7 @@ export function SemanticIngredientPicker({
                   </Badge>
                 )}
                 {currentMaster?.category && !currentVariety && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal shrink-0">
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal shrink-0 hidden sm:inline-flex">
                     {currentMaster.category}
                   </Badge>
                 )}
@@ -226,7 +226,8 @@ export function SemanticIngredientPicker({
           </PopoverTrigger>
 
           <PopoverContent
-            className="w-[380px] p-0 bg-popover border border-border shadow-xl rounded-2xl z-50 overflow-hidden"
+            collisionPadding={12}
+            className="w-[min(380px,calc(100vw-28px))] p-0 bg-popover border border-border shadow-xl rounded-2xl z-50 overflow-hidden"
             align="start"
           >
             {/* Search Input Box */}
@@ -303,7 +304,7 @@ export function SemanticIngredientPicker({
                             </span>
                           </div>
                           {master.flavor && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[260px] font-normal">
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[220px] font-normal hidden sm:inline">
                               {master.flavor}
                             </span>
                           )}
@@ -361,8 +362,8 @@ export function SemanticIngredientPicker({
             </div>
 
             {/* Quick footer to define custom entity */}
-            <div className="border-t border-border p-2 bg-muted/30 flex justify-between items-center text-[11px]">
-              <span className="text-muted-foreground">3NF Semantic Entity Engine</span>
+            <div className="border-t border-border p-2 sm:p-2.5 bg-muted/30 flex justify-between items-center text-[11px]">
+              <span className="text-muted-foreground">Can’t find your ingredient?</span>
               <button
                 type="button"
                 onClick={() => {
@@ -370,9 +371,9 @@ export function SemanticIngredientPicker({
                   setCustomModalOpen(true);
                   setOpen(false);
                 }}
-                className="text-primary hover:underline text-xs flex items-center gap-1 font-medium"
+                className="text-primary hover:underline text-xs flex items-center gap-1 font-medium cursor-pointer"
               >
-                <Plus size={12} /> New Entity
+                <Plus size={12} /> Add Custom
               </button>
             </div>
           </PopoverContent>

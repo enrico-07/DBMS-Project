@@ -453,18 +453,34 @@ function Index() {
       {/* "Cook With What You Have" Pantry Overlap Shelf */}
       <section className="pantry-strip">
         <div className="pantry-strip-header">
-          <div>
-            <h3 className="flex items-center gap-2 text-base font-serif font-semibold">
-              <ShoppingBag size={18} className="text-clay shrink-0" />
-              <span>Cook with What You Have</span>
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 w-full">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <ShoppingBag size={14} />
+              </div>
+              <h3 className="text-sm sm:text-base font-serif font-semibold text-foreground whitespace-nowrap">
+                Cook with What You Have
+              </h3>
+            </div>
+            <Link
+              to="/ingredients"
+              className="hidden sm:inline-flex text-[11px] font-semibold text-sage hover:text-sage/80 bg-sage/10 px-2.5 py-0.5 rounded-full shrink-0 border border-sage/20 transition-colors whitespace-nowrap"
+            >
+              {pantry.length} stocked ›
+            </Link>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 mt-1 sm:mt-0.5 pl-0 sm:pl-9">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Select what’s in your kitchen to see match percentages
             </p>
+            <Link
+              to="/ingredients"
+              className="sm:hidden text-[11px] font-semibold text-sage hover:text-sage/80 bg-sage/10 px-2.5 py-0.5 rounded-full shrink-0 border border-sage/20 transition-colors whitespace-nowrap"
+            >
+              {pantry.length} stocked ›
+            </Link>
           </div>
-          <span className="text-xs font-semibold text-sage shrink-0 mt-1 sm:mt-0">
-            {pantry.length} items stocked
-          </span>
         </div>
         <div className="pantry-chips">
           {quickPantryOptions.map(name => {

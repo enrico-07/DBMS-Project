@@ -62,6 +62,14 @@ export const Route = createFileRoute('/recipe/$id')({
     ),
 });
 
+const CONDITION_SHORT_NAMES: Record<string, string> = {
+  diabetes: 'Type 2 Diabetes',
+  pcos: 'PCOS',
+  hypertension: 'Hypertension',
+  gerd: 'GERD',
+  celiac: 'Celiac',
+};
+
 function RecipeDetail() {
   const { id } = Route.useParams();
   const {
@@ -335,68 +343,70 @@ function RecipeDetail() {
   return (
     <div className="standard-page detail-page printable-recipe-card">
       {/* Breadcrumbs for Crisp Culinary Context */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
-        <Link to="/" className="hover:text-primary transition-colors font-medium">Discover</Link>
-        <span>/</span>
-        <span className="capitalize">{recipe.category}</span>
-        <span>/</span>
-        <span className="text-foreground font-semibold truncate max-w-xs">{recipe.title}</span>
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 flex-wrap">
+        <Link to="/" className="hover:text-primary transition-colors font-medium shrink-0">Discover</Link>
+        <span className="shrink-0">/</span>
+        <span className="capitalize shrink-0">{recipe.category}</span>
+        <span className="shrink-0">/</span>
+        <span className="text-foreground font-semibold truncate max-w-[140px] sm:max-w-xs">{recipe.title}</span>
       </nav>
 
       {/* Top Action Bar */}
-      <div className="detail-actions">
-        <Button asChild variant="ghost" className="rounded-full gap-2 text-xs sm:text-sm">
+      <div className="detail-actions flex items-center justify-between gap-2 mb-6 flex-wrap">
+        <Button asChild variant="outline" size="sm" className="rounded-full gap-1.5 text-xs sm:text-sm h-8 sm:h-9 px-2.5 sm:px-3.5 shrink-0">
           <Link to="/">
-            <ArrowLeft size={16} />
+            <ArrowLeft size={15} />
             <span className="hidden sm:inline">Back to Discover</span>
             <span className="sm:hidden">Back</span>
           </Link>
         </Button>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0 flex-wrap">
           {recipeVersions.length > 0 && (
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full gap-1 text-xs px-2.5 sm:px-3"
+              className="rounded-full gap-1 text-xs h-8 sm:h-9 px-2 sm:px-3"
               onClick={() => setHistoryOpen(true)}
             >
-              <History size={14} />
+              <History size={13} />
               <span className="hidden sm:inline">Revisions ({recipeVersions.length})</span>
               <span className="sm:hidden">({recipeVersions.length})</span>
             </Button>
           )}
 
-          <Button asChild variant="ghost" size="icon" title="Edit recipe" className="rounded-full w-8 h-8 sm:w-9 sm:h-9">
+          <Button asChild variant="outline" size="icon" title="Edit recipe" className="rounded-full w-8 h-8 sm:w-9 sm:h-9">
             <Link to="/create" search={{ edit: id }}>
-              <Pencil size={15} />
+              <Pencil size={14} />
             </Link>
           </Button>
 
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             title="Delete recipe"
             aria-label="Delete recipe"
             className="rounded-full w-8 h-8 sm:w-9 sm:h-9 text-destructive hover:bg-destructive/10"
             onClick={() => setDeleteOpen(true)}
           >
-            <Trash2 size={15} />
+            <Trash2 size={14} />
           </Button>
 
           <Button
             variant="outline"
-            className="rounded-full gap-1.5 text-xs h-8 sm:h-9 px-2.5 sm:px-3.5"
+            size="sm"
+            className="rounded-full gap-1.5 text-xs h-8 sm:h-9 w-8 sm:w-auto p-0 sm:px-3 flex items-center justify-center"
             onClick={() => window.print()}
             title="Print printable recipe card"
           >
-            <Printer size={15} />
+            <Printer size={14} />
             <span className="hidden sm:inline">Print</span>
           </Button>
 
           <Button
             variant="outline"
-            className="rounded-full gap-1.5 text-xs h-8 sm:h-9 px-2.5 sm:px-3.5"
+            size="sm"
+            className="rounded-full gap-1.5 text-xs h-8 sm:h-9 w-8 sm:w-auto p-0 sm:px-3 flex items-center justify-center"
             title="Copy formatted recipe"
             onClick={async () => {
               try {
@@ -410,7 +420,7 @@ function RecipeDetail() {
               }
             }}
           >
-            <Share2 size={15} />
+            <Share2 size={14} />
             <span className="hidden sm:inline">Copy Recipe</span>
           </Button>
         </div>
@@ -521,32 +531,36 @@ function RecipeDetail() {
       <div className="recipe-details-grid">
         {/* Left Column: Scalable Ingredients & Nutrition */}
         <section>
-          <div className="section-heading">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 mb-4">
             <div>
-              <span className="eyebrow">WHAT GOES IN</span>
-              <h2>Ingredients</h2>
+              <span className="eyebrow block text-primary font-bold text-[11px] tracking-wider">WHAT GOES IN</span>
+              <h2 className="font-serif text-2xl font-bold text-foreground">Ingredients</h2>
             </div>
 
-            {/* Non-destructive Serving Scaler */}
-            <div className="serving-stepper">
+            {/* Non-destructive Serving Scaler: neatly left-aligned below title on mobile, right-aligned on desktop */}
+            <div className="serving-stepper self-start sm:self-auto shrink-0 flex items-center border border-border/80 rounded-full bg-card px-1 py-0.5 shadow-2xs">
               <Button
                 variant="ghost"
                 size="icon"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full cursor-pointer"
                 aria-label="Decrease servings"
                 disabled={servings <= 1}
                 onClick={() => setServings(s => s - 1)}
               >
-                <Minus size={14} />
+                <Minus size={13} />
               </Button>
-              <span className="tabular">{servings} servings</span>
+              <span className="tabular px-1.5 text-xs sm:text-sm font-semibold text-foreground min-w-[70px] text-center">
+                {servings} servings
+              </span>
               <Button
                 variant="ghost"
                 size="icon"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full cursor-pointer"
                 aria-label="Increase servings"
                 disabled={servings >= 24}
                 onClick={() => setServings(s => s + 1)}
               >
-                <Plus size={14} />
+                <Plus size={13} />
               </Button>
             </div>
           </div>
@@ -578,7 +592,7 @@ function RecipeDetail() {
           )}
 
           {/* Ingredient Checkoff List */}
-          <ul className="ingredient-list">
+          <ul className="ingredient-list w-full space-y-1">
             {recipe.ingredients.map(i => {
               const isChecked = checkedIngredients.includes(i.name);
               const swap = activeSwaps[i.name];
@@ -592,8 +606,11 @@ function RecipeDetail() {
               const displayName = swap ? swap.substituteName : i.name;
 
               return (
-                <li key={i.name} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2.5 min-h-[44px] border-b border-border/50">
-                  <label className="flex items-center gap-3 cursor-pointer flex-1 py-1">
+                <li
+                  key={i.name}
+                  className="py-3 border-b border-border/50 w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 items-start sm:items-center"
+                >
+                  <label className="flex items-center gap-3 cursor-pointer w-full text-left select-none">
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -602,9 +619,9 @@ function RecipeDetail() {
                           prev.includes(i.name) ? prev.filter(x => x !== i.name) : [...prev, i.name]
                         )
                       }
-                      className="w-4.5 h-4.5 accent-primary cursor-pointer rounded shrink-0"
+                      className="w-4.5 h-4.5 accent-primary cursor-pointer rounded shrink-0 m-0"
                     />
-                    <div className={isChecked ? 'line-through text-muted-foreground' : ''}>
+                    <div className={`flex-1 min-w-0 ${isChecked ? 'line-through text-muted-foreground' : ''}`}>
                       <span className="text-sm">
                         <strong data-testid={`quantity-${i.name}`} className="tabular mr-1.5 font-semibold text-foreground">
                           {displayQuantity} {displayUnit}
@@ -624,7 +641,7 @@ function RecipeDetail() {
                     </div>
                   </label>
 
-                  <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                  <div className="flex items-center gap-1.5 self-start pl-7.5 sm:pl-0 sm:self-auto shrink-0">
                     {availableSubstitutions.length > 0 && (
                       <Button
                         type="button"
@@ -655,47 +672,58 @@ function RecipeDetail() {
 
           {/* Nutritional Breakdown Panel */}
           <div className="mt-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-1 mb-3">
               <div>
-                <span className="eyebrow">A LITTLE NOURISHMENT</span>
-                <h3 className="font-serif text-xl">Nutritional Values</h3>
+                <span className="eyebrow block text-primary font-bold text-[11px] tracking-wider">A LITTLE NOURISHMENT</span>
+                <h3 className="font-serif text-xl font-bold text-foreground">Nutritional Values</h3>
               </div>
               <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                ESTIMATED · PER SERVING
+                Estimated · Per Serving
               </span>
             </div>
 
             <div className="nutrition-grid">
-              <div>
-                <strong className="tabular">{effectiveCalories}<small>kcal</small></strong>
-                <span>Energy</span>
+              <div className="nutrition-item">
+                <strong className="tabular font-serif font-bold text-lg sm:text-2xl text-foreground">
+                  {effectiveCalories}<small>kcal</small>
+                </strong>
+                <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mt-0.5">Energy</span>
                 {macroDeltas.calorieDelta !== 0 && (
                   <span className={`text-[10px] font-bold ${macroDeltas.calorieDelta < 0 ? 'text-sage' : 'text-primary'}`}>
                     {macroDeltas.calorieDelta > 0 ? `+${macroDeltas.calorieDelta}` : macroDeltas.calorieDelta} kcal
                   </span>
                 )}
               </div>
-              <div>
-                <strong className="tabular">{effectiveProtein}<small>g</small></strong>
-                <span>Protein</span>
+              <div className="nutrition-divider" />
+              <div className="nutrition-item">
+                <strong className="tabular font-serif font-bold text-lg sm:text-2xl text-foreground">
+                  {effectiveProtein}<small>g</small>
+                </strong>
+                <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mt-0.5">Protein</span>
                 {macroDeltas.proteinDelta !== 0 && (
                   <span className={`text-[10px] font-bold ${macroDeltas.proteinDelta > 0 ? 'text-sage' : 'text-primary'}`}>
                     {macroDeltas.proteinDelta > 0 ? `+${macroDeltas.proteinDelta}g` : `${macroDeltas.proteinDelta}g`}
                   </span>
                 )}
               </div>
-              <div>
-                <strong className="tabular">{effectiveCarbs}<small>g</small></strong>
-                <span>Carbs</span>
+              <div className="nutrition-divider" />
+              <div className="nutrition-item">
+                <strong className="tabular font-serif font-bold text-lg sm:text-2xl text-foreground">
+                  {effectiveCarbs}<small>g</small>
+                </strong>
+                <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mt-0.5">Carbs</span>
                 {macroDeltas.carbsDelta !== 0 && (
                   <span className={`text-[10px] font-bold ${macroDeltas.carbsDelta < 0 ? 'text-sage' : 'text-primary'}`}>
                     {macroDeltas.carbsDelta > 0 ? `+${macroDeltas.carbsDelta}g` : `${macroDeltas.carbsDelta}g`}
                   </span>
                 )}
               </div>
-              <div>
-                <strong className="tabular">{effectiveFat}<small>g</small></strong>
-                <span>Fat</span>
+              <div className="nutrition-divider" />
+              <div className="nutrition-item">
+                <strong className="tabular font-serif font-bold text-lg sm:text-2xl text-foreground">
+                  {effectiveFat}<small>g</small>
+                </strong>
+                <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mt-0.5">Fat</span>
                 {macroDeltas.fatDelta !== 0 && (
                   <span className={`text-[10px] font-bold ${macroDeltas.fatDelta < 0 ? 'text-sage' : 'text-primary'}`}>
                     {macroDeltas.fatDelta > 0 ? `+${macroDeltas.fatDelta}g` : `${macroDeltas.fatDelta}g`}
@@ -710,17 +738,16 @@ function RecipeDetail() {
           </div>
 
           {/* Clinical Health & Metabolic Analysis Panel */}
-          <div className="mt-8 p-5 rounded-2xl border border-border bg-card shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-border/70 pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={18} className="text-sage" />
-                <h4 className="font-serif text-lg">Clinical Health & Nutrition Profile</h4>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-[11px] text-muted-foreground">Net Carbs:</span>
-                <span className="font-bold text-foreground tabular bg-secondary px-2 py-0.5 rounded-full border border-border">
-                  {effectiveNetCarbs}g <small className="text-muted-foreground font-normal">({effectiveFiber}g fiber)</small>
-                </span>
+          <div className="mt-8 p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-border/70 pb-3.5">
+              <h4 className="font-serif text-base sm:text-lg font-bold text-foreground">
+                Clinical Health & Nutrition Profile
+              </h4>
+              <div className="flex items-center gap-2 bg-secondary/80 border border-border px-3 py-1.5 rounded-full text-xs self-start sm:self-auto shrink-0">
+                <span className="text-muted-foreground">Net Carbs:</span>
+                <strong className="text-foreground font-bold tabular">{effectiveNetCarbs}g</strong>
+                <span className="text-muted-foreground/60">·</span>
+                <span className="text-muted-foreground tabular">{effectiveFiber}g fiber</span>
               </div>
             </div>
 
@@ -752,93 +779,103 @@ function RecipeDetail() {
             ) : null}
 
             {/* Condition Suitability Badges */}
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <span className="text-[11px] font-semibold text-muted-foreground block uppercase tracking-wider">
                 Condition Suitability Ratings
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {healthEvals.map(evalItem => (
-                  <div
-                    key={evalItem.conditionId}
-                    className={`p-2.5 rounded-xl border flex items-center justify-between text-xs ${
-                      evalItem.isMatch ? 'bg-secondary/40 border-border' : 'bg-muted/30 border-border/50 opacity-70'
-                    }`}
-                  >
-                    <div>
-                      <span className="font-semibold block text-[11px] text-foreground">
-                        {evalItem.label}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {evalItem.highlights[0] || (evalItem.isMatch ? 'Suitable' : 'Moderation advised')}
-                      </span>
-                    </div>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 border ${
+                {healthEvals.map((evalItem, index) => {
+                  const conditionName =
+                    CONDITION_SHORT_NAMES[evalItem.conditionId] || evalItem.label;
+
+                  return (
+                    <div
+                      key={evalItem.conditionId}
+                      title={evalItem.label}
+                      className={`px-3 py-2.5 rounded-xl border flex items-center justify-between gap-2.5 transition-colors ${
+                        index === healthEvals.length - 1 && healthEvals.length % 2 !== 0 ? 'sm:col-span-2' : ''
+                      } ${
                         evalItem.isMatch
-                          ? 'bg-sage/15 text-sage border-sage/30'
-                          : 'bg-muted text-muted-foreground border-border'
+                          ? 'bg-secondary/40 border-border hover:bg-secondary/60'
+                          : 'bg-muted/30 border-border/60 opacity-80'
                       }`}
                     >
-                      {evalItem.isMatch ? `✓ ${evalItem.badge}` : 'Caution'}
-                    </span>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${
+                            evalItem.isMatch ? 'bg-sage' : 'bg-amber-500'
+                          }`}
+                        />
+                        <span className="font-semibold text-xs text-foreground truncate">
+                          {conditionName}
+                        </span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 border tabular ${
+                          evalItem.isMatch
+                            ? 'bg-sage/15 text-sage border-sage/30'
+                            : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                        }`}
+                      >
+                        {evalItem.isMatch ? '✓ Suitable' : 'Caution'}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
 
           {/* Kitchen Economics & Budget Estimator (Phase 3) */}
           {costData && (
-            <div className="bg-card border border-border p-5 rounded-2xl shadow-sm mt-6">
-              <div className="flex items-center justify-between border-b border-border/70 pb-3">
-                <div className="flex items-center gap-2">
-                  <Coins size={18} className="text-honey" />
-                  <h4 className="font-serif text-lg">Kitchen Economics & Budget</h4>
-                </div>
-                <span className="text-[11px] font-bold text-sage bg-sage/15 border border-sage/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <PiggyBank size={12} /> Save {costData.savingsPercentage}% vs. Takeout
+            <div className="bg-card border border-border p-4 sm:p-5 rounded-2xl shadow-sm mt-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/70 pb-3">
+                <h4 className="font-serif text-base sm:text-lg font-bold text-foreground">
+                  Kitchen Economics & Budget
+                </h4>
+                <span className="text-[11px] font-semibold text-sage bg-sage/15 border border-sage/30 px-3 py-1 rounded-full self-start sm:self-auto shrink-0">
+                  Save {costData.savingsPercentage}% vs. Takeout
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <div className="p-3.5 rounded-xl bg-background border border-border">
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mt-4">
+                <div className="p-3 sm:p-3.5 rounded-xl bg-background border border-border">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block truncate">
                     Per Serving
                   </span>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-xl font-bold font-serif text-foreground tabular">
+                  <div className="flex flex-wrap items-baseline gap-1 mt-1">
+                    <span className="text-lg sm:text-xl font-bold font-serif text-foreground tabular">
                       ${costData.costPerServing.toFixed(2)}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-medium">/ portion</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground block mt-1">
+                  <span className="text-[10px] text-muted-foreground block mt-1 truncate">
                     vs. ~$16.50 dining out
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-background border border-border">
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block">
-                    Batch Total ({servings} servings)
+                <div className="p-3 sm:p-3.5 rounded-xl bg-background border border-border">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block truncate">
+                    Batch Total ({servings} serv)
                   </span>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-xl font-bold font-serif text-primary tabular">
+                  <div className="flex flex-wrap items-baseline gap-1 mt-1">
+                    <span className="text-lg sm:text-xl font-bold font-serif text-primary tabular">
                       ${scaledBatchCost.toFixed(2)}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-medium">total</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground block mt-1">
+                  <span className="text-[10px] text-muted-foreground block mt-1 truncate">
                     Pantry ingredient pricing
                   </span>
                 </div>
               </div>
 
-              {/* Collapsible itemized pricing details */}
-              <div className="mt-4 pt-3 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
-                <span className="flex items-center gap-1">
-                  <Receipt size={13} className="text-muted-foreground" />
+              {/* Itemized pricing details */}
+              <div className="mt-4 pt-3 border-t border-border/50 text-[11px] text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span>
                   {costData.ingredientCosts.length} itemized kitchen staples
                 </span>
-                <span className="font-medium text-foreground">
+                <span className="font-semibold text-foreground">
                   Est. batch saving: ${(costData.restaurantEquivalent - scaledBatchCost).toFixed(2)}
                 </span>
               </div>
@@ -848,17 +885,17 @@ function RecipeDetail() {
 
         {/* Right Column: Step-by-Step Instructions & Reviews */}
         <section>
-          <div className="section-heading">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-4">
             <div>
-              <span className="eyebrow">THE METHOD</span>
-              <h2>Step-by-step Guide</h2>
+              <span className="eyebrow block text-primary font-bold text-[11px] tracking-wider">THE METHOD</span>
+              <h2 className="font-serif text-2xl font-bold text-foreground">Step-by-step Guide</h2>
             </div>
-            <span className="text-xs font-semibold text-muted-foreground tabular">
+            <span className="text-xs font-semibold text-muted-foreground tabular bg-secondary px-2.5 py-1 rounded-full border border-border self-start sm:self-auto shrink-0">
               {doneSteps.length} of {recipe.steps.length} completed
             </span>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             {recipe.steps.map((step, index) => {
               const isDone = doneSteps.includes(index);
               const stepTimer = timers.find(t => t.stepNumber === step.stepNumber);
@@ -876,28 +913,31 @@ function RecipeDetail() {
                   <span className="step-number">
                     {isDone ? <Check size={16} /> : step.stepNumber}
                   </span>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm leading-relaxed">{step.instruction}</p>
                     {step.tip && (
-                      <div className="mt-2 text-xs text-primary bg-secondary p-2.5 rounded-xl border border-border flex items-start gap-1.5">
-                        <ChefHat size={13} className="shrink-0 mt-0.5" />
-                        <span>Chef’s tip: {step.tip}</span>
+                      <div className="mt-2 text-xs text-primary bg-secondary/80 p-2.5 rounded-xl border border-border flex items-start gap-1.5">
+                        <span className="font-semibold shrink-0">Chef’s tip:</span>
+                        <span>{step.tip}</span>
                       </div>
                     )}
                     {step.durationMinutes && (
-                      <div className="mt-2.5 flex items-center gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Clock size={12} /> Approx {step.durationMinutes} min
+                      <div
+                        className="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between gap-2 flex-wrap"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                          <Clock size={13} className="text-primary/80" /> Approx {step.durationMinutes} min
                         </span>
 
                         {stepTimer ? (
-                          <div className="flex items-center gap-1.5 bg-card border border-sage/40 px-2.5 py-1 rounded-full text-xs">
-                            <Timer size={12} className={stepTimer.isRunning ? 'text-sage animate-spin' : 'text-muted-foreground'} />
-                            <strong className="tabular">{formatTimerDisplay(stepTimer.remainingSeconds)}</strong>
+                          <div className="flex items-center gap-1.5 bg-secondary/80 border border-sage/40 px-3 py-1 rounded-full text-xs shadow-2xs">
+                            <Timer size={13} className={stepTimer.isRunning ? 'text-sage animate-spin' : 'text-muted-foreground'} />
+                            <strong className="tabular text-foreground">{formatTimerDisplay(stepTimer.remainingSeconds)}</strong>
                             <button
                               type="button"
                               onClick={() => togglePauseTimer(stepTimer.id)}
-                              className="text-[10px] text-primary hover:underline ml-1 font-semibold"
+                              className="text-[11px] text-primary hover:underline ml-1 font-semibold cursor-pointer"
                             >
                               {stepTimer.isRunning ? 'Pause' : 'Resume'}
                             </button>
@@ -907,7 +947,7 @@ function RecipeDetail() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-6 text-[11px] rounded-full gap-1 px-2.5"
+                            className="h-7 text-xs rounded-full gap-1.5 px-3 border-primary/30 hover:border-primary text-foreground cursor-pointer"
                             onClick={() =>
                               startOrAddTimer(
                                 `Step ${step.stepNumber}: ${step.instruction.slice(0, 24)}…`,
@@ -916,7 +956,7 @@ function RecipeDetail() {
                               )
                             }
                           >
-                            <Timer size={11} /> Start {step.durationMinutes}m Timer
+                            <Timer size={13} className="text-primary" /> Start {step.durationMinutes}m Timer
                           </Button>
                         )}
                       </div>
@@ -939,15 +979,16 @@ function RecipeDetail() {
 
           {/* Community Reviews Section */}
           <div className="mt-12 pt-8 border-t border-border">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <span className="eyebrow">COMMUNITY KITCHEN</span>
-                <h3 className="font-serif text-xl">Reviews & Feedback ({recipeReviews.length})</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+              <div className="text-left">
+                <span className="eyebrow block text-primary font-bold text-[11px] tracking-wider mb-0.5">COMMUNITY KITCHEN</span>
+                <h3 className="font-serif text-xl font-bold text-foreground">Reviews & Feedback ({recipeReviews.length})</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Notes and ratings from home cooks who tested this recipe</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full gap-1.5"
+                className="rounded-full gap-1.5 self-start sm:self-auto h-9 px-4 text-xs font-semibold cursor-pointer shrink-0"
                 onClick={() => setReviewOpen(true)}
               >
                 <MessageSquare size={14} />

@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   PanelLeftClose,
   PanelLeft,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVault } from '@/components/vault-provider';
@@ -34,6 +35,7 @@ const navigation = [
   { to: '/planner' as const, label: 'Meal planner', icon: CalendarDays },
   { to: '/ingredients' as const, label: 'Pantry', icon: ShoppingBag },
   { to: '/nutrition' as const, label: 'Nutrition & wellbeing', icon: HeartPulse },
+  { to: '/profile' as const, label: 'Kitchen profile', icon: User },
   { to: '/settings' as const, label: 'Settings', icon: Settings2 },
 ];
 
@@ -91,16 +93,25 @@ export function VaultShell({ children }: { children: ReactNode }) {
             RecipeVault<span className="text-clay">.</span>
           </span>
         </Link>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <NotificationCenter />
+          <Link
+            to="/profile"
+            className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold text-xs shadow-2xs hover:ring-2 hover:ring-primary/40 transition-all shrink-0 cursor-pointer"
+            title={`Chef ${currentUser.name} · View kitchen profile`}
+            aria-label="Chef profile"
+            onClick={() => setOpen(false)}
+          >
+            {currentUser.avatar}
+          </Link>
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 text-foreground rounded-full hover:bg-muted"
+            className="h-8.5 w-8.5 text-foreground rounded-full hover:bg-muted cursor-pointer"
             aria-label={open ? 'Close navigation drawer' : 'Open navigation drawer'}
             onClick={() => setOpen(!open)}
           >
-            {open ? <X size={20} /> : <Menu size={20} />}
+            {open ? <X size={19} /> : <Menu size={19} />}
           </Button>
         </div>
       </header>
