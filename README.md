@@ -33,28 +33,28 @@
 ```mermaid
 flowchart TD
     subgraph Client ["Client Interface Layer (Mobile & Desktop)"]
-        A[Discover & Live Search] --> B[Pantry Overlap Scorer]
-        C[Recipe Details & Serving Scaler] --> D[Fullscreen Cooking Mode]
-        E[7-Day Day-Picker Meal Planner] --> F[Aisle-Consolidated Shopping]
-        G[Ingredient Encyclopedia & Substitutions] --> H[Nutrition & Macro Lab]
-        I[Auth & 1-Click Persona Switcher] --> J[Immutable Version Ledger]
+        A["Discover & Live Search"] --> B["Pantry Overlap Scorer"]
+        C["Recipe Details & Serving Scaler"] --> D["Fullscreen Cooking Mode"]
+        E["7-Day Day-Picker Meal Planner"] --> F["Aisle-Consolidated Shopping"]
+        G["Ingredient Encyclopedia & Substitutions"] --> H["Nutrition & Macro Lab"]
+        I["Auth & 1-Click Persona Switcher"] --> J["Immutable Version Ledger"]
     end
 
     subgraph Engine ["Culinary Intelligence Algorithms"]
-        K[Multi-Factor Recommendation Engine\nCuisine 35% · Diet 30% · Time 15% · Rating 20%]
-        L[Real-Time Set-Intersection Matcher\nO(N) Pantry Overlap & Missing Ingredient Analysis]
-        M[Non-Destructive Fractional Scaler\nDynamic Serving Multiplier with Fractional Formatting]
-        N[Active Password Security Evaluator\n5-Factor Strength Score & Visual Feedback]
+        K["Multi-Factor Recommendation Engine<br/>Cuisine 35% · Diet 30% · Time 15% · Rating 20%"]
+        L["Real-Time Set-Intersection Matcher<br/>O(N) Pantry Overlap & Missing Items"]
+        M["Non-Destructive Fractional Scaler<br/>Dynamic Serving Multiplier with Fractions"]
+        N["Active Password Security Evaluator<br/>5-Factor Strength Score & Visual Feedback"]
     end
 
     subgraph Store ["3NF Normalized Data Layer (PostgreSQL / Supabase / Local Store)"]
-        O[(Relational Schema)]
-        O --> P[users & user_health_profiles]
-        O --> Q[recipes & recipe_versions]
-        O --> R[ingredients & ingredient_aliases & substitutes]
-        O --> S[recipe_ingredients M:N Junction]
-        O --> T[meal_plans & meal_plan_items]
-        O --> U[ratings_and_reviews & Auto-Recalculating Triggers]
+        O[("Relational Schema")]
+        O --> P["users & user_health_profiles"]
+        O --> Q["recipes & recipe_versions"]
+        O --> R["ingredients & ingredient_aliases & substitutes"]
+        O --> S["recipe_ingredients M:N Junction"]
+        O --> T["meal_plans & meal_plan_items"]
+        O --> U["ratings_and_reviews & Auto-Recalculating Triggers"]
     end
 
     Client <--> Engine
