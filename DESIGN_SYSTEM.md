@@ -1,12 +1,12 @@
 # The RecipeVault Design System — "Warm Pantry"
 
-**Philosophy:** A beautiful digital kitchen shelf. Database complexity hidden behind warmth, editorial rhythm, and tactile interaction.
+**Philosophy:** A beautiful, tactile digital kitchen shelf. Database complexity and relational precision hidden behind warmth, editorial rhythm, and responsive craft.
 
 ---
 
 ## 1. Atmosphere Palette System (Time of Day & Mood)
 
-RecipeVault features an interactive 3-mode culinary atmosphere switcher accessible via the header and sidebar:
+RecipeVault features an interactive 3-mode culinary atmosphere switcher accessible via the header, sidebar, and floating atmosphere bar:
 
 ### Mode 1: Morning Dawn & Sunshine (`data-theme="morning"`)
 *Philosophy: Crisp morning light streaming through clean kitchen windows, dew on garden herbs, golden citrus sunbeams.*
@@ -49,21 +49,28 @@ RecipeVault features an interactive 3-mode culinary atmosphere switcher accessib
 
 ---
 
-## 3. Shape, Depth & Motion
+## 3. Shape, Depth, Borders & Mobile Spacing
 
 - **Radius**: Generous 16–24px on cards, fully rounded pills (9999px) for tags, chips, and primary buttons.
-- **Depth**: Subtle shadows with warm espresso undertones (`rgba(44, 35, 27, 0.05)`); soft linen borders do more work than heavy shadows.
+- **Borders & Dividers**: Natural, subtle linen borders (`border-border/70` or `border-border/80`). **Harsh yellow/golden gradient accent stripes have been eliminated** across all cards and containers.
+- **Mobile Grid Rules**:
+  - Discover feed uses a **2-column compact grid** (`grid-template-columns: repeat(2, minmax(0, 1fr))` with 8–12px gap) on screens ≤ 640px.
+  - Page wrapper padding scales down to `px-3 sm:px-6 md:px-8` to guarantee **0px horizontal viewport overflow**.
+- **Fixed Mobile Dock**:
+  - `fixed bottom-0 inset-x-0 z-50` with backdrop blur (`backdrop-blur-md`).
+  - 5 evenly spaced tabs with `env(safe-area-inset-bottom)` support.
+- **Depth**: Subtle shadows with warm espresso undertones (`rgba(44, 35, 27, 0.05)`); soft linen borders do more work than heavy drop shadows.
 - **Motion**:
   - Slow fades and gentle lifts on card hover (`translateY(-4px)` with warm shadow expansion).
   - Animated quantity transitions on the non-destructive serving stepper.
   - Soft **"tuck into the vault"** feedback animation (`@keyframes tuckIntoVault`) when saving recipes to a personal cookbook.
-- **Imagery**: Natural daylight food photography is the hero; typography and relational data support it.
 
 ---
 
 ## 4. Academic DBMS & Culinary Intelligence Layer
 
 - **Normalized 3NF Architecture**: Master ingredient directory, recipe junction tables, user dietary profiles, recipe version snapshots, and ratings.
-- **Pantry Overlap Engine**: Interactive pantry selector computing overlap percentages ("Cook with what you have!").
-- **Transparent Recommendation Scoring**: Weighted multi-factor query evaluating cuisine affinities, dietary restrictions, max prep time, and ratings.
+- **Pantry Overlap Engine**: Interactive pantry selector computing overlap percentages in $O(N)$ time ("Cook with what you have!").
+- **Transparent Recommendation Scoring**: Weighted multi-factor query evaluating cuisine affinities (35%), dietary restrictions (30%), max prep time (15%), and ratings (20%).
+- **Active Strong Password Evaluator**: 5-factor real-time security assessment with a 4-tier color meter and live checklist checkmarks.
 - **Persistent Local Store**: Preserves user edits, collections, meal plans, reviews, and version rollbacks across browser reloads, with a canonical demo reset button.

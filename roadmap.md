@@ -4,12 +4,19 @@
   - Full palette integration: Cream Base `#FAF6F0`, Card White `#FFFDF9`, Espresso Ink `#2C231B`, Clay `#C4633F`, Sage `#7C9070`, Honey `#D9A441`, Linen Border `#E9DFD2`.
   - Editorial typography: `Fraunces` display serif headings, `Nunito Sans` body, and tabular figures for ingredient quantities.
   - Generous 16–24px rounded surfaces, warm undertone shadows, gentle card hover lifts, and tuck-into-vault animations.
+  - Complete elimination of harsh golden/yellow accent lines in favor of natural borders.
+- [x] **Native-Feeling Mobile Responsive Overhaul**:
+  - Snappy 2-column mobile recipe grid (`grid-cols-2`) displaying 4–6 recipes per screen height.
+  - 5-tab fixed bottom dock (Discover, Cookbook, Add (+), Planner, Pantry) with iOS/Android safe area padding.
+  - Day-Picker 7-day strip on the meal planner focusing on a single day's 3 meals (*Breakfast, Lunch, Dinner*).
+  - Single-row horizontal pantry scrolling strip with shelf freshness warnings.
+  - Touch bottom-sheet filter modal for dietary tags, cuisines, and prep time sliders.
 - [x] **Relational DBMS Architecture & Schema**:
   - Normalized 3NF data store: Users, Recipes, RecipeVersions, Master Ingredients, Junctions, Collections, Meal Plans, Reviews, and Pantry Items.
   - Complete PostgreSQL DDL (`src/db/schema.sql`) and seed data (`src/db/seed.sql`) with referential integrity, indexes, views, and aggregate triggers.
   - In-browser local storage persistence with referential consistency and a 1-click canonical demo database reset.
 - [x] **Pantry Matching & Recommendation Intelligence Engine**:
-  - Interactive "Cook With What You Have" pantry selector calculating real-time overlap percentages.
+  - Interactive "Cook With What You Have" pantry selector calculating real-time overlap percentages in $O(N)$ time.
   - Transparent, explainable recommendation scoring query combining cuisine affinities, dietary patterns, time, and ratings.
 - [x] **Recipe Detail, Scaling Engine & Cooking Mode**:
   - Non-destructive fractional serving scaler with culinary fraction formatting (`1/2`, `1 1/4`, etc.).
@@ -19,15 +26,26 @@
   - Immutable revision snapshots with commit messages, version comparison, and 1-click rollback restoration.
 - [x] **Meal Planner & Consolidated Shopping List**:
   - 7-day schedule matrix with custom serving multipliers.
-  - Automated consolidated shopping list grouped by supermarket aisle (Produce, Dairy, Pantry, etc.) with pantry stock cross-checking.
+  - Automated consolidated shopping list grouped by supermarket aisle with pantry stock cross-checking and WhatsApp export.
 - [x] **Ingredient Library & Semantic Ontology**:
   - Master ingredient catalog with regional aliases, classifications, flavor notes, and dishes featuring each ingredient.
 - [x] **Nutrition & Comparative Wellbeing**:
+  - Circular calorie target dial, macro breakdown progress bars, and micronutrient balance analysis.
   - Side-by-side recipe nutrition comparator with dual animated comparison bars.
   - Nutritional science and culinary chemistry FAQs with medical boundary safety guidance.
-- [x] **Authentication & Persona Management**:
-  - 1-click quick persona switcher (Eric Titus, Neeraj K, Maya Lin) for instant review grading.
-  - Custom user registration, sign-in, and personalized taste/allergen profile controls.
+- [x] **Authentication, Security & Persona Management**:
+  - Dedicated Sign Up / Create Account flow for new users.
+  - Active Strong Password meter evaluating 5 criteria with live visual feedback and checklist checkmarks.
+  - "Remember Me" session persistence via `localStorage`.
+  - Complete 3-step interactive Account Recovery (Forgot Password) flow with 1-click demo code filler (`784912`).
+  - Redesigned 1-click persona switch cards with 36px avatars and 0px horizontal overflow.
+- [x] **Settings & Circadian Rhythm Environment**:
+  - Compact 3-chip circadian schedule grid (*Morning: 6 AM – 12 PM*, *Afternoon: 12 PM – 7 PM*, *Night: 7 PM – 6 AM*).
+  - Active atmosphere theme cards with glowing status indicators.
+  - Relational database metric counters and storage management.
+- [x] **Production Cloud Deployment & Vercel Readiness**:
+  - Automated Nitro Vercel Preset configuration in `vite.config.ts` for Vercel Serverless Functions.
+  - Configured `vercel.json` with Vercel Build Output API v3 compatibility.
 - [x] **Verification & Test Coverage**:
-  - Comprehensive unit test suite (`src/test/culinary-engine.test.ts` & `src/test/app-routing.test.tsx`) passing 100%.
+  - Comprehensive unit test suite (`src/test/culinary-engine.test.ts` & `src/test/app-routing.test.tsx`) passing 100% (14/14 tests).
   - Clean production build (`npm run build`).
