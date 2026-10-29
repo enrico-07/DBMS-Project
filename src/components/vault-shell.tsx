@@ -120,7 +120,7 @@ export function VaultShell({ children }: { children: ReactNode }) {
       <aside className={`sidebar ${open ? 'sidebar-open' : ''} ${showCollapsed ? 'sidebar-collapsed' : ''}`}>
         {/* Sidebar Header with Brand and Close/Collapse Controls */}
         {showCollapsed ? (
-          <div className="flex flex-col items-center gap-2 w-full mb-3 shrink-0">
+          <div className="flex flex-col items-center w-full mb-3 shrink-0">
             <Link
               to="/"
               className="flex items-center justify-center p-1 rounded-xl hover:bg-card/80 transition-colors"
@@ -128,16 +128,6 @@ export function VaultShell({ children }: { children: ReactNode }) {
             >
               <RecipeVaultLogo size={32} className="shrink-0" />
             </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-card cursor-pointer shrink-0 hidden md:flex items-center justify-center"
-              onClick={() => setDesktopCollapsed(false)}
-              aria-label="Expand sidebar"
-              title="Expand sidebar"
-            >
-              <PanelLeft size={16} />
-            </Button>
           </div>
         ) : (
           <div className="flex items-center justify-between gap-2 w-full mb-1 shrink-0">
@@ -364,10 +354,34 @@ export function VaultShell({ children }: { children: ReactNode }) {
         {children}
 
         <footer className="page-footer">
-          <span>
-            RecipeVault <span className="text-primary">♥</span> A Database-Driven Culinary Intelligence System
-          </span>
-          <span>Crafted with love for home cooks and food lovers</span>
+          <div className="flex items-start justify-between gap-3 sm:gap-6 w-full text-[11px]">
+            {/* Left Column: Brand & Descriptor */}
+            <div className="text-left min-w-0">
+              <div className="flex items-center gap-1 font-semibold text-foreground text-[11px] leading-tight">
+                <span>RecipeVault</span>
+                <span className="text-primary font-bold">♥</span>
+                <span className="hidden sm:inline font-normal text-muted-foreground ml-1">
+                  — A Database-Driven Culinary Intelligence System
+                </span>
+              </div>
+              <div className="sm:hidden text-muted-foreground text-[10px] leading-tight mt-0.5 truncate">
+                Database-Driven System
+              </div>
+            </div>
+
+            {/* Right Column: Dedication to Home Cooks */}
+            <div className="text-right shrink-0">
+              <div className="font-semibold text-foreground sm:text-muted-foreground text-[11px] leading-tight">
+                Crafted with love
+                <span className="hidden sm:inline font-normal sm:ml-1">
+                  for home cooks &amp; food lovers
+                </span>
+              </div>
+              <div className="sm:hidden text-muted-foreground text-[10px] leading-tight mt-0.5">
+                for home cooks &amp; food lovers
+              </div>
+            </div>
+          </div>
         </footer>
       </main>
 

@@ -71,7 +71,7 @@ function Ingredients() {
 
         {/* Categories Strip - Hidden Scrollbar with Full Touch Scroll Functionality */}
         <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto py-1 px-0.5 no-scrollbar scroll-smooth">
-          {categories.slice(0, 5).map((cat) => (
+          {categories.map((cat) => (
             <Button
               key={cat}
               variant={selectedCategory === cat ? "default" : "outline"}

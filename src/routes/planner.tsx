@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,10 +17,13 @@ import {
   Coins,
   Utensils,
   Clock,
+  Pencil,
+  X,
 } from "lucide-react";
 import { useVault } from "@/components/vault-provider";
 import { PageHeading } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { pageMeta } from "@/lib/metadata";
 import { masterIngredients, formatCulinaryQuantity } from "@/lib/recipes";
@@ -36,6 +39,74 @@ export const Route = createFileRoute("/planner")({
     ),
 });
 
+export type BasketItem = {
+  id: string;
+  key: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  category: string;
+  inPantry: boolean;
+  isCustom?: boolean;
+  isEdited?: boolean;
+};
+
+export type BasketWeekCustomization = {
+  customItems: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    unit: string;
+    category: string;
+    inPantry: boolean;
+  }>;
+  deletedKeys: string[];
+  overrides: Record<
+    string,
+    {
+      name: string;
+      quantity: number;
+      unit: string;
+      category: string;
+      inPantry?: boolean;
+    }
+  >;
+};
+
+const DEFAULT_AISLE_CATEGORIES = [
+  "Produce",
+  "Dairy & Eggs",
+  "Grains & Pasta",
+  "Proteins",
+  "Legumes",
+  "Pantry & Spices",
+  "Baking",
+  "Condiments",
+  "Nuts & Seeds",
+  "Pantry Essentials",
+  "Other",
+];
+
+const COMMON_UNITS = [
+  "whole",
+  "g",
+  "kg",
+  "ml",
+  "L",
+  "tbsp",
+  "tsp",
+  "cup",
+  "cups",
+  "oz",
+  "lb",
+  "cloves",
+  "bunch",
+  "slices",
+  "can",
+  "pinch",
+  "pkg",
+];
+
 function Planner() {
   const { items, plan, setMeal, clearMealPlan, pantry, currentUser } = useVault();
   const [weekOffset, setWeekOffset] = useState(0);
@@ -48,6 +119,53 @@ function Planner() {
   const [shoppingModalOpen, setShoppingModalOpen] = useState(false);
   const [checkedShoppingItems, setCheckedShoppingItems] = useState<string[]>([]);
   const [receiptView, setReceiptView] = useState(false);
+
+  // Basket Customizations (Add / Edit / Remove) persisted per week
+  const [basketCustomizations, setBasketCustomizations] = useState<
+    Record<number, BasketWeekCustomization>
+  >(() => {
+    try {
+      const raw = localStorage.getItem("rv_market_basket_customizations_v1");
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "rv_market_basket_customizations_v1",
+        JSON.stringify(basketCustomizations),
+      );
+    } catch {
+      // Storage quota or private browsing fallback
+    }
+  }, [basketCustomizations]);
+
+  // Form states for adding a custom item
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemQty, setNewItemQty] = useState("1");
+  const [newItemUnit, setNewItemUnit] = useState("whole");
+  const [newItemCategory, setNewItemCategory] = useState("Produce");
+  const [newItemInPantry, setNewItemInPantry] = useState(false);
+
+  // Form states for inline editing an item
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    quantity: number;
+    unit: string;
+    category: string;
+    inPantry: boolean;
+  }>({
+    name: "",
+    quantity: 1,
+    unit: "whole",
+    category: "Produce",
+    inPantry: false,
+  });
 
   const days = [
     { name: "Monday", subtitle: "A fresh start" },
@@ -68,18 +186,32 @@ function Planner() {
     return plan.filter((p) => p.day >= start && p.day < end);
   }, [plan, weekOffset]);
 
-  // Aggregate shopping list grouped by aisle
+  const currentWeekCustomizations = useMemo<BasketWeekCustomization>(() => {
+    return (
+      basketCustomizations[weekOffset] || {
+        customItems: [],
+        deletedKeys: [],
+        overrides: {},
+      }
+    );
+  }, [basketCustomizations, weekOffset]);
+
+  const hasModifications = useMemo(() => {
+    const data = currentWeekCustomizations;
+    return (
+      (data.customItems && data.customItems.length > 0) ||
+      (data.deletedKeys && data.deletedKeys.length > 0) ||
+      (data.overrides && Object.keys(data.overrides).length > 0)
+    );
+  }, [currentWeekCustomizations]);
+
+  // Aggregate shopping list grouped by aisle with customizations applied
   const shoppingListByAisle = useMemo(() => {
-    type AggItem = {
-      name: string;
-      quantity: number;
-      unit: string;
-      category: string;
-      inPantry: boolean;
-    };
+    const map = new Map<string, BasketItem>();
+    const deletedSet = new Set(currentWeekCustomizations.deletedKeys || []);
+    const overrides = currentWeekCustomizations.overrides || {};
 
-    const map = new Map<string, AggItem>();
-
+    // 1. Process base recipe plan items
     currentWeekPlan.forEach((p) => {
       const recipe = items.find((r) => r.id === p.recipeId);
       if (!recipe) return;
@@ -87,7 +219,13 @@ function Planner() {
       const servingMultiplier = (p.customServings || recipe.servings) / recipe.servings;
 
       recipe.ingredients.forEach((ing) => {
-        const key = `${ing.name.toLowerCase()}|${ing.unit.toLowerCase()}`;
+        const baseKey = `${ing.name.toLowerCase().trim()}|${ing.unit.toLowerCase().trim()}`;
+
+        // If this base recipe item was explicitly removed by the user, omit it
+        if (deletedSet.has(baseKey)) {
+          return;
+        }
+
         const master = masterIngredients.find(
           (m) =>
             m.name.toLowerCase() === ing.name.toLowerCase() ||
@@ -102,11 +240,13 @@ function Planner() {
 
         const currentQty = (ing.quantity || 1) * servingMultiplier;
 
-        if (map.has(key)) {
-          const existing = map.get(key)!;
+        if (map.has(baseKey)) {
+          const existing = map.get(baseKey)!;
           existing.quantity += currentQty;
         } else {
-          map.set(key, {
+          map.set(baseKey, {
+            id: `plan_${baseKey}`,
+            key: baseKey,
             name: ing.name,
             quantity: currentQty,
             unit: ing.unit,
@@ -117,29 +257,268 @@ function Planner() {
       });
     });
 
-    // Group items by category
-    const grouped: Record<string, AggItem[]> = {};
+    // 2. Apply user overrides (name, quantity, unit, category, inPantry)
+    Object.entries(overrides).forEach(([key, override]) => {
+      if (map.has(key)) {
+        const item = map.get(key)!;
+        map.set(key, {
+          ...item,
+          name: override.name ?? item.name,
+          quantity: override.quantity ?? item.quantity,
+          unit: override.unit ?? item.unit,
+          category: override.category ?? item.category,
+          inPantry: override.inPantry !== undefined ? override.inPantry : item.inPantry,
+          isEdited: true,
+        });
+      }
+    });
+
+    // 3. Add custom user items
+    (currentWeekCustomizations.customItems || []).forEach((cItem) => {
+      if (deletedSet.has(cItem.id)) return;
+      map.set(cItem.id, {
+        id: cItem.id,
+        key: cItem.id,
+        name: cItem.name,
+        quantity: cItem.quantity,
+        unit: cItem.unit,
+        category: cItem.category,
+        inPantry: cItem.inPantry,
+        isCustom: true,
+      });
+    });
+
+    // 4. Group items by category in preferred aisle order
+    const grouped: Record<string, BasketItem[]> = {};
     Array.from(map.values()).forEach((item) => {
-      const aisleItems = grouped[item.category] ?? (grouped[item.category] = []);
+      const aisle = item.category || "Pantry Essentials";
+      const aisleItems = grouped[aisle] ?? (grouped[aisle] = []);
       aisleItems.push(item);
     });
 
     return grouped;
-  }, [currentWeekPlan, items, pantry]);
+  }, [currentWeekPlan, items, pantry, currentWeekCustomizations]);
 
   const totalIngredientsCount = Object.values(shoppingListByAisle).reduce(
     (acc, list) => acc + list.length,
     0,
   );
 
+  // CRUD actions for Market Basket items
+  const handleAddCustomItem = () => {
+    if (!newItemName.trim()) {
+      toast.error("Please enter an item name");
+      return;
+    }
+    const qtyNum = parseFloat(newItemQty) || 1;
+    const newCustomItem = {
+      id: `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      name: newItemName.trim(),
+      quantity: qtyNum,
+      unit: newItemUnit.trim() || "whole",
+      category: newItemCategory || "Produce",
+      inPantry: newItemInPantry,
+    };
+
+    setBasketCustomizations((prev) => {
+      const weekData = prev[weekOffset] || {
+        customItems: [],
+        deletedKeys: [],
+        overrides: {},
+      };
+      return {
+        ...prev,
+        [weekOffset]: {
+          ...weekData,
+          customItems: [...(weekData.customItems || []), newCustomItem],
+        },
+      };
+    });
+
+    toast.success(`Added "${newItemName.trim()}" to market basket`);
+    setNewItemName("");
+    setNewItemQty("1");
+    setNewItemUnit("whole");
+    setNewItemInPantry(false);
+    setShowAddForm(false);
+  };
+
+  const startEditing = (item: BasketItem) => {
+    setEditingItemId(item.id);
+    setEditForm({
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      category: item.category,
+      inPantry: item.inPantry,
+    });
+  };
+
+  const handleSaveEdit = (item: BasketItem) => {
+    if (!editForm.name.trim()) {
+      toast.error("Item name cannot be empty");
+      return;
+    }
+    if (editForm.quantity <= 0) {
+      toast.error("Quantity must be greater than 0");
+      return;
+    }
+
+    setBasketCustomizations((prev) => {
+      const weekData = prev[weekOffset] || {
+        customItems: [],
+        deletedKeys: [],
+        overrides: {},
+      };
+
+      if (item.isCustom) {
+        const updatedCustom = (weekData.customItems || []).map((ci) =>
+          ci.id === item.id
+            ? {
+                ...ci,
+                name: editForm.name.trim(),
+                quantity: editForm.quantity,
+                unit: editForm.unit.trim() || "whole",
+                category: editForm.category,
+                inPantry: editForm.inPantry,
+              }
+            : ci,
+        );
+        return {
+          ...prev,
+          [weekOffset]: {
+            ...weekData,
+            customItems: updatedCustom,
+          },
+        };
+      } else {
+        return {
+          ...prev,
+          [weekOffset]: {
+            ...weekData,
+            overrides: {
+              ...(weekData.overrides || {}),
+              [item.key]: {
+                name: editForm.name.trim(),
+                quantity: editForm.quantity,
+                unit: editForm.unit.trim() || "whole",
+                category: editForm.category,
+                inPantry: editForm.inPantry,
+              },
+            },
+          },
+        };
+      }
+    });
+
+    toast.success(`Updated "${editForm.name.trim()}"`);
+    setEditingItemId(null);
+  };
+
+  const handleDeleteItem = (item: BasketItem) => {
+    setBasketCustomizations((prev) => {
+      const weekData = prev[weekOffset] || {
+        customItems: [],
+        deletedKeys: [],
+        overrides: {},
+      };
+
+      if (item.isCustom) {
+        return {
+          ...prev,
+          [weekOffset]: {
+            ...weekData,
+            customItems: (weekData.customItems || []).filter((ci) => ci.id !== item.id),
+          },
+        };
+      } else {
+        return {
+          ...prev,
+          [weekOffset]: {
+            ...weekData,
+            deletedKeys: [...(weekData.deletedKeys || []).filter((k) => k !== item.key), item.key],
+          },
+        };
+      }
+    });
+
+    // Remove from checked items
+    setCheckedShoppingItems((prev) =>
+      prev.filter((id) => id !== item.id && id !== item.key && id !== `${item.name}|${item.unit}`),
+    );
+
+    toast.success(`Removed "${item.name}" from basket`, {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          handleUndoDelete(item);
+        },
+      },
+    });
+  };
+
+  const handleUndoDelete = (item: BasketItem) => {
+    setBasketCustomizations((prev) => {
+      const weekData = prev[weekOffset] || {
+        customItems: [],
+        deletedKeys: [],
+        overrides: {},
+      };
+
+      if (item.isCustom) {
+        return {
+          ...prev,
+          [weekOffset]: {
+            ...weekData,
+            customItems: [
+              ...(weekData.customItems || []),
+              {
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity,
+                unit: item.unit,
+                category: item.category,
+                inPantry: item.inPantry,
+              },
+            ],
+          },
+        };
+      } else {
+        return {
+          ...prev,
+          [weekOffset]: {
+            ...weekData,
+            deletedKeys: (weekData.deletedKeys || []).filter((k) => k !== item.key),
+          },
+        };
+      }
+    });
+    toast.info(`Restored "${item.name}" to basket`);
+  };
+
+  const handleResetPlan = () => {
+    setBasketCustomizations((prev) => {
+      const copy = { ...prev };
+      delete copy[weekOffset];
+      return copy;
+    });
+    setEditingItemId(null);
+    setShowAddForm(false);
+    toast.info("Reset market basket to planned recipe ingredients");
+  };
+
   const copyShoppingList = async () => {
     let text = `🛒 RecipeVault Market Basket (${weekOffset === 0 ? "This Week" : `Week +${weekOffset}`})\n\n`;
     Object.entries(shoppingListByAisle).forEach(([cat, list]) => {
       text += `--- ${cat.toUpperCase()} ---\n`;
       list.forEach((item) => {
-        const isChecked = checkedShoppingItems.includes(`${item.name}|${item.unit}`);
-        const pantryTag = item.inPantry ? " (Already in Pantry)" : "";
-        text += `${isChecked ? "[x]" : "[ ]"} ${formatCulinaryQuantity(item.quantity)} ${item.unit} ${item.name}${pantryTag}\n`;
+        const isChecked =
+          checkedShoppingItems.includes(item.id) ||
+          checkedShoppingItems.includes(item.key) ||
+          checkedShoppingItems.includes(`${item.name}|${item.unit}`);
+        const pantryTag = item.inPantry ? " (In Pantry ✓)" : "";
+        const customTag = item.isCustom ? " (Extra)" : "";
+        text += `${isChecked ? "[x]" : "[ ]"} ${formatCulinaryQuantity(item.quantity)} ${item.unit} ${item.name}${customTag}${pantryTag}\n`;
       });
       text += "\n";
     });
@@ -157,10 +536,13 @@ function Planner() {
     Object.entries(shoppingListByAisle).forEach(([cat, list]) => {
       msg += `*${cat.toUpperCase()}*\n`;
       list.forEach((item) => {
-        const itemKey = `${item.name}|${item.unit}`;
-        const isChecked = checkedShoppingItems.includes(itemKey);
+        const isChecked =
+          checkedShoppingItems.includes(item.id) ||
+          checkedShoppingItems.includes(item.key) ||
+          checkedShoppingItems.includes(`${item.name}|${item.unit}`);
         const inPantryText = item.inPantry ? " (Pantry ✓)" : "";
-        msg += `${isChecked ? "✅" : "▫️"} ${formatCulinaryQuantity(item.quantity)} ${item.unit} ${item.name}${inPantryText}\n`;
+        const customText = item.isCustom ? " [Extra]" : "";
+        msg += `${isChecked ? "✅" : "▫️"} ${formatCulinaryQuantity(item.quantity)} ${item.unit} ${item.name}${customText}${inPantryText}\n`;
       });
       msg += "\n";
     });
@@ -592,7 +974,7 @@ function Planner() {
       <Dialog open={shoppingModalOpen} onOpenChange={setShoppingModalOpen}>
         <DialogContent className="max-w-xl max-h-[88vh] p-0 sm:p-0 flex flex-col gap-0 sm:gap-0 overflow-hidden">
           <div className="overflow-y-auto max-h-[88vh] no-scrollbar">
-            <div className="px-5 py-5 sm:px-7 sm:py-6 space-y-3">
+            <div className="px-4 py-4 sm:px-7 sm:py-6 space-y-3">
               {/* Header & Controls Area */}
           <div className="border-b border-border/70 pb-2.5 space-y-2">
             {/* Row 1: Title & Description on Left, Aisle/Slip Toggle on Right (Desktop) */}
@@ -607,8 +989,8 @@ function Planner() {
                 </DialogDescription>
               </div>
 
-              {/* Laptop only: Aisle/Slip toggle placed on the right edge */}
-              <div className="hidden sm:flex items-center shrink-0">
+              {/* Laptop only: Aisle/Slip toggle & Add Item placed on the right edge */}
+              <div className="hidden sm:flex items-center gap-2 shrink-0">
                 <div className="bg-muted/80 p-0.5 rounded-full flex items-center border border-border shadow-2xs">
                   <Button
                     type="button"
@@ -637,11 +1019,22 @@ function Planner() {
                     <Receipt size={13} className="mr-1.5" /> Slip
                   </Button>
                 </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-7 text-xs font-semibold rounded-full px-3 bg-primary text-primary-foreground shadow-xs gap-1.5"
+                  onClick={() => setShowAddForm((v) => !v)}
+                  title="Add custom item to basket"
+                >
+                  <Plus size={13} />
+                  <span>Add</span>
+                </Button>
               </div>
             </div>
 
-            {/* Mobile only: Aisle/Slip toggle - LEFT ALIGNED */}
-            <div className="sm:hidden flex items-center justify-start pt-1">
+            {/* Mobile only: Aisle/Slip toggle on left, compact Add button on right */}
+            <div className="sm:hidden flex items-center justify-between gap-2 pt-1">
               <div className="bg-muted/80 p-0.5 rounded-full flex items-center border border-border shadow-2xs">
                 <Button
                   type="button"
@@ -670,6 +1063,17 @@ function Planner() {
                   <Receipt size={12} className="mr-1.5" /> Slip
                 </Button>
               </div>
+
+              <Button
+                type="button"
+                size="sm"
+                className="h-7 text-xs font-semibold rounded-full px-3 bg-primary text-primary-foreground shadow-xs gap-1 shrink-0"
+                onClick={() => setShowAddForm((v) => !v)}
+                title="Add custom item to basket"
+              >
+                <Plus size={13} />
+                <span>Add</span>
+              </Button>
             </div>
 
             {/* Mobile Action Buttons: Copy & Print side-by-side, WhatsApp full-width on next line */}
@@ -708,14 +1112,43 @@ function Planner() {
                 <Share2 size={13} className="text-emerald-600 shrink-0" />
                 <span>Share via WhatsApp</span>
               </Button>
+
+              {hasModifications && (
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5 px-0.5">
+                  <span className="tabular-nums">
+                    {checkedShoppingItems.length > 0
+                      ? `${checkedShoppingItems.length} of ${totalIngredientsCount} checked`
+                      : `${totalIngredientsCount} items`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleResetPlan}
+                    className="text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                  >
+                    <RotateCcw size={11} /> Reset to recipe plan
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Desktop Action Buttons: Single row aligned to the right */}
             <div className="hidden sm:flex items-center justify-between gap-2 pt-0.5 w-full">
-              <div className="text-[11px] text-muted-foreground mr-auto tabular-nums">
-                {checkedShoppingItems.length > 0
-                  ? `${checkedShoppingItems.length} of ${totalIngredientsCount} items checked`
-                  : `${totalIngredientsCount} total ingredients`}
+              <div className="flex items-center gap-2 mr-auto">
+                <span className="text-[11px] text-muted-foreground tabular-nums">
+                  {checkedShoppingItems.length > 0
+                    ? `${checkedShoppingItems.length} of ${totalIngredientsCount} items checked`
+                    : `${totalIngredientsCount} total ingredients`}
+                </span>
+                {hasModifications && (
+                  <button
+                    type="button"
+                    onClick={handleResetPlan}
+                    className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer ml-1"
+                    title="Revert custom additions, edits, and deletions back to planned recipe ingredients"
+                  >
+                    <RotateCcw size={11} /> Revert to recipe plan
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -755,7 +1188,141 @@ function Planner() {
             </div>
           </div>
 
-          {/* Estimated Weekly Grocery Budget Pill - Compact & Zero Bloat */}
+          {/* Add Custom Item Inline Form (Smooth Expand) */}
+          {showAddForm && (
+            <div className="p-3.5 sm:p-4 bg-primary/[0.04] border border-primary/30 rounded-xl space-y-3 mt-2 mb-2 shadow-xs animate-in fade-in-50 duration-150">
+              <div className="flex items-center justify-between pb-1 border-b border-border/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <Plus size={14} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-serif font-bold text-foreground">
+                      Add Item to Market Basket
+                    </h4>
+                    <p className="text-[10px] text-muted-foreground">
+                      Add extra groceries, pantry staples, or household items for this week.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+                  onClick={() => setShowAddForm(false)}
+                  title="Cancel"
+                >
+                  <X size={14} />
+                </Button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAddCustomItem();
+                }}
+                className="space-y-2.5 pt-1"
+              >
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                    Item Name *
+                  </label>
+                  <Input
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    placeholder="e.g. Sourdough loaf, Avocados, Olive oil"
+                    className="h-8.5 text-xs"
+                    autoFocus
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                      Quantity *
+                    </label>
+                    <Input
+                      type="number"
+                      step="any"
+                      min="0.01"
+                      value={newItemQty}
+                      onChange={(e) => setNewItemQty(e.target.value)}
+                      placeholder="1"
+                      className="h-8.5 text-xs"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                      Unit
+                    </label>
+                    <Input
+                      value={newItemUnit}
+                      onChange={(e) => setNewItemUnit(e.target.value)}
+                      placeholder="e.g. whole, g, bunch"
+                      className="h-8.5 text-xs"
+                      list="common-units-list"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                      Aisle / Category
+                    </label>
+                    <select
+                      value={newItemCategory}
+                      onChange={(e) => setNewItemCategory(e.target.value)}
+                      className="flex h-8.5 w-full rounded-xl border border-input bg-background/80 px-2.5 py-1 text-xs shadow-xs focus:ring-1 focus:ring-primary focus:border-primary text-foreground"
+                    >
+                      {DEFAULT_AISLE_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex items-center pt-2 sm:pt-5">
+                    <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={newItemInPantry}
+                        onChange={(e) => setNewItemInPantry(e.target.checked)}
+                        className="rounded accent-clay w-4 h-4 cursor-pointer"
+                      />
+                      <span>Already in Pantry (Stocked)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/50">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7.5 text-xs px-3"
+                    onClick={() => setShowAddForm(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="h-7.5 text-xs px-3.5 bg-primary text-primary-foreground gap-1.5 shadow-xs"
+                  >
+                    <Plus size={13} />
+                    <span>Add to Basket</span>
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Estimated Weekly Grocery Budget Pill */}
           {totalIngredientsCount > 0 && (
             <div className="bg-primary/5 border border-primary/20 py-1.5 px-3 rounded-lg flex items-center justify-between gap-2 mt-2 mb-1.5 text-xs shadow-2xs">
               <div className="flex items-center gap-1.5 min-w-0">
@@ -780,12 +1347,21 @@ function Planner() {
           )}
 
           {totalIngredientsCount === 0 ? (
-            <div className="text-center py-10">
-              <ShoppingBasket size={28} className="text-primary mx-auto mb-2" />
-              <p className="text-sm font-semibold">No meals planned yet for this week.</p>
-              <small className="text-muted-foreground text-xs">
-                Add recipes to the calendar above to generate an aisle-by-aisle shopping list.
-              </small>
+            <div className="text-center py-10 space-y-2">
+              <ShoppingBasket size={28} className="text-primary mx-auto mb-1" />
+              <p className="text-sm font-semibold">No items in your market basket.</p>
+              <p className="text-muted-foreground text-xs max-w-xs mx-auto">
+                Add recipes to the weekly calendar above or add custom items to your basket.
+              </p>
+              <div className="pt-2">
+                <Button
+                  size="sm"
+                  className="rounded-full bg-primary text-primary-foreground gap-1.5 text-xs px-4"
+                  onClick={() => setShowAddForm(true)}
+                >
+                  <Plus size={13} /> Add an item
+                </Button>
+              </div>
             </div>
           ) : receiptView ? (
             /* VINTAGE THERMAL GROCERY SLIP VIEW */
@@ -810,23 +1386,37 @@ function Planner() {
                       [ {category.toUpperCase()} ]
                     </p>
                     {itemsList.map((item) => {
-                      const itemKey = `${item.name}|${item.unit}`;
-                      const isChecked = checkedShoppingItems.includes(itemKey);
+                      const isChecked =
+                        checkedShoppingItems.includes(item.id) ||
+                        checkedShoppingItems.includes(item.key) ||
+                        checkedShoppingItems.includes(`${item.name}|${item.unit}`);
 
                       return (
                         <div
-                          key={itemKey}
+                          key={item.id}
                           className="flex items-center justify-between text-xs py-0.5 border-b border-dotted border-border/40"
                         >
                           <span className={isChecked ? "line-through opacity-50" : ""}>
                             {isChecked ? "[✓]" : "[ ]"} {formatCulinaryQuantity(item.quantity)}{" "}
                             {item.unit} {item.name}
                           </span>
-                          {item.inPantry && (
-                            <span className="text-[10px] text-sage font-bold shrink-0">
-                              *IN PANTRY
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {item.isCustom && (
+                              <span className="text-[9px] text-honey font-bold">
+                                *EXTRA
+                              </span>
+                            )}
+                            {item.isEdited && (
+                              <span className="text-[9px] text-primary font-bold">
+                                *EDITED
+                              </span>
+                            )}
+                            {item.inPantry && (
+                              <span className="text-[10px] text-sage font-bold">
+                                *IN PANTRY
+                              </span>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -862,27 +1452,187 @@ function Planner() {
               </div>
             </div>
           ) : (
-            /* STANDARD CATEGORIZED AISLE LIST */
+            /* STANDARD CATEGORIZED AISLE LIST WITH ADD/EDIT/DELETE */
             <div className="space-y-3.5 mt-1.5">
               {Object.entries(shoppingListByAisle).map(([category, itemsList]) => (
                 <div key={category}>
                   <h4 className="aisle-header">{category}</h4>
                   <div className="space-y-1.5">
                     {itemsList.map((item) => {
-                      const itemKey = `${item.name}|${item.unit}`;
-                      const isChecked = checkedShoppingItems.includes(itemKey);
+                      const isChecked =
+                        checkedShoppingItems.includes(item.id) ||
+                        checkedShoppingItems.includes(item.key) ||
+                        checkedShoppingItems.includes(`${item.name}|${item.unit}`);
+
+                      if (editingItemId === item.id) {
+                        return (
+                          <div
+                            key={item.id}
+                            className="p-3 sm:p-3.5 bg-card border-2 border-primary/40 rounded-xl space-y-3 my-2 shadow-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-between pb-1 border-b border-border/50">
+                              <div className="flex items-center gap-1.5">
+                                <Pencil size={13} className="text-primary shrink-0" />
+                                <span className="text-xs font-semibold text-foreground">
+                                  Edit {item.isCustom ? "Custom Item" : "Recipe Item"}
+                                </span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                onClick={() => setEditingItemId(null)}
+                                title="Cancel edit"
+                              >
+                                <X size={13} />
+                              </Button>
+                            </div>
+
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                                  Item Name *
+                                </label>
+                                <Input
+                                  value={editForm.name}
+                                  onChange={(e) =>
+                                    setEditForm((f) => ({ ...f, name: e.target.value }))
+                                  }
+                                  placeholder="e.g. Cherry tomatoes"
+                                  className="h-8.5 text-xs"
+                                  autoFocus
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                                    Quantity *
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    step="any"
+                                    min="0.01"
+                                    value={editForm.quantity}
+                                    onChange={(e) =>
+                                      setEditForm((f) => ({
+                                        ...f,
+                                        quantity: parseFloat(e.target.value) || 0,
+                                      }))
+                                    }
+                                    className="h-8.5 text-xs"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                                    Unit
+                                  </label>
+                                  <Input
+                                    value={editForm.unit}
+                                    onChange={(e) =>
+                                      setEditForm((f) => ({ ...f, unit: e.target.value }))
+                                    }
+                                    placeholder="e.g. g, whole, bunch"
+                                    className="h-8.5 text-xs"
+                                    list="common-units-list"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                                    Aisle / Category
+                                  </label>
+                                  <select
+                                    value={editForm.category}
+                                    onChange={(e) =>
+                                      setEditForm((f) => ({ ...f, category: e.target.value }))
+                                    }
+                                    className="flex h-8.5 w-full rounded-xl border border-input bg-background/80 px-2.5 py-1 text-xs shadow-xs focus:ring-1 focus:ring-primary focus:border-primary text-foreground"
+                                  >
+                                    {DEFAULT_AISLE_CATEGORIES.map((cat) => (
+                                      <option key={cat} value={cat}>
+                                        {cat}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div className="flex items-center pt-2 sm:pt-5">
+                                  <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={editForm.inPantry}
+                                      onChange={(e) =>
+                                        setEditForm((f) => ({ ...f, inPantry: e.target.checked }))
+                                      }
+                                      className="rounded accent-clay w-4 h-4 cursor-pointer"
+                                    />
+                                    <span>Already in Pantry</span>
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs text-destructive hover:bg-destructive/10 px-2 gap-1"
+                                onClick={() => {
+                                  handleDeleteItem(item);
+                                  setEditingItemId(null);
+                                }}
+                              >
+                                <Trash2 size={12} />
+                                <span>Delete</span>
+                              </Button>
+
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-xs px-3"
+                                  onClick={() => setEditingItemId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="h-7 text-xs px-3 bg-primary text-primary-foreground gap-1"
+                                  onClick={() => handleSaveEdit(item)}
+                                >
+                                  <Check size={12} />
+                                  <span>Save</span>
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
 
                       return (
                         <div
-                          key={itemKey}
-                          className={`shopping-item cursor-pointer transition-colors ${
+                          key={item.id}
+                          className={`shopping-item cursor-pointer group transition-colors ${
                             isChecked ? "opacity-60 bg-muted/40" : "hover:bg-muted/30"
                           }`}
                           onClick={() =>
                             setCheckedShoppingItems((prev) =>
-                              prev.includes(itemKey)
-                                ? prev.filter((x) => x !== itemKey)
-                                : [...prev, itemKey],
+                              isChecked
+                                ? prev.filter(
+                                    (x) =>
+                                      x !== item.id &&
+                                      x !== item.key &&
+                                      x !== `${item.name}|${item.unit}`,
+                                  )
+                                : [...prev, item.id],
                             )
                           }
                         >
@@ -892,24 +1642,56 @@ function Planner() {
                             onChange={() => {}}
                             className="rounded accent-clay w-4 h-4 cursor-pointer shrink-0"
                           />
-                          <div className="flex-1 text-xs select-none pr-1.5 min-w-0">
-                            <span
-                              className={`block leading-snug ${
-                                isChecked ? "line-through text-muted-foreground" : "font-medium text-foreground"
-                              }`}
-                            >
-                              <strong className="tabular mr-1 text-foreground">
+                          <div className="flex-1 text-xs select-none pr-2 min-w-0">
+                            <div className="flex items-baseline flex-wrap gap-x-1.5 gap-y-0.5">
+                              <span className="font-bold tabular-nums text-foreground whitespace-nowrap shrink-0">
                                 {formatCulinaryQuantity(item.quantity)} {item.unit}
-                              </strong>
-                              <span>{item.name}</span>
-                            </span>
+                              </span>
+                              <span
+                                className={`leading-snug ${
+                                  isChecked
+                                    ? "line-through text-muted-foreground"
+                                    : "font-medium text-foreground"
+                                }`}
+                              >
+                                {item.name}
+                              </span>
+                              {item.isCustom && (
+                                <span className="text-[9px] bg-amber-500/10 text-amber-800 dark:text-amber-200 px-1.5 py-0.2 rounded font-semibold border border-amber-500/30 whitespace-nowrap shrink-0">
+                                  Extra
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          {item.inPantry && (
-                            <span className="text-[10px] bg-secondary text-primary px-2 py-0.5 rounded-full font-semibold shrink-0 border border-primary/20">
-                              In Pantry ✓
-                            </span>
-                          )}
+                          <div className="flex items-center gap-0.5 shrink-0 ml-auto">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditing(item);
+                              }}
+                              title={`Edit ${item.name}`}
+                            >
+                              <Pencil size={13} />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteItem(item);
+                              }}
+                              title={`Remove ${item.name}`}
+                            >
+                              <Trash2 size={13} />
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}
@@ -918,6 +1700,13 @@ function Planner() {
               ))}
             </div>
           )}
+
+          {/* Autocomplete datalist for standard culinary units */}
+          <datalist id="common-units-list">
+            {COMMON_UNITS.map((u) => (
+              <option key={u} value={u} />
+            ))}
+          </datalist>
             </div>
           </div>
         </DialogContent>

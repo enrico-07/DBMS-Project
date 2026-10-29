@@ -2363,7 +2363,8 @@ div:first-child > .aisle-header,
   }
   
   .page-footer {
-    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    padding: 16px 16px calc(84px + env(safe-area-inset-bottom, 0px)) 16px;
+    align-items: flex-start;
   }
 }
 
